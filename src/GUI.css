@@ -1,0 +1,88 @@
+<style type="text/css">
+
+body {
+  min-height: 100vh;
+}
+
+.imagegrid {
+  display: grid;
+  grid-gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.imagegrid div.active {
+  outline: 6px solid #d62350;
+}
+
+/* .imagegrid.hover_enabled div.item:not(.active):hover    we do not need the not-active now, because hover_enabled takes care of it*/
+.imagegrid.hover_enabled div.item:hover {
+  outline: 6px solid #d1607c;
+}
+
+.imagegrid img {
+  width: 100%;
+  max-width:256px;
+}
+
+.imagegrid .item {
+  position: relative;
+  overflow: hidden;
+  /* border: 1px red solid; */
+}
+
+.imagegrid .item img {
+  vertical-align: middle;
+}
+
+.imagegrid .caption {
+  margin: 0;
+  padding: 1em;
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  transition: transform 0.1s;
+  transform: translateY(100%);
+  background: rgba(0, 0, 0, 0.7);
+  color: rgb(255, 255, 255);
+}
+
+.imagegrid .item:hover .caption {
+  transform: translateY(0%);
+}
+
+.imagegrid {
+  font-size: 0.6rem;
+  user-select: none;  /* only for chrome */
+}
+
+
+/* sidebar */
+
+#main {
+    float:left;
+    border:1px solid red;
+    width:100%;
+}
+
+.sidebar_grid {
+  height: 100%;
+  width: 25%;
+  max-width:300px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  right: 0px;
+  background-color: rgb(255, 255, 255); /* Black*/
+  /* overflow-x: hidden; */
+  padding-top: 15px;
+  transition: 0.1s;
+  display:none;
+
+}
+
+</style>

@@ -1,7 +1,18 @@
 name = "SpmImageTycoon"
 uuid = "9d058c39-626d-4326-b74c-2931221b7bf0"
-authors = ["Alex <00alexx@riss.at> and contributors"]
+keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunneling microscopy", "atomic force microscopy", "images", "image analysis", "browser"]
+license = "GPLv3"
+desc = "Manage and edit SPM (scanning probe microscopy) images"
+authors = ["Alex Riss"]
 version = "0.1.0"
+
+[deps]
+Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+SpmImages = "a5d333f8-9588-4c9f-ac4d-4583361e1fcb"
 
 [compat]
 julia = "1"
