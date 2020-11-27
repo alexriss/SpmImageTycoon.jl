@@ -1,0 +1,13 @@
+name = "SpmImageTycoon"
+uuid = "9d058c39-626d-4326-b74c-2931221b7bf0"
+authors = ["Alex <00alexx@riss.at> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
