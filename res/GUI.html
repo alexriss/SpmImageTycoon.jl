@@ -12,7 +12,6 @@
         </spam>
       </div>
     </div>
-
   </div>
 
   <div id="navbarBasicExample" class="navbar-menu">
@@ -20,7 +19,6 @@
       <a class="navbar-item">
         Home
       </a>
-
       <a class="navbar-item">
         Documentation
       </a>
@@ -33,21 +31,21 @@
   <div class="columns is-mobile is-2">
 
     <div class="column">
-      <div id="imagegrid" class="imagegrid hover_enabled">
+      <div id="imagegrid" class="imagegrid unselectable hover_enabled">
         
           <template id="griditem">
             <div class="item">
-              <img src="" />
+              <img class="unselectable" src="" />
             </div>
           </template>
 
       </div>
     </div>
 
-    <div class="column is-narrow has-background-info-light">
-      <div id="sidebar_grid" class="sidebar" aria-label="sidebar containing image data" aria-hidden="true">
+    <div class="column is-narrow has-background-info-light" id="sidebar_grid" >
+      <div class="sidebar">
         <div class="sidebar_content">
-          <span>Image Data</span>
+          <p class="title is-6">Image Data</p>
         </div>
       </div>
     </div>
@@ -56,10 +54,18 @@
 </section>
 
 
-<div class="footer p-0 is-light">
-  <div class="content has-text-centered">
+<div class="footer p-2 is-light has-text-grey is-size-6">
+  <nav class="level">
+    <div class="level-left">
+      <div class="level-item">
+        Selected: <span id="footer_num_images" class="pl-1">0</span>
+      </div>
+    </div>
 
-      Footer.
-
-  </div>
+    <div class="level-right">
+      <div class="level-item">
+        <span id="footer_message"></span>
+      </div>
+    </div>
+  </nav>  
 </footer>

@@ -1,5 +1,6 @@
 window.dir_cache = "";  // will be set by julia
 window.last_selected = -1  // last selected item
+window.timeout = null;  // timeout reference
 
 function toggle_sidebar() {
     let sidebar = document.getElementById('sidebar_grid');
@@ -10,6 +11,16 @@ function toggle_sidebar() {
     }
 }
 
+function show_message(msg="") {
+    // shows message in the footer
+    if (window.timeout != null) {
+        clearTimeout(window.timeout);
+    }
+    let el = document.getElementById('footer_message');
+    el.innerText = msg;
+    window.timeout = setTimeout(show_message, 3000);
+}
+
 function clear_all_active() {
     // clears all active divs
     let grid = document.getElementById('imagegrid');
@@ -17,7 +28,7 @@ function clear_all_active() {
     for (let i=els.length-1; i >= 0; i--) {
         els[i].classList.remove('active');
     }
-    grid.classList.add('hover_enabled');
+    check_hover_enabled();
 }
 
 function toggle_all_active() {
@@ -30,12 +41,15 @@ function toggle_all_active() {
         for (let i=0; i < els.length; i++) {
             els[i].classList.add('active');
         }
-        grid.classList.remove('hover_enabled');
     }
+    check_hover_enabled();
 }
 
 function get_active_element_ids() {
     // returns all active element ids
+    // if any are selected (i.e active), then these are returned
+    // otherwise if one is hovered, then this is returned
+    // otherwise an empy list is returned
     let grid = document.getElementById('imagegrid');
     let els = grid.getElementsByClassName('active');
 
@@ -57,6 +71,7 @@ function get_active_element_ids() {
 function check_hover_enabled() {
     // checks whether the magedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
+    // also writes the number of selected images into the footer.
     let grid = document.getElementById('imagegrid');
     let els = grid.getElementsByClassName('item active');
     if (els.length == 0) {
@@ -64,6 +79,9 @@ function check_hover_enabled() {
     } else {
         grid.classList.remove('hover_enabled');
     }
+
+    let el_num = document.getElementById('footer_num_images');
+    el_num.innerText = els.length;
 }
 
 function select_item(event) {
@@ -178,6 +196,7 @@ function change_channel() {
     if (els_id.length > 0) {
         Blink.msg("next_channel", els_id);        
     }
+    show_message("change channel.")
 }
 
 function change_direction() {
@@ -186,6 +205,7 @@ function change_direction() {
     if (els_id.length > 0) {
         Blink.msg("next_direction", els_id);        
     }
+    show_message("change direction.")
 }
 
 

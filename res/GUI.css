@@ -27,6 +27,14 @@ body {
   outline: 6px solid #d1607c;
 }
 
+.imagegrid:not(.hover_enabled) div.item:not(.active):hover {
+  outline: 4px dashed #e47692;
+}
+
+.imagegrid div.item.active:hover {
+  outline: 6px solid #a5475f;
+}
+
 .imagegrid img {
   width: 100%;
   max-width:256px;
@@ -44,9 +52,16 @@ body {
 
 .imagegrid {
   font-size: 0.6rem;
-  user-select: none;  /* only for chrome */
 }
 
+.unselectable {
+  user-drag: none; 
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
 
 /* sidebar */
 
