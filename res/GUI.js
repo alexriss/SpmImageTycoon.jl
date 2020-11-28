@@ -112,7 +112,6 @@ function add_image(id, filename) {
     // filename = filename.replace(/\\/g, '/');
     // el.innerHTML = '<img src="file:///' + window.dir_cache + filename + '" /><span class="caption">' + filename + '</span>';
     el.querySelector('img').src = 'file:///' + window.dir_cache + filename;
-    el.querySelector('.caption').innerHTML = filename;
     grid.appendChild(el);
     el.addEventListener('click', select_item);
     el.addEventListener('dblclick', clear_all_active);
@@ -127,15 +126,28 @@ function update_image(id, filename) {
 // called from julia
 
 function load_page() {
-    let link = document.querySelector('link[rel="import"]');  // blink.jl loads it into an html import
+    // loads the page contents
+    let nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
+    let link = nodes[nodes.length - 1];
     document.body.innerHTML = link.import.querySelector('body').innerHTML
+
+    document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
 }
 
 function set_dir_cache(dir_cache) {
+    // stes the global variable of dir cache
     window.dir_cache = dir_cache;
 }
 
+function set_base_href(dir_res) {
+    // sets a base directory for all relative paths
+    let el = document.createElement('base');
+    el.href = dir_res;
+    document.getElementsByTagName('head')[0].appendChild(el);    
+}
+
 function load_images(ids, filenames) {
+    // loads images
     for (let i=0; i < ids.length; i++)
     {
       add_image(ids[i], filenames[i]);
@@ -143,6 +155,7 @@ function load_images(ids, filenames) {
 }
 
 function update_images(ids, filenames) {
+    // updates images
     for (let i=0; i < ids.length; i++)
     {
       update_image(ids[i], filenames[i]);

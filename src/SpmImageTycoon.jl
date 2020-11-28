@@ -7,7 +7,7 @@ using Images
 using ImageIO
 using JSON
 using SpmImages
-import Blink.AtomShell: resolve_blink_asset
+# import Blink.AtomShell: resolve_blink_asset
 
 export SpmImageGridItem, tycoon
 
@@ -25,7 +25,8 @@ channels_no_feedback = ["Frequency_Shift", "Current"]
 resize_to = 256
 extension_spm = ".sxm"
 
-dir_cache_name = "_spmimages_cache"
+dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
+dir_res = "../res/"  # relative to module directory
 
 
 """adds a trailing slash to a directory if necessary"""
@@ -51,6 +52,12 @@ end
 """returns the cache directory (which is a subdirectory of dir_data"""
 function get_dir_cache(dir_data::String)::String
     return joinpath(dir_data, dir_cache_name)
+end
+
+
+"""Returns the absolute path to an asset"""
+function path_asset(asset::String)::String
+    return abspath(joinpath(@__DIR__, dir_res, asset))
 end
 
 
@@ -193,10 +200,11 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 
-    file_GUI = joinpath(@__DIR__, "GUI.html")
-    file_GUI_css = joinpath(@__DIR__, "GUI.css")
-    file_GUI_js = joinpath(@__DIR__, "GUI.js")
-    file_CSS = joinpath(@__DIR__, "bulma.min.css")
+    file_GUI = path_asset("GUI.html")
+    file_GUI_css = path_asset("GUI.css")
+    file_GUI_js = path_asset("GUI.js")
+    file_CSS = path_asset("bulma.min.css")
+    dir_asset = path_asset("");
     # file_Blink_js = resolve_blink_asset("res", "blink.js")
 
     # loadfile(w, file_GUI)  # this is probably a bit "bold", as it replaces the whole content (including the basic blink.js, which we have to reload in the next line)
@@ -205,17 +213,17 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     load!(w, file_GUI_js)
     load!(w, file_CSS)
     load!(w, file_GUI_css)
-    opentools(w)
 
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
 
-    @js w load_page();
-    @js w set_dir_cache($dir_cache_js);
+    @js w set_base_href($dir_asset)
+    @js w set_dir_cache($dir_cache_js)
+    @js w load_page()
     
     ids = collect(1:length(images_parsed))
     filenames = [s.filename_display for s in images_parsed]
-    @js_ w load_images($ids, $filenames);
+    @js_ w load_images($ids, $filenames)
 
     set_event_handlers(w, dir_data, images_parsed)
 
