@@ -1,6 +1,9 @@
 window.dir_cache = "";  // will be set by julia
 window.last_selected = -1  // last selected item
 window.timeout = null;  // timeout reference
+window.timeout_image_info = null;  //timeout refrence for get_image_info function
+window.current_image = -1;  // current image, for which data is displayed
+
 
 function toggle_sidebar() {
     let sidebar = document.getElementById('sidebar_grid');
@@ -119,6 +122,21 @@ function select_item(event) {
     check_hover_enabled();
 }
 
+function image_info_timeout() {
+    // starts timeout when mouse enters the element - after a short while ulia will be asked to get all the info
+    let this_id = this.id;
+    window.timeout_image_info = window.setTimeout(function() {
+        get_image_info(this_id);
+    }, 300);
+}
+
+function image_info_timeout_clear() {
+    // clears timeout when mouse leaves the element
+    if (window.timeout_image_info != null) {
+        clearTimeout(window.timeout_image_info);
+    }
+}
+
 function add_image(id, filename) {
     // adds image to the DOM
     let grid = document.getElementById('imagegrid');
@@ -133,6 +151,8 @@ function add_image(id, filename) {
     grid.appendChild(el);
     el.addEventListener('click', select_item);
     el.addEventListener('dblclick', clear_all_active);
+    el.addEventListener('mouseenter', image_info_timeout);
+    el.addEventListener('mouseleave', image_info_timeout_clear);
 }
 
 function update_image(id, filename) {
@@ -194,7 +214,7 @@ function change_channel() {
     console.log("change channel");
     els_id = get_active_element_ids();
     if (els_id.length > 0) {
-        Blink.msg("next_channel", els_id);        
+        Blink.msg("grid_item", ["next_channel", els_id]);
     }
     show_message("change channel.")
 }
@@ -203,9 +223,16 @@ function change_direction() {
     console.log("change direction");
     els_id = get_active_element_ids();
     if (els_id.length > 0) {
-        Blink.msg("next_direction", els_id);        
+        Blink.msg("grid_item", ["next_direction", els_id]);
     }
     show_message("change direction.")
+}
+
+function get_image_info(id) {
+    // gets info (header data) for the current image
+    console.log("get info");
+    Blink.msg("get_info", id); 
+    //show_message("get info.");
 }
 
 

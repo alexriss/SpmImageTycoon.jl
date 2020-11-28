@@ -113,6 +113,14 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
 end
 
 
+"""Loads the header data for an image and returns a dictionary with all the data"""
+function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::Dict{String,String}
+    filename_original = images_parsed[id].filename_original
+    im_spm = load_image(joinpath(dir_data, filename_original), header_only=true, output_info=0)
+    return im_spm.header
+end
+
+
 """Cycles the channel or switches direction (backward/forward) for the images specified by ids. Modifies the images_parsed array and returns the new filenames."""
 function switch_channel_direction!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Vector{String}
     dir_cache = get_dir_cache(dir_data)
@@ -171,20 +179,20 @@ end
 """sets the julia handlers that are triggered by javascript events"""
 function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{SpmImageGridItem})
     # change channel
-    handle(w, "next_channel") do args...  # cycle through scan channels
+    handle(w, "grid_item") do args  # cycle through scan channels
         # @show args
-        ids_str = args[1]
+        what = args[1]
+        ids_str = args[2]
         ids = [parse(Int64, id) for id in ids_str]
-        filenames = switch_channel_direction!(ids, dir_data, images_parsed, "channel")
-        @js_ w update_images($ids_str, $filenames);
-    end
-
-    handle(w, "next_direction") do args...  # switch between forward and backward channels
-        # @show args
-        ids_str = args[1]
-        ids = [parse(Int64, id) for id in ids_str]
-        filenames = switch_channel_direction!(ids, dir_data, images_parsed, "direction")
-        @js_ w update_images($ids_str, $filenames);
+        if what == "next_channel"
+            filenames = switch_channel_direction!(ids, dir_data, images_parsed, "channel")
+            @js_ w update_images($ids_str, $filenames);
+        elseif what == "next_direction"
+            filenames = switch_channel_direction!(ids, dir_data, images_parsed, "direction")
+            @js_ w update_images($ids_str, $filenames);
+        elseif what == "get_info"
+            image_info = get_image_info(ids[1], dir_data, images_parsed)
+        end
     end
 
     return nothing
@@ -193,9 +201,12 @@ end
 
 """Start the main GUI and loads images from dir_data"""
 function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
-    if w == nothing
-        w = Window(Dict("webPreferences" => Dict("webSecurity" => false)))  # to load local files
-        title(w, "SpmImage Tycoon")
+    if w === nothing
+        w = Window(Dict(
+            "webPreferences" => Dict("webSecurity" => false),  # to load local files
+            "title" => "SpmImage Tycoon"
+        ))
+        @js w require("electron").remote.getCurrentWindow().maximize()
     end
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
@@ -227,6 +238,7 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
 
     set_event_handlers(w, dir_data, images_parsed)
 
+    @js w require("electron").remote.getCurrentWindow().show()
     return w
 end
 
