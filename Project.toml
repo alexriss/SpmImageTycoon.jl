@@ -15,6 +15,7 @@ JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 SpmImages = "a5d333f8-9588-4c9f-ac4d-4583361e1fcb"
 
 [compat]
+Blink = "0.12"
 JSON = "0.21"
 julia = "1"
 
