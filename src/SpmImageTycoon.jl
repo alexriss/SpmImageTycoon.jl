@@ -87,11 +87,16 @@ end
 
 """Gets the channel name after current_channel_name in the list of image's channel names."""
 function next_channel_name(image::SpmImage, current_channel_name::String)::String
+    backward_suffix = ""
+    if endswith(current_channel_name, "_bwd")
+        current_channel_name = current_channel_name[1:end-4]
+        backward_suffix = "_bwd"
+    end
     current_index = findfirst(x -> x == current_channel_name, image.channel_names)
-    if current_index == nothing
+    if current_index === nothing  # this should never happen anyways
         return image.channel_names[1]
     else
-        return image.channel_names[current_index % length(image.channel_names) + 1]
+        return image.channel_names[current_index % length(image.channel_names) + 1] * backward_suffix
     end
 end
 
