@@ -2,12 +2,12 @@ window.dir_cache = "";  // will be set by julia
 window.last_selected = -1  // last selected item
 window.timeout = null;  // timeout reference
 window.timeout_image_info = null;  //timeout refrence for get_image_info function
-window.current_image = -1;  // current image, for which data is displayed
-
+window.image_info_id = -1;  // current image, for which data is displayed
+window.datatable = null;  // holds the datatable
 
 function toggle_sidebar() {
     let sidebar = document.getElementById('sidebar_grid');
-    if (sidebar.style.display === "none") {
+    if (sidebar.style.display == "none") {
         sidebar.style.display = "block";
     } else {
         sidebar.style.display = "none";
@@ -21,7 +21,7 @@ function show_message(msg="") {
     }
     let el = document.getElementById('footer_message');
     el.innerText = msg;
-    window.timeout = setTimeout(show_message, 3000);
+    window.timeout = setTimeout(show_message, 2500);
 }
 
 function clear_all_active() {
@@ -124,10 +124,14 @@ function select_item(event) {
 
 function image_info_timeout() {
     // starts timeout when mouse enters the element - after a short while ulia will be asked to get all the info
+    if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
+        return;
+    }
     let this_id = this.id;
+    window.image_info_id = this_id;
     window.timeout_image_info = window.setTimeout(function() {
         get_image_info(this_id);
-    }, 300);
+    }, 200);
 }
 
 function image_info_timeout_clear() {
@@ -136,6 +140,16 @@ function image_info_timeout_clear() {
         clearTimeout(window.timeout_image_info);
     }
 }
+
+function image_info_search_parameter() {
+    // starts timeout when mouse enters the element - after a short while ulia will be asked to get all the info
+    if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
+        return;
+    }
+    document.querySelector(".dataTable-search .dataTable-input").focus();
+    return false;
+}
+
 
 function add_image(id, filename) {
     // adds image to the DOM
@@ -200,7 +214,31 @@ function update_images(ids, filenames) {
     }
 }
 
+function show_info(id, json) {
+    /// shows header data for an image
+    if (window.image_info_id != id)  return;  // there was some other event already
+
+    if (window.datatable == null) {
+        window.datatable = new simpleDatatables.DataTable("#header_info", {
+            searchable: true,
+            // fixedHeight: true,
+            paging: false,
+            scrollY: "80vh",
+            // fixedColumns: true,
+            // columns: { select: [2], sortable: false },
+        })
+        document.getElementById("table-container").style.display = "block";
+    } else {
+        window.datatable.rows().remove("all");
+    }
+    window.datatable.import({
+         type: "json",
+         data: json,
+    });
+}
+
 function header_data(json) {
+    // just for testing
     let t0 = performance.now();
     d = JSON.parse(json);
     let t1 = performance.now();
@@ -231,7 +269,7 @@ function change_direction() {
 function get_image_info(id) {
     // gets info (header data) for the current image
     console.log("get info");
-    Blink.msg("get_info", id); 
+    Blink.msg("grid_item", ["get_info", [id]]);
     //show_message("get info.");
 }
 
@@ -243,16 +281,21 @@ key_commands = {
     c: change_channel,
     d: change_direction,
     a: toggle_all_active,
-    m: toggle_sidebar
+    m: toggle_sidebar,
+    p: image_info_search_parameter,
 }
 
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (e) {
-		if (e.which === 123) {  // F12
-			require('electron').remote.getCurrentWindow().toggleDevTools();
-		} else if (e.which === 116) {  // F5
-			location.reload();
+    if (e.target.nodeName == "INPUT" || e.target.nodeName == "TEXTAREA" || e.target.isContentEditable) {
+        if (e.key == "Escape") e.target.blur();
+        return;
+    }
+    if (e.key == "F12") {  // F12
+		require('electron').remote.getCurrentWindow().toggleDevTools();
     } else if (e.key in key_commands) {
         key_commands[e.key]();
+        e.preventDefault();
+        e.stopPropagation();
     }
 });

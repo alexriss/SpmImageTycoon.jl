@@ -1,7 +1,10 @@
+__precompile__()
+
 module SpmImageTycoon
 
 using Blink
 # export @js, @js_, @new, @var, AtomShell, Blink, Electron, Page, Window, active, body!, centre, closetools, content!, flashframe, floating, front, handle, id, importhtml!, js, load!, loadcss!, loadfile, loadhtml, loadjs!, loadurl, opentools, progress, resolve, shell, title, tools
+using DataStructures
 using Dates
 using Images
 using ImageIO
@@ -114,7 +117,7 @@ end
 
 
 """Loads the header data for an image and returns a dictionary with all the data"""
-function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::Dict{String,String}
+function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::OrderedDict{String,String}
     filename_original = images_parsed[id].filename_original
     im_spm = load_image(joinpath(dir_data, filename_original), header_only=true, output_info=0)
     return im_spm.header
@@ -191,7 +194,12 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
             filenames = switch_channel_direction!(ids, dir_data, images_parsed, "direction")
             @js_ w update_images($ids_str, $filenames);
         elseif what == "get_info"
-            image_info = get_image_info(ids[1], dir_data, images_parsed)
+            id = ids[1]
+            image_info = get_image_info(id, dir_data, images_parsed)
+            k = replace.(SpmImages._string_unsimplify.(collect(keys(image_info))), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
+            v = replace.(collect(values(image_info)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
+            image_info_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
+            @js_ w show_info($id, $image_info_json);
         end
     end
 
@@ -202,29 +210,33 @@ end
 """Start the main GUI and loads images from dir_data"""
 function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     if w === nothing
+        file_logo = path_asset("logo_diamond.png")
         w = Window(Dict(
             "webPreferences" => Dict("webSecurity" => false),  # to load local files
-            "title" => "SpmImage Tycoon"
+            "title" => "SpmImage Tycoon",
+            "icon" => file_logo,
         ))
+        @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
         @js w require("electron").remote.getCurrentWindow().maximize()
     end
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 
+    # load main html file
     file_GUI = path_asset("GUI.html")
-    file_GUI_css = path_asset("GUI.css")
-    file_GUI_js = path_asset("GUI.js")
-    file_CSS = path_asset("bulma.min.css")
-    dir_asset = path_asset("");
-    # file_Blink_js = resolve_blink_asset("res", "blink.js")
-
-    # loadfile(w, file_GUI)  # this is probably a bit "bold", as it replaces the whole content (including the basic blink.js, which we have to reload in the next line)
-    # load!(w, file_Blink_js)
     load!(w, file_GUI)
-    load!(w, file_GUI_js)
-    load!(w, file_CSS)
-    load!(w, file_GUI_css)
 
+    # load all .css and .js asset files
+    dir_asset = path_asset("");
+    asset_files = filter!(
+        x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
+        readdir(dir_asset, join=true)
+    )
+    for asset_file in asset_files
+        load!(w, asset_file)
+    end
+
+    # call js functions to setup everything
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
 
@@ -238,6 +250,7 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
 
     set_event_handlers(w, dir_data, images_parsed)
 
+    # bring window to front
     @js w require("electron").remote.getCurrentWindow().show()
     return w
 end

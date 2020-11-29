@@ -65,13 +65,32 @@ body {
 
 /* sidebar */
 
-.sidebar_grid {
-  height: 100%;
-  width: 25%;
-  max-width:300px;
-  z-index: 1;
-  background-color: rgb(255, 255, 255); /* Black*/
-  /* overflow-x: hidden; */
+#sidebar_grid {
+  height: 90vh;
+  width: 30%;
+  max-width:400px;
   padding-top: 15px;
+  position: sticky;
+  top: 3rem;
   transition: 0.1s;
+}
+
+
+.table-container {
+  max-width: 400px;
+  width: 400px;
+  height: 85vh;
+}
+
+.table-container table {
+  table-layout:fixed;
+  overflow-wrap: break-word;  
+}
+
+.table-container input  {
+  font-size: 0.75rem;
+}
+
+#table-container {
+  display: none;
 }
