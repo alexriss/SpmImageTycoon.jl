@@ -23,7 +23,7 @@ end
 
 # default settings (should be overriden by config file later)
 channels_feedback = ["Z"]
-channels_no_feedback = ["Frequency_Shift", "Current"]
+channels_no_feedback = ["Frequency Shift", "Current"]
 
 resize_to = 256
 extension_spm = ".sxm"
@@ -88,9 +88,9 @@ end
 """Gets the channel name after current_channel_name in the list of image's channel names."""
 function next_channel_name(image::SpmImage, current_channel_name::String)::String
     backward_suffix = ""
-    if endswith(current_channel_name, "_bwd")
+    if endswith(current_channel_name, " bwd")
         current_channel_name = current_channel_name[1:end-4]
-        backward_suffix = "_bwd"
+        backward_suffix = " bwd"
     end
     current_index = findfirst(x -> x == current_channel_name, image.channel_names)
     if current_index === nothing  # this should never happen anyways
@@ -122,10 +122,17 @@ end
 
 
 """Loads the header data for an image and returns a dictionary with all the data"""
-function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::OrderedDict{String,String}
+function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::Tuple{Dict{String,String},OrderedDict{String,String}}
     filename_original = images_parsed[id].filename_original
     im_spm = load_image(joinpath(dir_data, filename_original), header_only=true, output_info=0)
-    return im_spm.header
+    # extra data
+    data_main = Dict(
+        "filename" => filename_original[1:end-4],  # strip off extension
+        "scansize" => join(im_spm.scansize, " x "),
+        "scansize_unit" => im_spm.scansize_unit,
+        "channel_name" => images_parsed[id].channel_name
+    )
+    return data_main, im_spm.header
 end
 
 
@@ -140,10 +147,10 @@ function switch_channel_direction!(ids::Vector{Int}, dir_data::String, images_pa
         if what == "channel"
             channel_name = next_channel_name(im_spm, channel_name)
         elseif what == "direction"
-            if endswith(channel_name, "_bwd")
+            if endswith(channel_name, " bwd")
                 channel_name = channel_name[1:end-4]
             else
-                channel_name = channel_name * "_bwd"
+                channel_name = channel_name * " bwd"
             end
         end
         filename_display = create_image(im_spm, filename_original, channel_name, resize_to=resize_to, base_dir=dir_cache)
@@ -200,11 +207,14 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
             @js_ w update_images($ids_str, $filenames);
         elseif what == "get_info"
             id = ids[1]
-            image_info = get_image_info(id, dir_data, images_parsed)
-            k = replace.(SpmImages._string_unsimplify.(collect(keys(image_info))), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
-            v = replace.(collect(values(image_info)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
-            image_info_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
-            @js_ w show_info($id, $image_info_json);
+
+            # get header data
+            image_info_main, image_info_header = get_image_info(id, dir_data, images_parsed)
+            k = replace.(collect(keys(image_info_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
+            v = replace.(collect(values(image_info_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
+            image_info_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
+
+             @js_ w show_info($id, $image_info_main, $image_info_header_json);
         end
     end
 

@@ -9,6 +9,7 @@ function toggle_sidebar() {
     let sidebar = document.getElementById('sidebar_grid');
     if (sidebar.style.display == "none") {
         sidebar.style.display = "block";
+        get_image_info();  // update info of current or last image
     } else {
         sidebar.style.display = "none";
     }
@@ -61,14 +62,14 @@ function get_active_element_ids() {
     }
 
     if (els.length == 0) {
-        return []
+        return [];
     }
 
     els_id = new Array(els.length)
     for (let i=0; i < els.length; i++) {
       els_id[i] = els[i].id;
     }
-    return els_id
+    return els_id;
 }
 
 function check_hover_enabled() {
@@ -128,10 +129,9 @@ function image_info_timeout() {
         return;
     }
     let this_id = this.id;
-    window.image_info_id = this_id;
     window.timeout_image_info = window.setTimeout(function() {
         get_image_info(this_id);
-    }, 200);
+    }, 30);
 }
 
 function image_info_timeout_clear() {
@@ -184,6 +184,15 @@ function load_page() {
     document.body.innerHTML = link.import.querySelector('body').innerHTML
 
     document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
+
+    // for dynamic css vh heights, see https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    window.addEventListener('resize', () => {
+        // We execute the same script as before
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
 }
 
 function set_dir_cache(dir_cache) {
@@ -200,30 +209,38 @@ function set_base_href(dir_res) {
 
 function load_images(ids, filenames) {
     // loads images
-    for (let i=0; i < ids.length; i++)
-    {
+    for (let i=0; i < ids.length; i++) {
       add_image(ids[i], filenames[i]);
     }
 }
 
 function update_images(ids, filenames) {
     // updates images
-    for (let i=0; i < ids.length; i++)
-    {
+    for (let i=0; i < ids.length; i++) {
       update_image(ids[i], filenames[i]);
     }
+
+    // update image info
+    get_image_info();
 }
 
-function show_info(id, json) {
+function show_info(id, info_main, info_json) {
     /// shows header data for an image
     if (window.image_info_id != id)  return;  // there was some other event already
 
+    let t1 = performance.now();
+    console.log("info unparse:" + (t1 - window.t0) + " ms.");
+
+    document.getElementById("image_info_filename").innerText = info_main["filename"];
+    document.getElementById("image_info_channel_name").innerText = info_main["channel_name"];
+    document.getElementById("image_info_scansize").innerText = info_main["scansize"] + " " + info_main["scansize_unit"];
+
     if (window.datatable == null) {
-        window.datatable = new simpleDatatables.DataTable("#header_info", {
+        window.datatable = new simpleDatatables.DataTable("#image_info", {
             searchable: true,
             // fixedHeight: true,
             paging: false,
-            scrollY: "80vh",
+            scrollY: "calc(var(--vh, 1vh) * 100 - 204px)",
             // fixedColumns: true,
             // columns: { select: [2], sortable: false },
         })
@@ -233,8 +250,10 @@ function show_info(id, json) {
     }
     window.datatable.import({
          type: "json",
-         data: json,
+         data: info_json,
     });
+    t1 = performance.now();
+    console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
 }
 
 function header_data(json) {
@@ -266,11 +285,24 @@ function change_direction() {
     show_message("change direction.")
 }
 
-function get_image_info(id) {
+function get_image_info(id=-1) {
     // gets info (header data) for the current image
     console.log("get info");
-    Blink.msg("grid_item", ["get_info", [id]]);
-    //show_message("get info.");
+    window.t0 = performance.now();
+
+    if (id == -1) {
+        let el =  document.getElementById('imagegrid').querySelector('div.item:hover');
+        if (el != null) {
+            id = el.id;
+        }
+        else {
+            id = window.image_info_id;
+        }
+    }
+    if (id != -1) {
+        window.image_info_id = id;
+        Blink.msg("grid_item", ["get_info", [id]]);
+    }
 }
 
 

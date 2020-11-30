@@ -3,6 +3,12 @@ body {
   margin-bottom: 2.5rem;
 }
 
+.abbreviate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .footer {
   position: fixed;
   left: 0;
@@ -79,16 +85,24 @@ body {
 .table-container {
   max-width: 400px;
   width: 400px;
-  height: 85vh;
+  display: flex;
+  height: 85vh; 
+  height: calc(var(--vh, 1vh) * 100 - 150px);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
+  overflow-y: scroll;
 }
 
 .table-container table {
-  table-layout:fixed;
+  table-layout: fixed;
   overflow-wrap: break-word;  
+  overflow-y: scroll;
 }
 
 .table-container input  {
   font-size: 0.75rem;
+}
+
+.table-container .dataTable-container {
+  overflow-y: scroll;
 }
 
 #table-container {
