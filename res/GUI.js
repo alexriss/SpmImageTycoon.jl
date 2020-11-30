@@ -296,7 +296,12 @@ function get_image_info(id=-1) {
             id = el.id;
         }
         else {
-            id = window.image_info_id;
+            ids = get_active_element_ids();
+            if (ids.length == 1) {
+                id = ids[0];
+            } else {
+                id = window.image_info_id;
+            }
         }
     }
     if (id != -1) {
