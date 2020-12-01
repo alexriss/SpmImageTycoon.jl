@@ -126,9 +126,21 @@ function select_item(event) {
     check_hover_enabled();
 }
 
+function image_info_quick(id=-1) {
+    // display quick info in footer
+    if (id == -1) {
+        let el =  document.getElementById('imagegrid').querySelector('div.item:hover');
+        if (el != null) {
+            id = el.id;
+        }
+    }
+    if (id != -1) {
+        document.getElementById('image_info_footer').innerText = window.items[id]["filename_original"] + ': ' + window.items[id]["channel_name"];
+    }
+}
+
 function image_info_timeout() {
-    // display quick info
-    document.getElementById('image_info_footer').innerText = window.items[this.id]["filename_original"] + ': ' + window.items[this.id]["channel_name"];
+    image_info_quick(this.id);
 
     // for main info we start a timeout when mouse enters the element - only after a short while julia will be asked to get all the info
     if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
@@ -241,6 +253,7 @@ function update_images(ids, filenames, channel_names) {
     }
 
     // update image info
+    image_info_quick();
     get_image_info();
 }
 
