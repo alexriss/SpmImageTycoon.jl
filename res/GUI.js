@@ -1,5 +1,8 @@
 window.dir_cache = "";  // will be set by julia
+window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
+
 window.last_selected = -1  // last selected item
+
 window.timeout = null;  // timeout reference
 window.timeout_image_info = null;  //timeout refrence for get_image_info function
 window.image_info_id = -1;  // current image, for which data is displayed
@@ -124,7 +127,10 @@ function select_item(event) {
 }
 
 function image_info_timeout() {
-    // starts timeout when mouse enters the element - after a short while ulia will be asked to get all the info
+    // display quick info
+    document.getElementById('image_info_footer').innerText = window.items[this.id]["filename_original"] + ': ' + window.items[this.id]["channel_name"];
+
+    // for main info we start a timeout when mouse enters the element - only after a short while julia will be asked to get all the info
     if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
         return;
     }
@@ -132,6 +138,7 @@ function image_info_timeout() {
     window.timeout_image_info = window.setTimeout(function() {
         get_image_info(this_id);
     }, 30);
+
 }
 
 function image_info_timeout_clear() {
@@ -139,6 +146,13 @@ function image_info_timeout_clear() {
     if (window.timeout_image_info != null) {
         clearTimeout(window.timeout_image_info);
     }
+
+    // clear quick info (if no hover anymore)
+    window.setTimeout(function() {
+        if (document.getElementById('imagegrid').querySelector('div.item:hover') == null) {
+            document.getElementById('image_info_footer').innerText = "";
+        }
+     }, 350);
 }
 
 function image_info_search_parameter() {
@@ -149,7 +163,6 @@ function image_info_search_parameter() {
     document.querySelector(".dataTable-search .dataTable-input").focus();
     return false;
 }
-
 
 function add_image(id, filename) {
     // adds image to the DOM
@@ -207,17 +220,24 @@ function set_base_href(dir_res) {
     document.getElementsByTagName('head')[0].appendChild(el);    
 }
 
-function load_images(ids, filenames) {
+function load_images(ids, filenames, filenames_original, channel_names) {
     // loads images
     for (let i=0; i < ids.length; i++) {
-      add_image(ids[i], filenames[i]);
+        add_image(ids[i], filenames[i]);
+        window.items[ids[i]] = {
+            filename_original: filenames_original[i],
+            filename_display: filenames[i],
+            channel_name: channel_names[i],
+        };
     }
 }
 
-function update_images(ids, filenames) {
+function update_images(ids, filenames, channel_names) {
     // updates images
     for (let i=0; i < ids.length; i++) {
-      update_image(ids[i], filenames[i]);
+        update_image(ids[i], filenames[i]);
+        window.items[ids[i]]['filename_display'] = filenames[i];
+        window.items[ids[i]]['channel_name'] = channel_names[i];
     }
 
     // update image info

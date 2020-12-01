@@ -136,11 +136,12 @@ function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImag
 end
 
 
-"""Cycles the channel or switches direction (backward/forward) for the images specified by ids. Modifies the images_parsed array and returns the new filenames."""
-function switch_channel_direction!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Vector{String}
+"""Cycles the channel or switches direction (backward/forward) for the images specified by ids. Modifies the images_parsed array and returns the new filenames and channel names."""
+function switch_channel_direction!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Tuple{Vector{String}, Vector{String}}
     dir_cache = get_dir_cache(dir_data)
-    filenames = Vector{String}()
-    for id in ids
+    filenames = Vector{String}(undef, size(ids))
+    channel_names = Vector{String}(undef, size(ids))
+    for (i, id) in enumerate(ids)
         filename_original = images_parsed[id].filename_original
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         channel_name = images_parsed[id].channel_name
@@ -159,9 +160,10 @@ function switch_channel_direction!(ids::Vector{Int}, dir_data::String, images_pa
         images_parsed[id].channel_name = channel_name
         images_parsed[id].filename_display = filename_display
             
-        push!(filenames, filename_display)
+        filenames[i] = filename_display
+        channel_names[i] = channel_name
     end
-    return filenames
+    return filenames, channel_names
 end
 
 
@@ -169,9 +171,9 @@ end
 function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
     datafiles = filter!(x -> isfile(x) && endswith(x, extension_spm), readdir(dir_data, join=true))
-    images_parsed = Vector{SpmImageGridItem}()
+    images_parsed = Vector{SpmImageGridItem}(undef, size(datafiles))
     time_start = Dates.now()
-    for datafile in datafiles
+    for (i, datafile) in enumerate(datafiles)
         im_spm = load_image(datafile, output_info=0)
         
         # get the respective image channel (depending on whether the feedback was on or not)
@@ -180,7 +182,7 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
         filename_original = basename(datafile)
         filename_display = create_image(im_spm, filename_original, channel_name, resize_to=resize_to, base_dir=dir_cache)
         
-        push!(images_parsed, SpmImageGridItem(filename_original, filename_display, channel_name))
+        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name)
     end
 
     elapsed_time = Dates.now() - time_start
@@ -200,11 +202,11 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         ids_str = args[2]
         ids = [parse(Int64, id) for id in ids_str]
         if what == "next_channel"
-            filenames = switch_channel_direction!(ids, dir_data, images_parsed, "channel")
-            @js_ w update_images($ids_str, $filenames);
+            filenames, channel_names = switch_channel_direction!(ids, dir_data, images_parsed, "channel")
+            @js_ w update_images($ids_str, $filenames, $channel_names);
         elseif what == "next_direction"
-            filenames = switch_channel_direction!(ids, dir_data, images_parsed, "direction")
-            @js_ w update_images($ids_str, $filenames);
+            filenames, channel_names = switch_channel_direction!(ids, dir_data, images_parsed, "direction")
+            @js_ w update_images($ids_str, $filenames, $channel_names);
         elseif what == "get_info"
             id = ids[1]
 
@@ -261,7 +263,9 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     
     ids = collect(1:length(images_parsed))
     filenames = [s.filename_display for s in images_parsed]
-    @js_ w load_images($ids, $filenames)
+    filenames_original = [s.filename_original for s in images_parsed]
+    channel_names = [s.channel_name for s in images_parsed]
+    @js_ w load_images($ids, $filenames, $filenames_original, $channel_names)
 
     set_event_handlers(w, dir_data, images_parsed)
 
