@@ -18,12 +18,22 @@ mutable struct SpmImageGridItem
     filename_original::String
     filename_display::String
     channel_name::String
+    background_correction::String
 end
 
 
 # default settings (should be overriden by config file later)
 channels_feedback = ["Z"]
 channels_no_feedback = ["Frequency Shift", "Current"]
+
+background_correction_list = OrderedDict{String,Background}(
+    "none" => no_correction,
+    "plane" => plane_linear_fit,
+    "line average" => line_average,
+    "vline average" => vline_average,
+    "line linear" => line_linear_fit,
+    "vline linear" => vline_linear_fit,
+)
 
 resize_to = 256
 extension_spm = ".sxm"
@@ -101,19 +111,30 @@ function next_channel_name(image::SpmImage, current_channel_name::String)::Strin
 end
 
 
+"""Gets the next background_correction key and value in the list of possible background corrections"""
+function next_background_correction(background_correction::String)::String
+    keys_bg = collect(keys(background_correction_list))
+    i = findfirst(x -> x == background_correction, keys_bg)
+    i = i % length(background_correction_list) + 1
+    return keys_bg[i]
+end
+
+
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
 Returns the filename it created (without the directory prefix)"""
-function create_image(image::SpmImage, filename_original::String, channel_name::String; resize_to::Int=0, base_dir::String="")::String
+function create_image(image::SpmImage, filename_original::String, channel_name::String, background_correction::String; resize_to::Int=0, base_dir::String="")::String
     # create grayscale image
     d = get_channel(image, channel_name, origin="upper").data;
-    vmin, vmax = minimum(d), maximum(d)
+    d = correct_background(d, background_correction_list[background_correction])
+    d_ = filter(!isnan,d)
+    vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
     d = (d .- vmin) ./ (vmax - vmin)
     clamp01nan!(d)
     im_arr = Gray.(d)
     
     ratio = max(1, resize_to / max(image.pixelsize...))
 
-    filename_display = filename_original[1:end-4] * "_$channel_name.png"
+    filename_display = filename_original[1:end-4] * "_$(channel_name)_$(background_correction).png"
     save(joinpath(base_dir, filename_display), imresize(im_arr, ratio=ratio))  # ImageIO should be installed, gives speed improvement for saving pngs
     # println(joinpath(dir_cache, fname))
     
@@ -130,40 +151,46 @@ function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImag
         "filename" => filename_original[1:end-4],  # strip off extension
         "scansize" => join(im_spm.scansize, " x "),
         "scansize_unit" => im_spm.scansize_unit,
-        "channel_name" => images_parsed[id].channel_name
+        "channel_name" => images_parsed[id].channel_name,
+        "background_correction" => images_parsed[id].background_correction,
     )
     return data_main, im_spm.header
 end
 
 
 """Cycles the channel or switches direction (backward/forward) for the images specified by ids. Modifies the images_parsed array and returns the new filenames and channel names."""
-function switch_channel_direction!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Tuple{Vector{String}, Vector{String}}
+function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Tuple{Vector{String}, Vector{String}, Vector{String}}
     dir_cache = get_dir_cache(dir_data)
     filenames = Vector{String}(undef, size(ids))
     channel_names = Vector{String}(undef, size(ids))
+    background_corrections = Vector{String}(undef, size(ids))
     for (i, id) in enumerate(ids)
         filename_original = images_parsed[id].filename_original
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         channel_name = images_parsed[id].channel_name
+        background_correction = images_parsed[id].background_correction
         if what == "channel"
             channel_name = next_channel_name(im_spm, channel_name)
+            images_parsed[id].channel_name = channel_name
         elseif what == "direction"
             if endswith(channel_name, " bwd")
                 channel_name = channel_name[1:end-4]
             else
                 channel_name = channel_name * " bwd"
             end
+            images_parsed[id].channel_name = channel_name
+        elseif what == "background_correction"
+            background_correction = next_background_correction(background_correction)
+            images_parsed[id].background_correction = background_correction
         end
-        filename_display = create_image(im_spm, filename_original, channel_name, resize_to=resize_to, base_dir=dir_cache)
-
-        # updated images_parsed
-        images_parsed[id].channel_name = channel_name
+        filename_display = create_image(im_spm, filename_original, channel_name, background_correction, resize_to=resize_to, base_dir=dir_cache)
         images_parsed[id].filename_display = filename_display
             
         filenames[i] = filename_display
         channel_names[i] = channel_name
+        background_corrections[i] = background_correction
     end
-    return filenames, channel_names
+    return filenames, channel_names, background_corrections
 end
 
 
@@ -180,9 +207,9 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
         channel_name = default_channel_name(im_spm, channels_feedback, channels_no_feedback)
         
         filename_original = basename(datafile)
-        filename_display = create_image(im_spm, filename_original, channel_name, resize_to=resize_to, base_dir=dir_cache)
+        filename_display = create_image(im_spm, filename_original, channel_name, "none", resize_to=resize_to, base_dir=dir_cache)
         
-        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name)
+        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name, "none")
     end
 
     elapsed_time = Dates.now() - time_start
@@ -202,11 +229,14 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         ids_str = args[2]
         ids = [parse(Int64, id) for id in ids_str]
         if what == "next_channel"
-            filenames, channel_names = switch_channel_direction!(ids, dir_data, images_parsed, "channel")
-            @js_ w update_images($ids_str, $filenames, $channel_names);
+            filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed, "channel")
+            @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
         elseif what == "next_direction"
-            filenames, channel_names = switch_channel_direction!(ids, dir_data, images_parsed, "direction")
-            @js_ w update_images($ids_str, $filenames, $channel_names);
+            filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed, "direction")
+            @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
+        elseif what == "next_background_correction"
+            filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed, "background_correction")
+            @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
         elseif what == "get_info"
             id = ids[1]
 
@@ -265,7 +295,8 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     filenames = [s.filename_display for s in images_parsed]
     filenames_original = [s.filename_original for s in images_parsed]
     channel_names = [s.channel_name for s in images_parsed]
-    @js_ w load_images($ids, $filenames, $filenames_original, $channel_names)
+    background_corrections = [s.channel_name for s in images_parsed]
+    @js_ w load_images($ids, $filenames, $filenames_original, $channel_names, $background_corrections)
 
     set_event_handlers(w, dir_data, images_parsed)
 

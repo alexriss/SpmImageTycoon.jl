@@ -232,7 +232,7 @@ function set_base_href(dir_res) {
     document.getElementsByTagName('head')[0].appendChild(el);    
 }
 
-function load_images(ids, filenames, filenames_original, channel_names) {
+function load_images(ids, filenames, filenames_original, channel_names, background_corrections) {
     // loads images
     for (let i=0; i < ids.length; i++) {
         add_image(ids[i], filenames[i]);
@@ -240,16 +240,18 @@ function load_images(ids, filenames, filenames_original, channel_names) {
             filename_original: filenames_original[i],
             filename_display: filenames[i],
             channel_name: channel_names[i],
+            background_correction: background_corrections[i],
         };
     }
 }
 
-function update_images(ids, filenames, channel_names) {
+function update_images(ids, filenames, channel_names, background_corrections) {
     // updates images
     for (let i=0; i < ids.length; i++) {
         update_image(ids[i], filenames[i]);
         window.items[ids[i]]['filename_display'] = filenames[i];
         window.items[ids[i]]['channel_name'] = channel_names[i];
+        window.items[ids[i]]['backgound_correction'] = background_corrections[i];
     }
 
     // update image info
@@ -267,6 +269,7 @@ function show_info(id, info_main, info_json) {
     document.getElementById("image_info_filename").innerText = info_main["filename"];
     document.getElementById("image_info_channel_name").innerText = info_main["channel_name"];
     document.getElementById("image_info_scansize").innerText = info_main["scansize"] + " " + info_main["scansize_unit"];
+    document.getElementById("image_info_background_correction").innerText = info_main["background_correction"];
 
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
@@ -318,6 +321,15 @@ function change_direction() {
     show_message("change direction.")
 }
 
+function change_background_correction() {
+    console.log("change background correction");
+    els_id = get_active_element_ids();
+    if (els_id.length > 0) {
+        Blink.msg("grid_item", ["next_background_correction", els_id]);
+    }
+    show_message("change background.")
+}
+
 function get_image_info(id=-1) {
     // gets info (header data) for the current image
     console.log("get info");
@@ -350,6 +362,7 @@ function get_image_info(id=-1) {
 key_commands = {
     c: change_channel,
     d: change_direction,
+    b: change_background_correction,
     a: toggle_all_active,
     m: toggle_sidebar,
     p: image_info_search_parameter,
