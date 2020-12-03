@@ -37,7 +37,7 @@ background_correction_list = OrderedDict{String,Background}(
     "vline linear" => vline_linear_fit,
 )
 
-colorscheme_list = OrderedDict{String,ColorScheme}(
+colorscheme_list_pre = OrderedDict{String,ColorScheme}(
     "gray" => ColorSchemes.grays,  # we wont use this, though, will just be the standard Gray-function
     "thermal" => ColorSchemes.thermal,
     "ice" => ColorSchemes.ice,
@@ -58,6 +58,8 @@ colorscheme_list = OrderedDict{String,ColorScheme}(
     "fuchsia" => ColorSchemes.fuchsia,
     "deepsea" => ColorSchemes.deepsea
 )
+colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
+
 
 resize_to = 256
 extension_spm = ".sxm"
@@ -67,12 +69,21 @@ dir_res = "../res/"  # relative to module directory
 
 
 
-"""converts all the colorschemes in the colorscheme list to 256-step colorschemes"""
-function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme})
-    for (k,v) in dict_colorschemes
+"""converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes, also generated inverse schemes.
+The resulting schemes are stored in the OrderedDict dict_colorschemes."""
+function colorscheme_list_to_256!(dict_colorschemes_pre::OrderedDict{String,ColorScheme}, dict_colorschemes::OrderedDict{String,ColorScheme})
+    for (k,v) in dict_colorschemes_pre
         dict_colorschemes[k] = loadcolorscheme(
             Symbol(k * "_256"),
             [get(v, i) for i in 0.0:1/255:1.0],
+            getfield(v, :category),
+            getfield(v, :notes)
+        )
+
+        # inverted color scheme
+        dict_colorschemes[k * " inv"] = loadcolorscheme(
+            Symbol(k * "_inv_256"),
+            [get(v, i) for i in 1.0:-1/255:0.0],
             getfield(v, :category),
             getfield(v, :notes)
         )
@@ -162,8 +173,18 @@ end
 function next_colorscheme(colorscheme::String)::String
     keys_cs = collect(keys(colorscheme_list))
     i = findfirst(x -> x == colorscheme, keys_cs)
-    i = i % length(colorscheme_list) + 1
+    i = (i + 1) % length(colorscheme_list) + 1  # inverted and normal are alternating, so twice +1 will give us the same time
     return keys_cs[i]
+end
+
+
+"""Gets the inverted colorscheme key in the list of possible colorschemes"""
+function invert_colorscheme(colorscheme::String)::String
+    if endswith(colorscheme, " inv")
+        return colorscheme[1:end-4]
+    else
+        return colorscheme * " inv"
+    end
 end
 
 
@@ -224,16 +245,18 @@ end
 
 
 """Cycles the channel or switches direction (backward/forward) for the images specified by ids. Modifies the images_parsed array and returns the new filenames and channel names."""
-function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Tuple{Vector{String}, Vector{String}, Vector{String}}
+function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Tuple{Vector{String}, Vector{String}, Vector{String}, Vector{String}}
     dir_cache = get_dir_cache(dir_data)
     filenames = Vector{String}(undef, size(ids))
     channel_names = Vector{String}(undef, size(ids))
     background_corrections = Vector{String}(undef, size(ids))
+    colorschemes = Vector{String}(undef, size(ids))
     Threads.@threads for (i, id) in collect(enumerate(ids))  # the "collect" is needed for the threads macro
         filename_original = images_parsed[id].filename_original
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         channel_name = images_parsed[id].channel_name
         background_correction = images_parsed[id].background_correction
+        colorscheme = images_parsed[id].colorscheme
         if what == "channel"
             channel_name = next_channel_name(im_spm, channel_name)
             images_parsed[id].channel_name = channel_name
@@ -248,7 +271,11 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
             background_correction = next_background_correction(background_correction)
             images_parsed[id].background_correction = background_correction
         elseif what == "colorscheme"
-            images_parsed[id].colorscheme = next_colorscheme(images_parsed[id].colorscheme)
+            colorscheme = next_colorscheme(colorscheme)
+            images_parsed[id].colorscheme = colorscheme
+        elseif what == "inverted"
+            colorscheme = invert_colorscheme(colorscheme)
+            images_parsed[id].colorscheme = colorscheme
         end
         filename_display = create_image(im_spm, filename_original, channel_name,
             background_correction, resize_to=resize_to, colorscheme=images_parsed[id].colorscheme, base_dir=dir_cache)
@@ -257,8 +284,9 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
         filenames[i] = filename_display
         channel_names[i] = channel_name
         background_corrections[i] = background_correction
+        colorschemes[i] = colorscheme
     end
-    return filenames, channel_names, background_corrections
+    return filenames, channel_names, background_corrections, colorschemes
 end
 
 
@@ -309,8 +337,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         elseif what[1:5] == "next_"
             lock(l)
             try
-                filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed,  what[6:end])
-                @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
+                filenames, channel_names, background_corrections, colorschemes = switch_channel_direction_background!(ids, dir_data, images_parsed,  what[6:end])
+                @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections, $colorschemes);
             finally
                 unlock(l)
             end
@@ -334,7 +362,7 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
         @js w require("electron").remote.getCurrentWindow().maximize()
     end
 
-    colorscheme_list_to_256!(colorscheme_list)  # so we have 256 steps in each colorscheme
+    colorscheme_list_to_256!(colorscheme_list_pre, colorscheme_list)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 
@@ -365,7 +393,8 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     filenames_original = [s.filename_original for s in images_parsed]
     channel_names = [s.channel_name for s in images_parsed]
     background_corrections = [s.channel_name for s in images_parsed]
-    @js_ w load_images($ids, $filenames, $filenames_original, $channel_names, $background_corrections)
+    colorschemes = [s.channel_name for s in images_parsed]
+    @js_ w load_images($ids, $filenames, $filenames_original, $channel_names, $background_corrections, $colorschemes)
 
     set_event_handlers(w, dir_data, images_parsed)
 

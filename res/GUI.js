@@ -293,7 +293,7 @@ function set_base_href(dir_res) {
     document.getElementsByTagName('head')[0].appendChild(el);    
 }
 
-function load_images(ids, filenames, filenames_original, channel_names, background_corrections) {
+function load_images(ids, filenames, filenames_original, channel_names, background_corrections, colorschemes) {
     // loads images
     for (let i=0; i < ids.length; i++) {
         add_image(ids[i], filenames[i]);
@@ -302,17 +302,19 @@ function load_images(ids, filenames, filenames_original, channel_names, backgrou
             filename_display: filenames[i],
             channel_name: channel_names[i],
             background_correction: background_corrections[i],
+            colorscheme: colorschemes[i],
         };
     }
 }
 
-function update_images(ids, filenames, channel_names, background_corrections) {
+function update_images(ids, filenames, channel_names, background_corrections, colorschemes) {
     // updates images
     for (let i=0; i < ids.length; i++) {
         update_image(ids[i], filenames[i]);
         window.items[ids[i]]['filename_display'] = filenames[i];
         window.items[ids[i]]['channel_name'] = channel_names[i];
         window.items[ids[i]]['backgound_correction'] = background_corrections[i];
+        window.items[ids[i]]['colorscheme'] = colorschemes[i];
     }
 
     // update image info
@@ -407,6 +409,16 @@ function change_colorscheme() {
     open_jobs(1);
 }
 
+function change_inverted() {
+    console.log("change inverted");
+    els_id = get_active_element_ids();
+    if (els_id.length > 0) {
+        Blink.msg("grid_item", ["next_inverted", els_id]);
+    }
+    show_message("invert colorscheme.")
+    open_jobs(1);
+}
+
 function get_image_info(id=-1) {
     // gets info (header data) for the current image
     
@@ -442,6 +454,7 @@ key_commands = {
     d: change_direction,
     b: change_background_correction,
     f: change_colorscheme,
+    i: change_inverted,
     a: toggle_all_active,
     m: toggle_sidebar,
     z: toggle_imagezoom,
