@@ -3,10 +3,12 @@ window.items = {};  // dictionary with ids as keys and a dictionary of filenames
 
 window.last_selected = -1  // last selected item
 
+window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
 window.timeout_image_info = null;  //timeout refrence for get_image_info function
 window.image_info_id = -1;  // current image, for which data is displayed
 window.datatable = null;  // holds the datatable
+
 
 function toggle_sidebar() {
     let sidebar = document.getElementById('sidebar_grid');
@@ -26,6 +28,16 @@ function show_message(msg="") {
     let el = document.getElementById('footer_message');
     el.innerText = msg;
     window.timeout = setTimeout(show_message, 2500);
+}
+
+function open_jobs(diff) {
+    // tracks the number of open julia jobs and displays spinner as long as there are some
+    window.num_open_jobs += diff;
+    if (window.num_open_jobs > 0) {
+        document.getElementById("spinner_title").classList.remove("hidden");
+    } else {
+        document.getElementById("spinner_title").classList.add("hidden");
+    }
 }
 
 function clear_all_active() {
@@ -257,6 +269,8 @@ function update_images(ids, filenames, channel_names, background_corrections) {
     // update image info
     image_info_quick();
     get_image_info();
+
+    open_jobs(-1);
 }
 
 function show_info(id, info_main, info_json) {
@@ -310,6 +324,7 @@ function change_channel() {
         Blink.msg("grid_item", ["next_channel", els_id]);
     }
     show_message("change channel.")
+    open_jobs(1);
 }
 
 function change_direction() {
@@ -319,6 +334,7 @@ function change_direction() {
         Blink.msg("grid_item", ["next_direction", els_id]);
     }
     show_message("change direction.")
+    open_jobs(1);
 }
 
 function change_background_correction() {
@@ -328,6 +344,7 @@ function change_background_correction() {
         Blink.msg("grid_item", ["next_background_correction", els_id]);
     }
     show_message("change background.")
+    open_jobs(1);
 }
 
 function get_image_info(id=-1) {

@@ -9,6 +9,10 @@ body {
   text-overflow: ellipsis;
 }
 
+.hidden {
+  visibility:hidden;
+}
+
 .footer {
   position: fixed;
   left: 0;
