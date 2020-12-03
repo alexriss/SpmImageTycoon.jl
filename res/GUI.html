@@ -25,7 +25,7 @@
     </div>
     <div class="navbar-end">
       <a class="navbar-item">
-        <div id="spinner_title" class="hidden loader is-loading"></div>
+        <div id="spinner_title" class="loader is-loading is-invisible"></div>
       </a>
     </div>
   </div> 
@@ -45,7 +45,12 @@
           </template>
 
       </div>
-    </div>
+      <div id="imagezoom" class="is-hidden">
+        <div id="imagezoom_window" style="width:100%;height:100%;">
+          <img id="imagezoom_content" src="https://placehold.it/2400x1400" alt="image" />
+        </div>
+      </div>
+  </div>
 
     <div class="column is-narrow has-background-info-light" id="sidebar_grid">
       <div class="sidebar">
@@ -55,6 +60,7 @@
             <span id="image_info_channel_name" class="is-info"></span><br />
             <span class="is-size-7 has-text-weight-normal">Background: <span id="image_info_background_correction"></span></span><br />
             <span id="image_info_scansize" class="is-size-7 has-text-weight-normal"></span>
+            <span id="image_info_colorscheme" class="ml-2 is-size-7 has-text-weight-normal has-text-grey"></span>
           </p>
           <div id="table-container" class="table-container is-size-7">
             <table id="image_info" class="table is-narrow is-hoverable is-size-7">

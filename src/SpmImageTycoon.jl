@@ -3,7 +3,7 @@ __precompile__()
 module SpmImageTycoon
 
 using Blink
-# export @js, @js_, @new, @var, AtomShell, Blink, Electron, Page, Window, active, body!, centre, closetools, content!, flashframe, floating, front, handle, id, importhtml!, js, load!, loadcss!, loadfile, loadhtml, loadjs!, loadurl, opentools, progress, resolve, shell, title, tools
+using ColorSchemes
 using DataStructures
 using Dates
 using Images
@@ -19,7 +19,9 @@ mutable struct SpmImageGridItem
     filename_display::String
     channel_name::String
     background_correction::String
+    colorscheme::String
 end
+SpmImageGridItem(filename_original, filename_display, channel_name) = SpmImageGridItem(filename_original, filename_display, channel_name, "none", "gray")
 
 
 # default settings (should be overriden by config file later)
@@ -35,11 +37,47 @@ background_correction_list = OrderedDict{String,Background}(
     "vline linear" => vline_linear_fit,
 )
 
+colorscheme_list = OrderedDict{String,ColorScheme}(
+    "gray" => ColorSchemes.grays,  # we wont use this, though, will just be the standard Gray-function
+    "thermal" => ColorSchemes.thermal,
+    "ice" => ColorSchemes.ice,
+    "batlow" => ColorSchemes.batlow,
+    "davos" => ColorSchemes.davos,
+    "hawaii" => ColorSchemes.hawaii,
+    "imola" => ColorSchemes.imola,
+    "lapaz" => ColorSchemes.lapaz,
+    "oslo" => ColorSchemes.oslo,
+    "tokyo" => ColorSchemes.tokyo,
+    "copper" => ColorSchemes.copper,
+    "inferno" => ColorSchemes.inferno,
+    "CMRmap" => ColorSchemes.CMRmap,
+    "avocado" => ColorSchemes.avocado,
+    "rainbow" => ColorSchemes.rainbow,
+    "rust" => ColorSchemes.rust,
+    "valentine" => ColorSchemes.valentine,
+    "fuchsia" => ColorSchemes.fuchsia,
+    "deepsea" => ColorSchemes.deepsea
+)
+
 resize_to = 256
 extension_spm = ".sxm"
 
 dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
 dir_res = "../res/"  # relative to module directory
+
+
+
+"""converts all the colorschemes in the colorscheme list to 256-step colorschemes"""
+function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme})
+    for (k,v) in dict_colorschemes
+        dict_colorschemes[k] = loadcolorscheme(
+            Symbol(k * "_256"),
+            [get(v, i) for i in 0.0:1/255:1.0],
+            getfield(v, :category),
+            getfield(v, :notes)
+        )
+    end
+end
 
 
 """adds a trailing slash to a directory if necessary"""
@@ -111,7 +149,7 @@ function next_channel_name(image::SpmImage, current_channel_name::String)::Strin
 end
 
 
-"""Gets the next background_correction key and value in the list of possible background corrections"""
+"""Gets the next background_correction key in the list of possible background corrections"""
 function next_background_correction(background_correction::String)::String
     keys_bg = collect(keys(background_correction_list))
     i = findfirst(x -> x == background_correction, keys_bg)
@@ -120,9 +158,30 @@ function next_background_correction(background_correction::String)::String
 end
 
 
+"""Gets the next colorscheme key in the list of possible colorschemes"""
+function next_colorscheme(colorscheme::String)::String
+    keys_cs = collect(keys(colorscheme_list))
+    i = findfirst(x -> x == colorscheme, keys_cs)
+    i = i % length(colorscheme_list) + 1
+    return keys_cs[i]
+end
+
+
+"""gives a colorscheme to an 2D grayscale image (i.e. and image with values between 0 and 1)"""
+function colorize(data::Array{<:Number,2}, colorscheme::String)::Array{RGB{Float32},2}
+    m, n = size(data)
+    cs = colorscheme_list[colorscheme]
+    res = Array{RGB{Float32}}(undef, m, n)
+    for j in 1:n, i in 1:m
+        @views @inbounds res[i,j] = getindex(cs, round(Int, data[i,j] * (length(cs) - 1)) + 1)
+    end
+    res
+end
+
+
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
 Returns the filename it created (without the directory prefix)"""
-function create_image(image::SpmImage, filename_original::String, channel_name::String, background_correction::String; resize_to::Int=0, base_dir::String="")::String
+function create_image(image::SpmImage, filename_original::String, channel_name::String, background_correction::String; resize_to::Int=0, colorscheme::String="gray", base_dir::String="")::String
     # create grayscale image
     d = get_channel(image, channel_name, origin="upper").data;
     d = correct_background(d, background_correction_list[background_correction])
@@ -130,11 +189,16 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
     vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
     d = (d .- vmin) ./ (vmax - vmin)
     clamp01nan!(d)
-    im_arr = Gray.(d)
+
+    if colorscheme == "gray"  # special case, we dont need the actual colorscheme
+        im_arr = Gray.(d)
+    else
+        im_arr = colorize(d, colorscheme)
+    end
     
     ratio = max(1, resize_to / max(image.pixelsize...))
 
-    filename_display = filename_original[1:end-4] * "_$(channel_name)_$(background_correction).png"
+    filename_display = filename_original[1:end-4] * "_$(channel_name)_$(background_correction)_$(colorscheme).png"
     save(joinpath(base_dir, filename_display), imresize(im_arr, ratio=ratio))  # ImageIO should be installed, gives speed improvement for saving pngs
     # println(joinpath(dir_cache, fname))
     
@@ -153,6 +217,7 @@ function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImag
         "scansize_unit" => im_spm.scansize_unit,
         "channel_name" => images_parsed[id].channel_name,
         "background_correction" => images_parsed[id].background_correction,
+        "colorscheme" => images_parsed[id].colorscheme,
     )
     return data_main, im_spm.header
 end
@@ -182,8 +247,11 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
         elseif what == "background_correction"
             background_correction = next_background_correction(background_correction)
             images_parsed[id].background_correction = background_correction
+        elseif what == "colorscheme"
+            images_parsed[id].colorscheme = next_colorscheme(images_parsed[id].colorscheme)
         end
-        filename_display = create_image(im_spm, filename_original, channel_name, background_correction, resize_to=resize_to, base_dir=dir_cache)
+        filename_display = create_image(im_spm, filename_original, channel_name,
+            background_correction, resize_to=resize_to, colorscheme=images_parsed[id].colorscheme, base_dir=dir_cache)
         images_parsed[id].filename_display = filename_display
             
         filenames[i] = filename_display
@@ -209,7 +277,7 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
         filename_original = basename(datafile)
         filename_display = create_image(im_spm, filename_original, channel_name, "none", resize_to=resize_to, base_dir=dir_cache)
         
-        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name, "none")
+        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name)
     end
 
     elapsed_time = Dates.now() - time_start
@@ -265,6 +333,8 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
         @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
         @js w require("electron").remote.getCurrentWindow().maximize()
     end
+
+    colorscheme_list_to_256!(colorscheme_list)  # so we have 256 steps in each colorscheme
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 

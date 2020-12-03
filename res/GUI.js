@@ -1,7 +1,10 @@
 window.dir_cache = "";  // will be set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
-window.last_selected = -1  // last selected item
+window.last_selected = -1;  // last selected item
+window.last_scroll_grid = 0;  // last scroll position in grid view
+window.zoom_control = null;  // holds the drag/zoom object
+window.zoom_last_selected = -1;  // last selected image for zoom
 
 window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
@@ -11,12 +14,52 @@ window.datatable = null;  // holds the datatable
 
 
 function toggle_sidebar() {
+    // toggles sidebar
     let sidebar = document.getElementById('sidebar_grid');
     if (sidebar.style.display == "none") {
         sidebar.style.display = "block";
         get_image_info();  // update info of current or last image
     } else {
         sidebar.style.display = "none";
+    }
+}
+
+function get_view() {
+    if (document.getElementById('imagegrid').classList.contains("is-hidden")) {
+        return "zoom";
+    } else {
+        return "grid";
+    }
+}
+
+function toggle_imagezoom() {
+    // toggles between grid and imagezoom views
+
+    let grid = document.getElementById('imagegrid');
+    let zoom = document.getElementById('imagezoom');
+
+    if (get_view() == "zoom") {
+        zoom.classList.add("is-hidden");
+        grid.classList.remove("is-hidden");
+        window.scrollTo(0, window.last_scroll_grid);
+    } else {
+        let el = grid.querySelector('div.item:hover');
+        if (el != null) {
+            window.last_scroll_grid = window.scrollY;
+            grid.classList.add("is-hidden");
+            zoom.classList.remove("is-hidden");
+            
+            window.image_info_id = el.id;  // should be set already, but just to make sure
+            get_image_info(el.id);  // should also not be necessary
+
+            if (window.zoom_control === null) {
+                window.zoom_control = WZoom.create('#imagezoom_content');
+            }
+            if (window.zoom_last_selected != el.id) {
+                window.zoom_control.prepare();
+            }
+            window.zoom_last_selected = el.id;
+        }
     }
 }
 
@@ -34,9 +77,9 @@ function open_jobs(diff) {
     // tracks the number of open julia jobs and displays spinner as long as there are some
     window.num_open_jobs += diff;
     if (window.num_open_jobs > 0) {
-        document.getElementById("spinner_title").classList.remove("hidden");
+        document.getElementById("spinner_title").classList.remove("is-invisible");
     } else {
-        document.getElementById("spinner_title").classList.add("hidden");
+        document.getElementById("spinner_title").classList.add("is-invisible");
     }
 }
 
@@ -66,9 +109,17 @@ function toggle_all_active() {
 
 function get_active_element_ids() {
     // returns all active element ids
-    // if any are selected (i.e active), then these are returned
+    // for zoom view, an array with this one element is returned
+    // for grid view, if any are selected (i.e active), then these are returned
     // otherwise if one is hovered, then this is returned
     // otherwise an empy list is returned
+    
+    // zoom view
+    if (get_view() == "zoom") {
+        return window.image_info_id;
+    }
+
+    // grid view
     let grid = document.getElementById('imagegrid');
     let els = grid.getElementsByClassName('active');
 
@@ -220,8 +271,6 @@ function load_page() {
     let link = nodes[nodes.length - 1];
     document.body.innerHTML = link.import.querySelector('body').innerHTML
 
-    document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
-
     // for dynamic css vh heights, see https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
     let vh = window.innerHeight * 0.01;
     document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -277,13 +326,14 @@ function show_info(id, info_main, info_json) {
     /// shows header data for an image
     if (window.image_info_id != id)  return;  // there was some other event already
 
-    let t1 = performance.now();
-    console.log("info unparse:" + (t1 - window.t0) + " ms.");
+    // let t1 = performance.now();
+    // console.log("info unparse:" + (t1 - window.t0) + " ms.");
 
     document.getElementById("image_info_filename").innerText = info_main["filename"];
     document.getElementById("image_info_channel_name").innerText = info_main["channel_name"];
     document.getElementById("image_info_scansize").innerText = info_main["scansize"] + " " + info_main["scansize_unit"];
     document.getElementById("image_info_background_correction").innerText = info_main["background_correction"];
+    document.getElementById("image_info_colorscheme").innerText = info_main["colorscheme"];
 
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
@@ -302,8 +352,8 @@ function show_info(id, info_main, info_json) {
          type: "json",
          data: info_json,
     });
-    t1 = performance.now();
-    console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
+    // t1 = performance.now();
+    // console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
 }
 
 function header_data(json) {
@@ -347,10 +397,21 @@ function change_background_correction() {
     open_jobs(1);
 }
 
+function change_colorscheme() {
+    console.log("change colorscheme");
+    els_id = get_active_element_ids();
+    if (els_id.length > 0) {
+        Blink.msg("grid_item", ["next_colorscheme", els_id]);
+    }
+    show_message("change colorscheme.")
+    open_jobs(1);
+}
+
 function get_image_info(id=-1) {
     // gets info (header data) for the current image
-    console.log("get info");
-    window.t0 = performance.now();
+    
+    // console.log("get info");
+    // window.t0 = performance.now();
 
     if (id == -1) {
         let el =  document.getElementById('imagegrid').querySelector('div.item:hover');
@@ -380,9 +441,12 @@ key_commands = {
     c: change_channel,
     d: change_direction,
     b: change_background_correction,
+    f: change_colorscheme,
     a: toggle_all_active,
     m: toggle_sidebar,
+    z: toggle_imagezoom,
     p: image_info_search_parameter,
+
 }
 
 // for debugging, F5 for reload, F12 for dev tools
@@ -399,3 +463,13 @@ document.addEventListener("keydown", function (e) {
         e.stopPropagation();
     }
 });
+
+
+if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded',afterDOMLoaded);
+} else {
+    afterDOMLoaded();
+}
+function afterDOMLoaded(){
+    document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
+}
