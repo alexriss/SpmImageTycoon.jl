@@ -164,7 +164,7 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
     filenames = Vector{String}(undef, size(ids))
     channel_names = Vector{String}(undef, size(ids))
     background_corrections = Vector{String}(undef, size(ids))
-    for (i, id) in enumerate(ids)
+    Threads.@threads for (i, id) in collect(enumerate(ids))  # the "collect" is needed for the threads macro
         filename_original = images_parsed[id].filename_original
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         channel_name = images_parsed[id].channel_name
@@ -200,7 +200,7 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
     datafiles = filter!(x -> isfile(x) && endswith(x, extension_spm), readdir(dir_data, join=true))
     images_parsed = Vector{SpmImageGridItem}(undef, size(datafiles))
     time_start = Dates.now()
-    for (i, datafile) in enumerate(datafiles)
+    Threads.@threads for (i, datafile) in collect(enumerate(datafiles))  # the "collect" is needed for the threads macro
         im_spm = load_image(datafile, output_info=0)
         
         # get the respective image channel (depending on whether the feedback was on or not)
@@ -223,23 +223,14 @@ end
 """sets the julia handlers that are triggered by javascript events"""
 function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{SpmImageGridItem})
     # change channel
+    l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
         # @show args
         what = args[1]
         ids_str = args[2]
         ids = [parse(Int64, id) for id in ids_str]
-        if what == "next_channel"
-            filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed, "channel")
-            @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
-        elseif what == "next_direction"
-            filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed, "direction")
-            @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
-        elseif what == "next_background_correction"
-            filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed, "background_correction")
-            @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
-        elseif what == "get_info"
+        if what == "get_info"
             id = ids[1]
-
             # get header data
             image_info_main, image_info_header = get_image_info(id, dir_data, images_parsed)
             k = replace.(collect(keys(image_info_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
@@ -247,6 +238,14 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
             image_info_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
 
              @js_ w show_info($id, $image_info_main, $image_info_header_json);
+        elseif what[1:5] == "next_"
+            lock(l)
+            try
+                filenames, channel_names, background_corrections = switch_channel_direction_background!(ids, dir_data, images_parsed,  what[6:end])
+                @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections);
+            finally
+                unlock(l)
+            end
         end
     end
 
