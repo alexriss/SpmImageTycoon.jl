@@ -18,10 +18,34 @@ body {
   text-align: center;
 }
 
+#imagegrid_container_container {
+  transform: translateZ(0);  /* this will cause the child with to be relaive to this container */
+  height: calc(100vh - 4.6rem);
+}
+
+#imagegrid_container {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+}
+
 .imagegrid {
   display: grid;
   grid-gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-rows: 1fr;
+}
+
+.imagegrid .item {
+  position: relative;
+  /* overflow: hidden; */
+  height: 100%;
+  /* border: 1px red solid; */
+  scroll-snap-align: start;
+  scroll-margin-top: 12px
 }
 
 .imagegrid div.active {
@@ -41,23 +65,11 @@ body {
   outline: 6px solid #a5475f;
 }
 
-.imagegrid img {
-  width: 100%;
-  max-width:256px;
-}
-
-.imagegrid .item {
-  position: relative;
-  overflow: hidden;
-  /* border: 1px red solid; */
-}
-
 .imagegrid .item img {
+  width: 100%;
+  max-width: 256px;
+  object-fit: contain;
   vertical-align: middle;
-}
-
-.imagegrid {
-  font-size: 0.6rem;
 }
 
 .unselectable {
@@ -68,6 +80,19 @@ body {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
+
+
+/* zoom view */
+
+#imagezoon {
+  height:100%;
+}
+
+#imagezoom_window {
+  width:600px;
+  height:600px;
+}
+
 
 /* sidebar */
 
@@ -80,7 +105,6 @@ body {
   top: 3rem;
   transition: 0.1s;
 }
-
 
 .table-container {
   max-width: 400px;

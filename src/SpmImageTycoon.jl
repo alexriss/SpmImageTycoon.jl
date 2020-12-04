@@ -71,7 +71,7 @@ dir_res = "../res/"  # relative to module directory
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes, also generated inverse schemes.
 The resulting schemes are stored in the OrderedDict dict_colorschemes."""
-function colorscheme_list_to_256!(dict_colorschemes_pre::OrderedDict{String,ColorScheme}, dict_colorschemes::OrderedDict{String,ColorScheme})
+function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})
     for (k,v) in dict_colorschemes_pre
         dict_colorschemes[k] = loadcolorscheme(
             Symbol(k * "_256"),
@@ -362,7 +362,7 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
         @js w require("electron").remote.getCurrentWindow().maximize()
     end
 
-    colorscheme_list_to_256!(colorscheme_list_pre, colorscheme_list)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
+    colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 

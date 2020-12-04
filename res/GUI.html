@@ -35,19 +35,23 @@
 <section class="section m-2 p-0">
   <div class="columns is-mobile is-2">
 
-    <div class="column">
-      <div id="imagegrid" class="imagegrid unselectable hover_enabled">
-        
-          <template id="griditem">
-            <div class="item">
-              <img class="unselectable" src="" />
-            </div>
-          </template>
+    <div class="column p-0">
+      <div id="imagegrid_container_container">
+        <div id="imagegrid_container" class="p-3">
+          <div id="imagegrid" class="imagegrid unselectable hover_enabled">
+            
+              <template id="griditem">
+                <div class="item">
+                  <img class="unselectable" src="" />
+                </div>
+              </template>
 
+          </div>
+        </div>
       </div>
       <div id="imagezoom" class="is-hidden">
-        <div id="imagezoom_window" style="width:100%;height:100%;">
-          <img id="imagezoom_content" src="https://placehold.it/2400x1400" alt="image" />
+        <div id="imagezoom_window">
+          <img id="imagezoom_content" />
         </div>
       </div>
   </div>
@@ -89,7 +93,7 @@
 <div class="footer p-1 is-light has-text-dark is-size-7">
   <nav class="level">
     <div class="level-left pl-1">
-      <div class="level-item">
+      <div id="footer_num_images_container" class="level-item">
         Selected: <span id="footer_num_images" class="pl-1">0</span>
       </div>
     </div>

@@ -35,12 +35,14 @@ function get_view() {
 function toggle_imagezoom() {
     // toggles between grid and imagezoom views
 
-    let grid = document.getElementById('imagegrid');
-    let zoom = document.getElementById('imagezoom');
+    const grid = document.getElementById('imagegrid');
+    const zoom = document.getElementById('imagezoom');
+    const footer_num_images_container = document.getElementById('footer_num_images_container');
 
     if (get_view() == "zoom") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
+        footer_num_images_container.classList.remove("is-invisible")
         window.scrollTo(0, window.last_scroll_grid);
     } else {
         let el = grid.querySelector('div.item:hover');
@@ -48,14 +50,16 @@ function toggle_imagezoom() {
             window.last_scroll_grid = window.scrollY;
             grid.classList.add("is-hidden");
             zoom.classList.remove("is-hidden");
+            footer_num_images_container.classList.add("is-invisible")
             
             window.image_info_id = el.id;  // should be set already, but just to make sure
             get_image_info(el.id);  // should also not be necessary
 
             if (window.zoom_control === null) {
-                window.zoom_control = WZoom.create('#imagezoom_content');
+                window.zoom_control = WZoom.create('#imagezoom_content', minScale=0.1, maxScale=20, speed=50);
             }
             if (window.zoom_last_selected != el.id) {
+                window.imagezoom_content.src = 'file:///' + window.dir_cache + window.items[el.id]["filename_display"];
                 window.zoom_control.prepare();
             }
             window.zoom_last_selected = el.id;
@@ -85,8 +89,11 @@ function open_jobs(diff) {
 
 function clear_all_active() {
     // clears all active divs
-    let grid = document.getElementById('imagegrid');
-    let els = grid.getElementsByClassName('active');
+    if (get_view() != "grid") {
+        return;
+    }
+    const grid = document.getElementById('imagegrid');
+    const els = grid.getElementsByClassName('active');
     for (let i=els.length-1; i >= 0; i--) {
         els[i].classList.remove('active');
     }
@@ -95,8 +102,11 @@ function clear_all_active() {
 
 function toggle_all_active() {
     // toggles between select-all and select-none
-    let grid = document.getElementById('imagegrid');
-    let els = grid.querySelectorAll('.item:not(.active)');
+    if (get_view() != "grid") {
+        return;
+    }
+    const grid = document.getElementById('imagegrid');
+    const els = grid.querySelectorAll('.item:not(.active)');
     if (els.length == 0) {
         clear_all_active();
     } else {
@@ -112,15 +122,15 @@ function get_active_element_ids() {
     // for zoom view, an array with this one element is returned
     // for grid view, if any are selected (i.e active), then these are returned
     // otherwise if one is hovered, then this is returned
-    // otherwise an empy list is returned
+    // otherwise an empty array is returned
     
     // zoom view
     if (get_view() == "zoom") {
-        return window.image_info_id;
+        return [window.image_info_id];
     }
 
     // grid view
-    let grid = document.getElementById('imagegrid');
+    const grid = document.getElementById('imagegrid');
     let els = grid.getElementsByClassName('active');
 
     if (els.length == 0) {
@@ -142,23 +152,28 @@ function check_hover_enabled() {
     // checks whether the magedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
     // also writes the number of selected images into the footer.
-    let grid = document.getElementById('imagegrid');
-    let els = grid.getElementsByClassName('item active');
+    const grid = document.getElementById('imagegrid');
+    const els = grid.getElementsByClassName('item active');
     if (els.length == 0) {
         grid.classList.add('hover_enabled');
     } else {
         grid.classList.remove('hover_enabled');
     }
 
-    let el_num = document.getElementById('footer_num_images');
+    const el_num = document.getElementById('footer_num_images');
     el_num.innerText = els.length;
 }
 
 function select_item(event) {
     // selects one item or a bunch of items (if shift or ctrl is pressed)
-    let modifier = (event.ctrlKey || event.shiftKey);
-    let items = Array.from(this.parentNode.children);
-    let idx = items.indexOf(this);
+
+    if (get_view() != "grid") {
+        return;
+    }
+
+    const modifier = (event.ctrlKey || event.shiftKey);
+    const items = Array.from(this.parentNode.children);
+    const idx = items.indexOf(this);
     let start = window.last_selected;
     if (modifier && window.last_selected != -1 && (idx != start)) {
         let end = idx;
@@ -192,7 +207,7 @@ function select_item(event) {
 function image_info_quick(id=-1) {
     // display quick info in footer
     if (id == -1) {
-        let el =  document.getElementById('imagegrid').querySelector('div.item:hover');
+        const el =  document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
             id = el.id;
         }
@@ -209,7 +224,7 @@ function image_info_timeout() {
     if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
         return;
     }
-    let this_id = this.id;
+    const this_id = this.id;
     window.timeout_image_info = window.setTimeout(function() {
         get_image_info(this_id);
     }, 30);
@@ -241,9 +256,9 @@ function image_info_search_parameter() {
 
 function add_image(id, filename) {
     // adds image to the DOM
-    let grid = document.getElementById('imagegrid');
-    let t = document.getElementById('griditem');
-    let el = t.content.firstElementChild.cloneNode(true)
+    const grid = document.getElementById('imagegrid');
+    const t = document.getElementById('griditem');
+    const el = t.content.firstElementChild.cloneNode(true)
     // let el = document.createElement('div');
     el.id = id;
     // el.className = 'item';
@@ -267,8 +282,8 @@ function update_image(id, filename) {
 
 function load_page() {
     // loads the page contents
-    let nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
-    let link = nodes[nodes.length - 1];
+    const nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
+    const link = nodes[nodes.length - 1];
     document.body.innerHTML = link.import.querySelector('body').innerHTML
 
     // for dynamic css vh heights, see https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
@@ -288,7 +303,7 @@ function set_dir_cache(dir_cache) {
 
 function set_base_href(dir_res) {
     // sets a base directory for all relative paths
-    let el = document.createElement('base');
+    const el = document.createElement('base');
     el.href = dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);    
 }
@@ -426,7 +441,7 @@ function get_image_info(id=-1) {
     // window.t0 = performance.now();
 
     if (id == -1) {
-        let el =  document.getElementById('imagegrid').querySelector('div.item:hover');
+        const el =  document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
             id = el.id;
         }
@@ -459,7 +474,8 @@ key_commands = {
     m: toggle_sidebar,
     z: toggle_imagezoom,
     p: image_info_search_parameter,
-
+    //ArrowRight: 
+    //ArrowLeft: 
 }
 
 // for debugging, F5 for reload, F12 for dev tools

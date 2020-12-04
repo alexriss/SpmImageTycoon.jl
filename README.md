@@ -4,7 +4,8 @@ App to manage and edit SPM (scanning probe microscopy) images. Currently limited
 
 ## Technical comments
 
-To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads 4`
+- To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads 4`
+- There is some overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 
 ## Dependencies
 
