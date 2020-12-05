@@ -32,6 +32,13 @@ function get_view() {
     }
 }
 
+function toggle_imagezoom_mouse(event) {
+    // switches to imagezoom mode via a mouse event (only if no modifier is pressed)
+    if (!event.ctrlKey && !event.shiftKey) {
+        toggle_imagezoom("zoom")
+    }
+}
+
 function toggle_imagezoom(target_view="") {
     // toggles between grid and imagezoom views
 
@@ -89,8 +96,16 @@ function open_jobs(diff) {
     }
 }
 
+function clear_all_active_mouse(event) {
+    // clears all active items upon mouse double-click (only when modifier key is pressed)
+    if (!event.ctrlKey && !event.shiftKey) {
+        return;
+    }
+    clear_all_active();
+}
+
 function clear_all_active() {
-    // clears all active divs
+    // clears all active items
     if (get_view() != "grid") {
         return;
     }
@@ -296,7 +311,8 @@ function add_image(id, filename) {
     el.querySelector('img').src = 'file:///' + window.dir_cache + filename;
     grid.appendChild(el);
     el.addEventListener('click', select_item);
-    el.addEventListener('dblclick', clear_all_active);
+    el.addEventListener('dblclick', clear_all_active_mouse);  // with a modifier
+    el.addEventListener('dblclick', toggle_imagezoom_mouse);  // only without a modifier
     el.addEventListener('mouseenter', image_info_timeout);
     el.addEventListener('mouseleave', image_info_timeout_clear);
 }
@@ -306,7 +322,7 @@ function update_image(id, filename) {
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
         document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + filename;
     }
-    document.getElementById(id).firstElementChild.src = 'file:///' + window.dir_cache + filename;
+    document.getElementById(id).firstElementChild.firstElementChild.src = 'file:///' + window.dir_cache + filename;
 }
 
 
@@ -410,8 +426,15 @@ function header_data(json) {
 function change_item(what, message, jump=1) {
     console.log("change: " + what);
     els_id = get_active_element_ids();
+
+    if (get_view() == "zoom") {
+        full_resolution = true;
+    } else {
+        full_resolution = false;
+    }
+
     if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_" + what, els_id, jump]);
+        Blink.msg("grid_item", ["next_" + what, els_id, jump, full_resolution]);
     }
     show_message(message)
     open_jobs(1);
@@ -438,14 +461,8 @@ function get_image_info(id=-1) {
         }
     }
     if (id != -1) {
-        if (get_view() == "zoom") {
-            full_resolution = true;
-        } else {
-            full_resolution = false;
-        }
-
         window.image_info_id = id;
-        Blink.msg("grid_item", ["get_info", [id], full_resolution]);
+        Blink.msg("grid_item", ["get_info", [id]]);
     }
 }
 
@@ -474,17 +491,21 @@ key_commands = {
 }
 
 // for debugging, F5 for reload, F12 for dev tools
-document.addEventListener("keydown", function (e) {
-    if (e.target.nodeName == "INPUT" || e.target.nodeName == "TEXTAREA" || e.target.isContentEditable) {
-        if (e.key == "Escape") e.target.blur();
+document.addEventListener("keydown", function (event) {
+    if (event.target.nodeName == "INPUT" || event.target.nodeName == "TEXTAREA" || event.target.isContentEditable) {
+        if (event.key == "Escape") {
+            if (event.ctrlKey || event.shiftKey) {
+                event.target.blur();
+            }
+        }
         return;
     }
-    if (e.key == "F12") {  // F12
+    if (event.key == "F12") {  // F12
 		require('electron').remote.getCurrentWindow().toggleDevTools();
-    } else if (e.key in key_commands) {
-        key_commands[e.key].command(...key_commands[e.key].args);
-        e.preventDefault();
-        e.stopPropagation();
+    } else if (event.key in key_commands) {
+        key_commands[event.key].command(...key_commands[event.key].args);
+        event.preventDefault();
+        event.stopPropagation();
     }
 });
 

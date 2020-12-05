@@ -221,7 +221,10 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
         im_arr = colorize(d, colorscheme)
     end
     
-    ratio = max(1, resize_to / max(image.pixelsize...))
+    ratio = min(1, resize_to / max(image.pixelsize...))
+    if ratio <= 0.0
+        ratio = 1
+    end
 
     filename_display = filename_original[1:end-4] * "_$(channel_name)_$(background_correction)_$(colorscheme).png"
     save(joinpath(base_dir, filename_display), imresize(im_arr, ratio=ratio))  # ImageIO should be installed, gives speed improvement for saving pngs
@@ -251,8 +254,9 @@ end
 """Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
 for the images specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
+The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
 Modifies the images_parsed array and returns arrays of the new filenames, channel names, background corrections and colorschemes"""
-function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String, jump::Int)::Tuple{Vector{String}, Vector{String}, Vector{String}, Vector{String}}
+function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String, jump::Int, full_resolution::Bool)::Tuple{Vector{String}, Vector{String}, Vector{String}, Vector{String}}
     dir_cache = get_dir_cache(dir_data)
     filenames = Vector{String}(undef, size(ids))
     channel_names = Vector{String}(undef, size(ids))
@@ -284,8 +288,9 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
             colorscheme = invert_colorscheme(colorscheme)
             images_parsed[id].colorscheme = colorscheme
         end
+        resize_to_ = full_resolution ? 0 : resize_to
         filename_display = create_image(im_spm, filename_original, channel_name,
-            background_correction, resize_to=resize_to, colorscheme=images_parsed[id].colorscheme, base_dir=dir_cache)
+            background_correction, resize_to=resize_to_, colorscheme=images_parsed[id].colorscheme, base_dir=dir_cache)
         images_parsed[id].filename_display = filename_display
             
         filenames[i] = filename_display
@@ -334,8 +339,6 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         ids = [parse(Int64, id) for id in ids_str]
         if what == "get_info"
             id = ids[1]
-            full_resolution = args[3]
-            println(full_resolution)
             # get header data
             image_info_main, image_info_header = get_image_info(id, dir_data, images_parsed)
             k = replace.(collect(keys(image_info_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
@@ -346,8 +349,11 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         elseif what[1:5] == "next_"
             lock(l)
             jump = args[3]
+            full_resolution = args[4]
             try
-                filenames, channel_names, background_corrections, colorschemes = switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump)
+                filenames, channel_names, background_corrections, colorschemes = switch_channel_direction_background!(
+                    ids, dir_data, images_parsed, what[6:end], jump, full_resolution
+                )
                 @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections, $colorschemes);
             finally
                 unlock(l)
