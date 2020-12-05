@@ -13,6 +13,15 @@ window.image_info_id = -1;  // current image, for which data is displayed
 window.datatable = null;  // holds the datatable
 
 
+function show_help() {
+    // toggle  help modal
+    if (document.getElementById("modal_help").classList.contains("is-active")) {
+        document.getElementById("modal_help").classList.remove("is-active");
+    } else {
+        document.getElementById("modal_help").classList.add("is-active");
+    }
+}
+
 function toggle_sidebar() {
     // toggles sidebar
     let sidebar = document.getElementById('sidebar_grid');
@@ -25,7 +34,9 @@ function toggle_sidebar() {
 }
 
 function get_view() {
-    if (document.getElementById('imagegrid_container').classList.contains("is-hidden")) {
+    if (document.getElementById("modal_help").classList.contains("is-active")) {
+        return "help";
+    } else if (document.getElementById('imagegrid_container').classList.contains("is-hidden")) {
         return "zoom";
     } else {
         return "grid";
@@ -46,7 +57,9 @@ function toggle_imagezoom(target_view = "") {
     const zoom = document.getElementById('imagezoom_container');
     const footer_num_images_container = document.getElementById('footer_num_images_container');
 
-    if (get_view() == "zoom" || target_view == "grid") {
+    if (get_view() == "help") {
+        show_help();
+    } else if (get_view() == "zoom" || target_view == "grid") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
         footer_num_images_container.classList.remove("is-invisible")
@@ -141,6 +154,10 @@ function get_active_element_ids() {
     // otherwise if one is hovered, then this is returned
     // otherwise an empty array is returned
 
+    // help view
+    if (get_view() == "help") {
+        return [];
+    }
     // zoom view
     if (get_view() == "zoom") {
         return [window.image_info_id];
@@ -189,15 +206,22 @@ function next_item(jump) {
 
     let el = document.getElementById(window.zoom_last_selected);
     let elnext = el;
-    for (let i = 0; i < Math.abs(jump); i++) {
+    i = 0;
+    while (i != jump) {
         if (jump > 0) {
             elnext = el.nextSibling;
+            i++;
         } else {
             elnext = el.previousSibling;
+            i--;
         }
-        if (elnext == null) {
+
+        if (elnext === null || elnext.classList === undefined) {
             break;
+        } else if (elnext.classList.contains("is-hidden") || !elnext.classList.contains("item")) {    // do not count hidden items
+            i = i - Math.sign(jump);
         }
+
         el = elnext;
     }
     if (el.id in window.items) {
@@ -334,6 +358,9 @@ function load_page() {
     const link = nodes[nodes.length - 1];
     document.body.innerHTML = link.import.querySelector('body').innerHTML;
     link.remove();  // remove this node, we wont need it anymore
+
+    // set-up extra event handlers
+    event_handlers();
 }
 
 function set_dir_cache(dir_cache) {
@@ -503,6 +530,9 @@ key_commands = {
     m: { command: toggle_sidebar, args: [] },
     z: { command: toggle_imagezoom, args: [] },
     p: { command: image_info_search_parameter, args: [] },
+    h: { command: show_help, args: [] },
+    "?": { command: show_help, args: [] },
+    "/": { command: show_help, args: [] },
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: toggle_imagezoom, args: ["grid"] },
@@ -511,6 +541,12 @@ key_commands = {
 
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (event) {
+    if (get_view() == "help") {    // only certain buttons allowed
+        if (["Escape", "?", "/", "h"].includes(event.key)) {
+            show_help();
+        }
+        return;
+    }
     if (event.target.nodeName == "INPUT" || event.target.nodeName == "TEXTAREA" || event.target.isContentEditable) {
         if (event.key == "Escape") {
             if (event.ctrlKey || event.shiftKey) {
@@ -546,4 +582,14 @@ function afterDOMLoaded() {
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
     });
+}
+
+function event_handlers() {
+    //extra event handlers, this functions is called form "load_page", when all elements are present
+
+    // modals
+    let els = document.getElementById("modal_help").getElementsByTagName("button");
+    for (let i = 0; i < els.length; i++) {
+        els[i].addEventListener('click', show_help);
+    }
 }

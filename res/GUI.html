@@ -1,9 +1,9 @@
-
+<!-- navigation bar -->
 <nav class="navbar is-fixed-top is-link" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
     <div>
       <div class="is-pulled-left">
-        <img class="pt-2 pl-2 pr-3" src="logo_diamond.png" style="height:2.8rem;"/>
+        <img class="pt-2 pl-2 pr-3" src="logo_diamond.png" style="height:2.8rem;" />
       </div>
       <div class="is-pulled-right has-text-centered pr-5" style="line-height:1.3;padding-top:0.3rem;">
         <spam class="is-size-6 is-unselectable" style="line-height:1;">
@@ -28,25 +28,27 @@
         <div id="spinner_title" class="loader is-loading is-invisible"></div>
       </a>
     </div>
-  </div> 
+  </div>
 </nav>
 
 
+<!-- main page -->
 <section class="section m-2 p-0">
   <div class="columns is-mobile is-2">
 
+    <!-- main part of page: grid and zoom views -->
     <div class="column p-0">
       <div id="imagegrid_container">
         <div id="imagegrid_container_sub" class="p-3">
           <div id="imagegrid" class="imagegrid unselectable hover_enabled">
-            
-              <template id="griditem">
-                <div class="item">
-                  <div class="content">
-                    <img class="unselectable" src="" />
-                  </div>
+
+            <template id="griditem">
+              <div class="item">
+                <div class="content">
+                  <img class="unselectable" src="" />
                 </div>
-              </template>
+              </div>
+            </template>
 
           </div>
         </div>
@@ -58,19 +60,22 @@
           </section>
         </div>
       </div>
-  </div>
+    </div>
 
+    <!-- side bar -->
     <div class="column is-narrow has-background-info-light p-2" id="sidebar_grid">
       <div class="sidebar">
         <div class="sidebar_content">
           <p id="image_info_title" class="abbreviate title is-size-6 mb-1 pb-1">
             <span id="image_info_filename">Image Data</span>:
             <span id="image_info_channel_name" class="is-info"></span><br />
-            <span class="is-size-7 has-text-weight-normal">Background: <span id="image_info_background_correction"></span></span>
-            <span class="ml-2 is-size-7 has-text-weight-normal has-text-grey">Color: <span id="image_info_colorscheme"></span></span>
+            <span class="is-size-7 has-text-weight-normal">Background: <span
+                id="image_info_background_correction"></span></span>
+            <span class="ml-2 is-size-7 has-text-weight-normal has-text-grey">Color: <span
+                id="image_info_colorscheme"></span></span>
             <br />
             <span id="image_info_scansize" class="is-size-7 has-text-weight-normal"></span>
-            
+
           </p>
           <div id="table-container" class="table-container is-size-7">
             <table id="image_info" class="table is-narrow is-hoverable is-size-7">
@@ -94,6 +99,7 @@
 </section>
 
 
+<!-- footer -->
 <div class="footer p-1 is-light has-text-dark is-size-7">
   <nav class="level">
     <div class="level-left pl-1">
@@ -112,4 +118,23 @@
       </div>
     </div>
   </nav>
-</footer>
+  </footer>
+</div>
+
+
+<!-- modal-help -->
+<div id="modal_help" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Help</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+      <!-- Content ... -->
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button is-success">Ok, groovy!</button>
+    </footer>
+  </div>
+</div>
