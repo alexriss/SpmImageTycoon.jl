@@ -271,7 +271,7 @@ function image_info_timeout() {
     const this_id = this.id;
     window.timeout_image_info = window.setTimeout(function() {
         get_image_info(this_id);
-    }, 30);
+    }, 10);
 
 }
 
@@ -333,6 +333,7 @@ function load_page() {
     const nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
     const link = nodes[nodes.length - 1];
     document.body.innerHTML = link.import.querySelector('body').innerHTML;
+    link.remove();  // remove this node, we wont need it anymore
 }
 
 function set_dir_cache(dir_cache) {
@@ -347,28 +348,36 @@ function set_base_href(dir_res) {
     document.getElementsByTagName('head')[0].appendChild(el);    
 }
 
-function load_images(ids, filenames, filenames_original, channel_names, background_corrections, colorschemes) {
-    // loads images
+function load_images(ids, images_parsed, delete_previous=false) {
+    // load all images into the page
+
+    // delete previous images
+    Blink.msg("debug", [delete_previous]);
+    if (delete_previous) {
+        // remove all nodes
+        let els = document.getElementById('imagegrid').getElementsByClassName('item');
+        while (els.length > 0) {
+            els[0].remove();
+        }
+
+        // delete saved items
+        window.items = {};
+
+        open_jobs(-1);  // this is interactively called only with delete_previous=true
+    }
+
+    // loads new images
     for (let i=0; i < ids.length; i++) {
-        add_image(ids[i], filenames[i]);
-        window.items[ids[i]] = {
-            filename_original: filenames_original[i],
-            filename_display: filenames[i],
-            channel_name: channel_names[i],
-            background_correction: background_corrections[i],
-            colorscheme: colorschemes[i],
-        };
+        add_image(ids[i], images_parsed[i].filename_display);
+        window.items[ids[i]] = images_parsed[i];
     }
 }
 
-function update_images(ids, filenames, channel_names, background_corrections, colorschemes) {
+function update_images(ids, images_parsed) {
     // updates images
     for (let i=0; i < ids.length; i++) {
-        update_image(ids[i], filenames[i]);
-        window.items[ids[i]]['filename_display'] = filenames[i];
-        window.items[ids[i]]['channel_name'] = channel_names[i];
-        window.items[ids[i]]['backgound_correction'] = background_corrections[i];
-        window.items[ids[i]]['colorscheme'] = colorschemes[i];
+        update_image(ids[i], images_parsed[i].filename_display);
+        window.items[ids[i]] = images_parsed[i];
     }
 
     // update image info
@@ -378,18 +387,19 @@ function update_images(ids, filenames, channel_names, background_corrections, co
     open_jobs(-1);
 }
 
-function show_info(id, info_main, info_json) {
+function show_info(id, info_json) {
     /// shows header data for an image
     if (window.image_info_id != id)  return;  // there was some other event already
 
     // let t1 = performance.now();
     // console.log("info unparse:" + (t1 - window.t0) + " ms.");
 
-    document.getElementById("image_info_filename").innerText = info_main["filename"];
-    document.getElementById("image_info_channel_name").innerText = info_main["channel_name"];
-    document.getElementById("image_info_scansize").innerText = info_main["scansize"] + " " + info_main["scansize_unit"];
-    document.getElementById("image_info_background_correction").innerText = info_main["background_correction"];
-    document.getElementById("image_info_colorscheme").innerText = info_main["colorscheme"];
+    const filename_original = window.items[id].filename_original
+    document.getElementById("image_info_filename").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
+    document.getElementById("image_info_channel_name").innerText = window.items[id].channel_name;
+    document.getElementById("image_info_scansize").innerText = window.items[id].scansize[0] + " x " + window.items[id].scansize[1] + " " + window.items[id].scansize_unit;
+    document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
+    document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
 
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
@@ -445,7 +455,6 @@ function get_image_info(id=-1) {
     
     // console.log("get info");
     // window.t0 = performance.now();
-
     if (id == -1) {
         const el =  document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
@@ -466,28 +475,38 @@ function get_image_info(id=-1) {
     }
 }
 
+function re_parse_images(message) {
+    // delete all images from DOM and re-parses them
+    if (get_view() == "grid") {
+        Blink.msg("re_parse_images", []);
+        show_message(message)
+        open_jobs(1);
+    }
+}
+
 
 
 // keyboard events etc
 
 key_commands = {
-    c: {command: change_item, args: ["channel", "change channel."] },
-    d: {command: change_item, args: ["direction", "change direction."] },
-    b: {command: change_item, args: ["background_correction", "change background."] },
-    f: {command: change_item, args: ["colorscheme", "change colorscheme."] },
-    i: {command: change_item, args: ["inverted", "invert colorscheme."] },
-    C: {command: change_item, args: ["channel", "change channel.", -1] },
-    D: {command: change_item, args: ["direction", "change direction.", -1] },
-    B: {command: change_item, args: ["background_correction", "change background.", -1] },
-    F: {command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
-    I: {command: change_item, args: ["inverted", "invert colorscheme."] },
-    a: {command: toggle_all_active, args: [] },
-    m: {command: toggle_sidebar, args: [] },
-    z: {command: toggle_imagezoom, args: [] },
-    p: {command: image_info_search_parameter, args: [] },
-    ArrowRight: {command: next_item, args: [1] },
-    ArrowLeft: {command: next_item, args: [-1] },
-    Escape: {command: toggle_imagezoom, args: ["grid"] },
+    c: { command: change_item, args: ["channel", "change channel."] },
+    d: { command: change_item, args: ["direction", "change direction."] },
+    b: { command: change_item, args: ["background_correction", "change background."] },
+    f: { command: change_item, args: ["colorscheme", "change colorscheme."] },
+    i: { command: change_item, args: ["inverted", "invert colorscheme."] },
+    C: { command: change_item, args: ["channel", "change channel.", -1] },
+    D: { command: change_item, args: ["direction", "change direction.", -1] },
+    B: { command: change_item, args: ["background_correction", "change background.", -1] },
+    F: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
+    I: { command: change_item, args: ["inverted", "invert colorscheme."] },
+    a: { command: toggle_all_active, args: [] },
+    m: { command: toggle_sidebar, args: [] },
+    z: { command: toggle_imagezoom, args: [] },
+    p: { command: image_info_search_parameter, args: [] },
+    ArrowRight: { command: next_item, args: [1] },
+    ArrowLeft: { command: next_item, args: [-1] },
+    Escape: { command: toggle_imagezoom, args: ["grid"] },
+    F5: { command: re_parse_images, args: [] },
 }
 
 // for debugging, F5 for reload, F12 for dev tools

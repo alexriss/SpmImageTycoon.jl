@@ -18,10 +18,18 @@ mutable struct SpmImageGridItem
     filename_original::String
     filename_display::String
     channel_name::String
+    scansize::Vector{Float64}
+    scansize_unit::String
     background_correction::String
     colorscheme::String
+    rating::Int
+    keywords::Vector{String}
 end
-SpmImageGridItem(filename_original, filename_display, channel_name) = SpmImageGridItem(filename_original, filename_display, channel_name, "none", "gray")
+SpmImageGridItem(
+    filename_original, filename_display, channel_name, scansize, scansize_unit
+) = SpmImageGridItem(
+    filename_original, filename_display, channel_name, scansize, scansize_unit, "none", "gray", 0, []
+)
 
 
 # default settings (should be overriden by config file later)
@@ -61,7 +69,7 @@ colorscheme_list_pre = OrderedDict{String,ColorScheme}(
 colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
 
 
-resize_to = 256
+resize_to = 4096  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
 extension_spm = ".sxm"
 
 dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
@@ -69,7 +77,7 @@ dir_res = "../res/"  # relative to module directory
 
 
 
-"""converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes, also generated inverse schemes.
+"""converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
 The resulting schemes are stored in the OrderedDict dict_colorschemes."""
 function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})
     for (k,v) in dict_colorschemes_pre
@@ -235,19 +243,10 @@ end
 
 
 """Loads the header data for an image and returns a dictionary with all the data"""
-function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::Tuple{Dict{String,String},OrderedDict{String,String}}
+function get_image_header(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::OrderedDict{String,String}
     filename_original = images_parsed[id].filename_original
     im_spm = load_image(joinpath(dir_data, filename_original), header_only=true, output_info=0)
-    # extra data
-    data_main = Dict(
-        "filename" => filename_original[1:end-4],  # strip off extension
-        "scansize" => join(im_spm.scansize, " x "),
-        "scansize_unit" => im_spm.scansize_unit,
-        "channel_name" => images_parsed[id].channel_name,
-        "background_correction" => images_parsed[id].background_correction,
-        "colorscheme" => images_parsed[id].colorscheme,
-    )
-    return data_main, im_spm.header
+    return im_spm.header
 end
 
 
@@ -255,14 +254,10 @@ end
 for the images specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
-Modifies the images_parsed array and returns arrays of the new filenames, channel names, background corrections and colorschemes"""
-function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String, jump::Int, full_resolution::Bool)::Tuple{Vector{String}, Vector{String}, Vector{String}, Vector{String}}
+Modifies the images_parsed array."""
+function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String, jump::Int, full_resolution::Bool)
     dir_cache = get_dir_cache(dir_data)
-    filenames = Vector{String}(undef, size(ids))
-    channel_names = Vector{String}(undef, size(ids))
-    background_corrections = Vector{String}(undef, size(ids))
-    colorschemes = Vector{String}(undef, size(ids))
-    Threads.@threads for (i, id) in collect(enumerate(ids))  # the "collect" is needed for the threads macro
+    Threads.@threads for id in ids
         filename_original = images_parsed[id].filename_original
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         channel_name = images_parsed[id].channel_name
@@ -292,13 +287,8 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
         filename_display = create_image(im_spm, filename_original, channel_name,
             background_correction, resize_to=resize_to_, colorscheme=images_parsed[id].colorscheme, base_dir=dir_cache)
         images_parsed[id].filename_display = filename_display
-            
-        filenames[i] = filename_display
-        channel_names[i] = channel_name
-        background_corrections[i] = background_correction
-        colorschemes[i] = colorscheme
     end
-    return filenames, channel_names, background_corrections, colorschemes
+    return nothing
 end
 
 
@@ -317,7 +307,7 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
         filename_original = basename(datafile)
         filename_display = create_image(im_spm, filename_original, channel_name, "none", resize_to=resize_to, base_dir=dir_cache)
         
-        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name)
+        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name, im_spm.scansize, im_spm.scansize_unit)
     end
 
     elapsed_time = Dates.now() - time_start
@@ -340,25 +330,37 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         if what == "get_info"
             id = ids[1]
             # get header data
-            image_info_main, image_info_header = get_image_info(id, dir_data, images_parsed)
-            k = replace.(collect(keys(image_info_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
-            v = replace.(collect(values(image_info_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
-            image_info_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
-
-             @js_ w show_info($id, $image_info_main, $image_info_header_json);
+            image_header = get_image_header(id, dir_data, images_parsed)
+            k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
+            v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
+            image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
+            @js_ w show_info($id, $image_header_json);
         elseif what[1:5] == "next_"
             lock(l)
             jump = args[3]
             full_resolution = args[4]
             try
-                filenames, channel_names, background_corrections, colorschemes = switch_channel_direction_background!(
-                    ids, dir_data, images_parsed, what[6:end], jump, full_resolution
-                )
-                @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections, $colorschemes);
+                switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump, full_resolution)
+                @js_ w update_images($ids_str, $(images_parsed[ids]));
             finally
                 unlock(l)
             end
         end
+    end
+
+    handle(w, "re_parse_images") do args
+        lock(l)
+        try
+            images_parsed = parse_files(dir_data)
+            ids = collect(1:length(images_parsed))
+            @js_ w load_images($ids, $images_parsed, true)
+        finally
+            unlock(l)
+        end
+    end
+
+    handle(w, "debug") do args
+        println("debug: " * string(args))
     end
 
     return nothing
@@ -400,17 +402,12 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
 
-    @js w set_base_href($dir_asset)
-    @js w set_dir_cache($dir_cache_js)
-    @js w load_page()
+    @js_ w set_base_href($dir_asset)
+    @js_ w set_dir_cache($dir_cache_js)
+    @js_ w load_page()
     
     ids = collect(1:length(images_parsed))
-    filenames = [s.filename_display for s in images_parsed]
-    filenames_original = [s.filename_original for s in images_parsed]
-    channel_names = [s.channel_name for s in images_parsed]
-    background_corrections = [s.channel_name for s in images_parsed]
-    colorschemes = [s.channel_name for s in images_parsed]
-    @js_ w load_images($ids, $filenames, $filenames_original, $channel_names, $background_corrections, $colorschemes)
+    @js_ w load_images($ids, $images_parsed)
 
     set_event_handlers(w, dir_data, images_parsed)
 
