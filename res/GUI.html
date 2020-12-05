@@ -36,8 +36,8 @@
   <div class="columns is-mobile is-2">
 
     <div class="column p-0">
-      <div id="imagegrid_container_container">
-        <div id="imagegrid_container" class="p-3">
+      <div id="imagegrid_container">
+        <div id="imagegrid_container_sub" class="p-3">
           <div id="imagegrid" class="imagegrid unselectable hover_enabled">
             
               <template id="griditem">
@@ -49,9 +49,11 @@
           </div>
         </div>
       </div>
-      <div id="imagezoom" class="is-hidden">
-        <div id="imagezoom_window">
-          <img id="imagezoom_content" />
+      <div id="imagezoom_container" class="p-3 is-hidden">
+        <div id="imagezoom_content">
+          <section>
+            <img id="imagezoom_image" />
+          </section>
         </div>
       </div>
   </div>

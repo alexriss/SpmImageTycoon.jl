@@ -18,12 +18,12 @@ body {
   text-align: center;
 }
 
-#imagegrid_container_container {
+#imagegrid_container {
   transform: translateZ(0);  /* this will cause the child with to be relaive to this container */
   height: calc(100vh - 4.6rem);
 }
 
-#imagegrid_container {
+#imagegrid_container_sub {
   position: fixed;
   top: 0;
   bottom: 0;
@@ -84,13 +84,30 @@ body {
 
 /* zoom view */
 
-#imagezoon {
-  height:100%;
+
+
+#imagezoom_content {
+	width: 100%;
+	height: calc(100vh - 4rem);
+  overflow: hidden;
 }
 
-#imagezoom_window {
-  width:600px;
-  height:600px;
+#imagezoom_content section { 
+  display: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#imagezoom_image {
+  user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  width: 100%;
+  max-height: 100%;
+  /* height: 100%; */
 }
 
 

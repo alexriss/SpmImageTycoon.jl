@@ -3,7 +3,7 @@ window.items = {};  // dictionary with ids as keys and a dictionary of filenames
 
 window.last_selected = -1;  // last selected item
 window.last_scroll_grid = 0;  // last scroll position in grid view
-window.zoom_control = null;  // holds the drag/zoom object
+window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = -1;  // last selected image for zoom
 
 window.num_open_jobs = 0;  // how many julia jobs are open
@@ -25,7 +25,7 @@ function toggle_sidebar() {
 }
 
 function get_view() {
-    if (document.getElementById('imagegrid').classList.contains("is-hidden")) {
+    if (document.getElementById('imagegrid_container').classList.contains("is-hidden")) {
         return "zoom";
     } else {
         return "grid";
@@ -35,8 +35,8 @@ function get_view() {
 function toggle_imagezoom() {
     // toggles between grid and imagezoom views
 
-    const grid = document.getElementById('imagegrid');
-    const zoom = document.getElementById('imagezoom');
+    const grid = document.getElementById('imagegrid_container');
+    const zoom = document.getElementById('imagezoom_container');
     const footer_num_images_container = document.getElementById('footer_num_images_container');
 
     if (get_view() == "zoom") {
@@ -55,12 +55,14 @@ function toggle_imagezoom() {
             window.image_info_id = el.id;  // should be set already, but just to make sure
             get_image_info(el.id);  // should also not be necessary
 
-            if (window.zoom_control === null) {
-                window.zoom_control = WZoom.create('#imagezoom_content', minScale=0.1, maxScale=20, speed=50);
+            const zoom_content = document.getElementById('imagezoom_content');
+            if (!window.zoom_control_setup) {
+                zoom_drag_setup(zoom_content);
+                window.zoom_control_setup = true;
             }
             if (window.zoom_last_selected != el.id) {
-                window.imagezoom_content.src = 'file:///' + window.dir_cache + window.items[el.id]["filename_display"];
-                window.zoom_control.prepare();
+                document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + window.items[el.id]["filename_display"];
+                zoom_drag_reset(zoom_content);
             }
             window.zoom_last_selected = el.id;
         }
@@ -284,16 +286,7 @@ function load_page() {
     // loads the page contents
     const nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
     const link = nodes[nodes.length - 1];
-    document.body.innerHTML = link.import.querySelector('body').innerHTML
-
-    // for dynamic css vh heights, see https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
-    let vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-    window.addEventListener('resize', () => {
-        // We execute the same script as before
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    });
+    document.body.innerHTML = link.import.querySelector('body').innerHTML;
 }
 
 function set_dir_cache(dir_cache) {
@@ -474,8 +467,9 @@ key_commands = {
     m: toggle_sidebar,
     z: toggle_imagezoom,
     p: image_info_search_parameter,
-    //ArrowRight: 
-    //ArrowLeft: 
+    // ArrowRight: 
+    // ArrowLeft: 
+    // Escape: go back to grid view TODO
 }
 
 // for debugging, F5 for reload, F12 for dev tools
@@ -501,4 +495,13 @@ if(document.readyState === 'loading') {
 }
 function afterDOMLoaded(){
     document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
+
+    // for dynamic css vh heights, see https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    window.addEventListener('resize', () => {
+        // We execute the same script as before
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
 }
