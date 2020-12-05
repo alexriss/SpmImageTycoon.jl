@@ -39,7 +39,7 @@ function toggle_imagezoom_mouse(event) {
     }
 }
 
-function toggle_imagezoom(target_view="") {
+function toggle_imagezoom(target_view = "") {
     // toggles between grid and imagezoom views
 
     const grid = document.getElementById('imagegrid_container');
@@ -58,7 +58,7 @@ function toggle_imagezoom(target_view="") {
             grid.classList.add("is-hidden");
             zoom.classList.remove("is-hidden");
             footer_num_images_container.classList.add("is-invisible")
-            
+
             window.image_info_id = el.id;  // should be set already, but just to make sure
             get_image_info(el.id);  // should also not be necessary
 
@@ -76,7 +76,7 @@ function toggle_imagezoom(target_view="") {
     }
 }
 
-function show_message(msg="") {
+function show_message(msg = "") {
     // shows message in the footer
     if (window.timeout != null) {
         clearTimeout(window.timeout);
@@ -111,7 +111,7 @@ function clear_all_active() {
     }
     const grid = document.getElementById('imagegrid');
     const els = grid.getElementsByClassName('active');
-    for (let i=els.length-1; i >= 0; i--) {
+    for (let i = els.length - 1; i >= 0; i--) {
         els[i].classList.remove('active');
     }
     check_hover_enabled();
@@ -127,7 +127,7 @@ function toggle_all_active() {
     if (els.length == 0) {
         clear_all_active();
     } else {
-        for (let i=0; i < els.length; i++) {
+        for (let i = 0; i < els.length; i++) {
             els[i].classList.add('active');
         }
     }
@@ -140,7 +140,7 @@ function get_active_element_ids() {
     // for grid view, if any are selected (i.e active), then these are returned
     // otherwise if one is hovered, then this is returned
     // otherwise an empty array is returned
-    
+
     // zoom view
     if (get_view() == "zoom") {
         return [window.image_info_id];
@@ -159,8 +159,8 @@ function get_active_element_ids() {
     }
 
     els_id = new Array(els.length)
-    for (let i=0; i < els.length; i++) {
-      els_id[i] = els[i].id;
+    for (let i = 0; i < els.length; i++) {
+        els_id[i] = els[i].id;
     }
     return els_id;
 }
@@ -189,7 +189,7 @@ function next_item(jump) {
 
     let el = document.getElementById(window.zoom_last_selected);
     let elnext = el;
-    for (let i=0; i<Math.abs(jump); i++) {
+    for (let i = 0; i < Math.abs(jump); i++) {
         if (jump > 0) {
             elnext = el.nextSibling;
         } else {
@@ -226,32 +226,32 @@ function select_item(event) {
             end = window.last_selected;
         }
 
-        els = items.slice(start, end+1);
+        els = items.slice(start, end + 1);
         let all_active = true;
-        for (let i=0; i < els.length; i++) {
+        for (let i = 0; i < els.length; i++) {
             if (!els[i].classList.contains('active')) {
                 els[i].classList.add('active');
                 all_active = false;
             }
         }
         if (all_active) {  // all were active, we deactivate them
-            for (let i=0; i < els.length; i++) {
+            for (let i = 0; i < els.length; i++) {
                 els[i].classList.remove('active');
             }
         }
     } else if (modifier && this.classList.contains('active')) {  // dont de-select when modifier is pressed
         // pass
-    } else { 
+    } else {
         this.classList.toggle('active');
     }
     window.last_selected = idx;
     check_hover_enabled();
 }
 
-function image_info_quick(id=-1) {
+function image_info_quick(id = -1) {
     // display quick info in footer
     if (id == -1) {
-        const el =  document.getElementById('imagegrid').querySelector('div.item:hover');
+        const el = document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
             id = el.id;
         }
@@ -269,7 +269,7 @@ function image_info_timeout() {
         return;
     }
     const this_id = this.id;
-    window.timeout_image_info = window.setTimeout(function() {
+    window.timeout_image_info = window.setTimeout(function () {
         get_image_info(this_id);
     }, 10);
 
@@ -282,11 +282,11 @@ function image_info_timeout_clear() {
     }
 
     // clear quick info (if no hover anymore)
-    window.setTimeout(function() {
+    window.setTimeout(function () {
         if (document.getElementById('imagegrid').querySelector('div.item:hover') == null) {
             document.getElementById('image_info_footer').innerText = "";
         }
-     }, 350);
+    }, 350);
 }
 
 function image_info_search_parameter() {
@@ -345,10 +345,10 @@ function set_base_href(dir_res) {
     // sets a base directory for all relative paths
     const el = document.createElement('base');
     el.href = dir_res;
-    document.getElementsByTagName('head')[0].appendChild(el);    
+    document.getElementsByTagName('head')[0].appendChild(el);
 }
 
-function load_images(ids, images_parsed, delete_previous=false) {
+function load_images(ids, images_parsed, delete_previous = false) {
     // load all images into the page
 
     // delete previous images
@@ -367,7 +367,7 @@ function load_images(ids, images_parsed, delete_previous=false) {
     }
 
     // loads new images
-    for (let i=0; i < ids.length; i++) {
+    for (let i = 0; i < ids.length; i++) {
         add_image(ids[i], images_parsed[i].filename_display);
         window.items[ids[i]] = images_parsed[i];
     }
@@ -375,7 +375,7 @@ function load_images(ids, images_parsed, delete_previous=false) {
 
 function update_images(ids, images_parsed) {
     // updates images
-    for (let i=0; i < ids.length; i++) {
+    for (let i = 0; i < ids.length; i++) {
         update_image(ids[i], images_parsed[i].filename_display);
         window.items[ids[i]] = images_parsed[i];
     }
@@ -389,7 +389,7 @@ function update_images(ids, images_parsed) {
 
 function show_info(id, info_json) {
     /// shows header data for an image
-    if (window.image_info_id != id)  return;  // there was some other event already
+    if (window.image_info_id != id) return;  // there was some other event already
 
     // let t1 = performance.now();
     // console.log("info unparse:" + (t1 - window.t0) + " ms.");
@@ -415,8 +415,8 @@ function show_info(id, info_json) {
         window.datatable.rows().remove("all");
     }
     window.datatable.import({
-         type: "json",
-         data: info_json,
+        type: "json",
+        data: info_json,
     });
     // t1 = performance.now();
     // console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
@@ -433,7 +433,7 @@ function header_data(json) {
 
 // calling julia
 
-function change_item(what, message, jump=1) {
+function change_item(what, message, jump = 1) {
     console.log("change: " + what);
     els_id = get_active_element_ids();
 
@@ -450,13 +450,13 @@ function change_item(what, message, jump=1) {
     open_jobs(1);
 }
 
-function get_image_info(id=-1) {
+function get_image_info(id = -1) {
     // gets info (header data) for the current image
-    
+
     // console.log("get info");
     // window.t0 = performance.now();
     if (id == -1) {
-        const el =  document.getElementById('imagegrid').querySelector('div.item:hover');
+        const el = document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
             id = el.id;
         }
@@ -520,7 +520,7 @@ document.addEventListener("keydown", function (event) {
         return;
     }
     if (event.key == "F12") {  // F12
-		require('electron').remote.getCurrentWindow().toggleDevTools();
+        require('electron').remote.getCurrentWindow().toggleDevTools();
     } else if (event.key in key_commands) {
         key_commands[event.key].command(...key_commands[event.key].args);
         event.preventDefault();
@@ -529,13 +529,13 @@ document.addEventListener("keydown", function (event) {
 });
 
 
-if(document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded',afterDOMLoaded);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', afterDOMLoaded);
 } else {
     afterDOMLoaded();
 }
 
-function afterDOMLoaded(){
+function afterDOMLoaded() {
     document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
 
     // for dynamic css vh heights, see https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
