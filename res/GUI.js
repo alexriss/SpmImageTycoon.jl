@@ -32,14 +32,14 @@ function get_view() {
     }
 }
 
-function toggle_imagezoom() {
+function toggle_imagezoom(target_view="") {
     // toggles between grid and imagezoom views
 
     const grid = document.getElementById('imagegrid_container');
     const zoom = document.getElementById('imagezoom_container');
     const footer_num_images_container = document.getElementById('footer_num_images_container');
 
-    if (get_view() == "zoom") {
+    if (get_view() == "zoom" || target_view == "grid") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
         footer_num_images_container.classList.remove("is-invisible")
@@ -166,6 +166,33 @@ function check_hover_enabled() {
     el_num.innerText = els.length;
 }
 
+function next_item(jump) {
+    // jumps a number of items forward or backward (only in zoom mode currently)
+    if (get_view() != "zoom") {
+        return;
+    }
+
+    let el = document.getElementById(window.zoom_last_selected);
+    let elnext = el;
+    for (let i=0; i<Math.abs(jump); i++) {
+        if (jump > 0) {
+            elnext = el.nextSibling;
+        } else {
+            elnext = el.previousSibling;
+        }
+        if (elnext == null) {
+            break;
+        }
+        el = elnext;
+    }
+    if (el.id in window.items) {
+        document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + window.items[el.id]["filename_display"];
+        window.image_info_id = el.id;
+        window.zoom_last_selected = el.id;
+        get_image_info(el.id);
+    }
+}
+
 function select_item(event) {
     // selects one item or a bunch of items (if shift or ctrl is pressed)
 
@@ -276,6 +303,9 @@ function add_image(id, filename) {
 
 function update_image(id, filename) {
     // updates the image to a new channel
+    if (get_view() == "zoom" && window.zoom_last_selected == id) {
+        document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + filename;
+    }
     document.getElementById(id).firstElementChild.src = 'file:///' + window.dir_cache + filename;
 }
 
@@ -377,53 +407,13 @@ function header_data(json) {
 
 // calling julia
 
-function change_channel() {
-    console.log("change channel");
+function change_item(what, message, jump=1) {
+    console.log("change: " + what);
     els_id = get_active_element_ids();
     if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_channel", els_id]);
+        Blink.msg("grid_item", ["next_" + what, els_id, jump]);
     }
-    show_message("change channel.")
-    open_jobs(1);
-}
-
-function change_direction() {
-    console.log("change direction");
-    els_id = get_active_element_ids();
-    if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_direction", els_id]);
-    }
-    show_message("change direction.")
-    open_jobs(1);
-}
-
-function change_background_correction() {
-    console.log("change background correction");
-    els_id = get_active_element_ids();
-    if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_background_correction", els_id]);
-    }
-    show_message("change background.")
-    open_jobs(1);
-}
-
-function change_colorscheme() {
-    console.log("change colorscheme");
-    els_id = get_active_element_ids();
-    if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_colorscheme", els_id]);
-    }
-    show_message("change colorscheme.")
-    open_jobs(1);
-}
-
-function change_inverted() {
-    console.log("change inverted");
-    els_id = get_active_element_ids();
-    if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_inverted", els_id]);
-    }
-    show_message("invert colorscheme.")
+    show_message(message)
     open_jobs(1);
 }
 
@@ -448,8 +438,14 @@ function get_image_info(id=-1) {
         }
     }
     if (id != -1) {
+        if (get_view() == "zoom") {
+            full_resolution = true;
+        } else {
+            full_resolution = false;
+        }
+
         window.image_info_id = id;
-        Blink.msg("grid_item", ["get_info", [id]]);
+        Blink.msg("grid_item", ["get_info", [id], full_resolution]);
     }
 }
 
@@ -458,18 +454,23 @@ function get_image_info(id=-1) {
 // keyboard events etc
 
 key_commands = {
-    c: change_channel,
-    d: change_direction,
-    b: change_background_correction,
-    f: change_colorscheme,
-    i: change_inverted,
-    a: toggle_all_active,
-    m: toggle_sidebar,
-    z: toggle_imagezoom,
-    p: image_info_search_parameter,
-    // ArrowRight: 
-    // ArrowLeft: 
-    // Escape: go back to grid view TODO
+    c: {command: change_item, args: ["channel", "change channel."] },
+    d: {command: change_item, args: ["direction", "change direction."] },
+    b: {command: change_item, args: ["background_correction", "change background."] },
+    f: {command: change_item, args: ["colorscheme", "change colorscheme."] },
+    i: {command: change_item, args: ["inverted", "invert colorscheme."] },
+    C: {command: change_item, args: ["channel", "change channel.", -1] },
+    D: {command: change_item, args: ["direction", "change direction.", -1] },
+    B: {command: change_item, args: ["background_correction", "change background.", -1] },
+    F: {command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
+    I: {command: change_item, args: ["inverted", "invert colorscheme."] },
+    a: {command: toggle_all_active, args: [] },
+    m: {command: toggle_sidebar, args: [] },
+    z: {command: toggle_imagezoom, args: [] },
+    p: {command: image_info_search_parameter, args: [] },
+    ArrowRight: {command: next_item, args: [1] },
+    ArrowLeft: {command: next_item, args: [-1] },
+    Escape: {command: toggle_imagezoom, args: ["grid"] },
 }
 
 // for debugging, F5 for reload, F12 for dev tools
@@ -481,7 +482,7 @@ document.addEventListener("keydown", function (e) {
     if (e.key == "F12") {  // F12
 		require('electron').remote.getCurrentWindow().toggleDevTools();
     } else if (e.key in key_commands) {
-        key_commands[e.key]();
+        key_commands[e.key].command(...key_commands[e.key].args);
         e.preventDefault();
         e.stopPropagation();
     }
@@ -493,6 +494,7 @@ if(document.readyState === 'loading') {
 } else {
     afterDOMLoaded();
 }
+
 function afterDOMLoaded(){
     document.body.classList.add('has-navbar-fixed-top');  // we need to do this here, because the base html file is served form blink
 

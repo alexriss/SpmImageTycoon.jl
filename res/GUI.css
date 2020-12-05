@@ -20,7 +20,7 @@ body {
 
 #imagegrid_container {
   transform: translateZ(0);  /* this will cause the child with to be relaive to this container */
-  height: calc(100vh - 4.6rem);
+  height: calc(100vh - 5rem);
 }
 
 #imagegrid_container_sub {

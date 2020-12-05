@@ -145,35 +145,39 @@ end
 
 
 """Gets the channel name after current_channel_name in the list of image's channel names."""
-function next_channel_name(image::SpmImage, current_channel_name::String)::String
+function next_channel_name(image::SpmImage, current_channel_name::String, jump::Int)::String
     backward_suffix = ""
     if endswith(current_channel_name, " bwd")
         current_channel_name = current_channel_name[1:end-4]
         backward_suffix = " bwd"
     end
-    current_index = findfirst(x -> x == current_channel_name, image.channel_names)
-    if current_index === nothing  # this should never happen anyways
+    i = findfirst(x -> x == current_channel_name, image.channel_names)
+    if i === nothing  # this should never happen anyways
         return image.channel_names[1]
     else
-        return image.channel_names[current_index % length(image.channel_names) + 1] * backward_suffix
+        i = (i + jump - 1) % length(image.channel_names) + length(image.channel_names)
+        i = i % length(image.channel_names) + 1
+        return image.channel_names[i] * backward_suffix
     end
 end
 
 
 """Gets the next background_correction key in the list of possible background corrections"""
-function next_background_correction(background_correction::String)::String
+function next_background_correction(background_correction::String, jump::Int)::String
     keys_bg = collect(keys(background_correction_list))
     i = findfirst(x -> x == background_correction, keys_bg)
+    i = (i + jump - 1) % length(background_correction_list) + length(background_correction_list)
     i = i % length(background_correction_list) + 1
     return keys_bg[i]
 end
 
 
 """Gets the next colorscheme key in the list of possible colorschemes"""
-function next_colorscheme(colorscheme::String)::String
+function next_colorscheme(colorscheme::String, jump::Int)::String
     keys_cs = collect(keys(colorscheme_list))
     i = findfirst(x -> x == colorscheme, keys_cs)
-    i = (i + 1) % length(colorscheme_list) + 1  # inverted and normal are alternating, so twice +1 will give us the same time
+    i = (i + sign(jump) + jump - 1) % length(colorscheme_list) + length(colorscheme_list)   # inverted and normal are alternating, so an extra +1 or -1 (i.e. sign(jump) is needed
+    i = i % length(colorscheme_list) + 1
     return keys_cs[i]
 end
 
@@ -244,8 +248,11 @@ function get_image_info(id::Int, dir_data::String, images_parsed::Vector{SpmImag
 end
 
 
-"""Cycles the channel or switches direction (backward/forward) for the images specified by ids. Modifies the images_parsed array and returns the new filenames and channel names."""
-function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String)::Tuple{Vector{String}, Vector{String}, Vector{String}, Vector{String}}
+"""Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
+for the images specified by ids. The type of change is specified by the argument "what".
+The argument "jump" specifies whether to cycle backward or forward (if applicable).
+Modifies the images_parsed array and returns arrays of the new filenames, channel names, background corrections and colorschemes"""
+function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String, jump::Int)::Tuple{Vector{String}, Vector{String}, Vector{String}, Vector{String}}
     dir_cache = get_dir_cache(dir_data)
     filenames = Vector{String}(undef, size(ids))
     channel_names = Vector{String}(undef, size(ids))
@@ -258,7 +265,7 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
         background_correction = images_parsed[id].background_correction
         colorscheme = images_parsed[id].colorscheme
         if what == "channel"
-            channel_name = next_channel_name(im_spm, channel_name)
+            channel_name = next_channel_name(im_spm, channel_name, jump)
             images_parsed[id].channel_name = channel_name
         elseif what == "direction"
             if endswith(channel_name, " bwd")
@@ -268,10 +275,10 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
             end
             images_parsed[id].channel_name = channel_name
         elseif what == "background_correction"
-            background_correction = next_background_correction(background_correction)
+            background_correction = next_background_correction(background_correction, jump)
             images_parsed[id].background_correction = background_correction
         elseif what == "colorscheme"
-            colorscheme = next_colorscheme(colorscheme)
+            colorscheme = next_colorscheme(colorscheme, jump)
             images_parsed[id].colorscheme = colorscheme
         elseif what == "inverted"
             colorscheme = invert_colorscheme(colorscheme)
@@ -327,6 +334,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
         ids = [parse(Int64, id) for id in ids_str]
         if what == "get_info"
             id = ids[1]
+            full_resolution = args[3]
+            println(full_resolution)
             # get header data
             image_info_main, image_info_header = get_image_info(id, dir_data, images_parsed)
             k = replace.(collect(keys(image_info_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
@@ -336,8 +345,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
              @js_ w show_info($id, $image_info_main, $image_info_header_json);
         elseif what[1:5] == "next_"
             lock(l)
+            jump = args[3]
             try
-                filenames, channel_names, background_corrections, colorschemes = switch_channel_direction_background!(ids, dir_data, images_parsed,  what[6:end])
+                filenames, channel_names, background_corrections, colorschemes = switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump)
                 @js_ w update_images($ids_str, $filenames, $channel_names, $background_corrections, $colorschemes);
             finally
                 unlock(l)
