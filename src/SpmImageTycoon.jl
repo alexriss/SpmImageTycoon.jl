@@ -222,7 +222,9 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
     if ratio <= 0.0
         ratio = 1
     end
-    d = imresize(d, ratio=ratio)
+    if ratio < 1
+        d = imresize(d, ratio=ratio)
+    end
 
     d = correct_background(d, background_correction_list[background_correction])
     d_ = filter(!isnan,d)
