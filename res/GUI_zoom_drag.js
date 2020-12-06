@@ -85,7 +85,9 @@ function zoom_drag_setup(divMain) {
 
     // reset on doubleclick
     divMain.addEventListener('dblclick', (e) => {
-        zoom_drag_reset(divMain)
+        if (!e.ctrlKey && !e.shiftKey) {
+            zoom_drag_reset(divMain)
+        }
     })
 }
 

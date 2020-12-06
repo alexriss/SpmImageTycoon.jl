@@ -1,3 +1,4 @@
+window.dir_res = "";  // resources directory
 window.dir_cache = "";  // will be set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
@@ -533,6 +534,7 @@ key_commands = {
     h: { command: show_help, args: [] },
     "?": { command: show_help, args: [] },
     "/": { command: show_help, args: [] },
+    F1: { command: show_help, args: [] },
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: toggle_imagezoom, args: ["grid"] },
@@ -542,7 +544,7 @@ key_commands = {
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (event) {
     if (get_view() == "help") {    // only certain buttons allowed
-        if (["Escape", "?", "/", "h"].includes(event.key)) {
+        if (["Escape", "?", "/", "h", "F1"].includes(event.key)) {
             show_help();
         }
         return;
@@ -592,4 +594,11 @@ function event_handlers() {
     for (let i = 0; i < els.length; i++) {
         els[i].addEventListener('click', show_help);
     }
+
+    // imagezoom
+    document.getElementById('imagezoom_container').addEventListener('dblclick', (e) => {
+        if (e.ctrlKey || e.shiftKey) {
+            toggle_imagezoom("grid");
+        }
+    });
 }
