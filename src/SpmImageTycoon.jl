@@ -69,7 +69,7 @@ colorscheme_list_pre = OrderedDict{String,ColorScheme}(
 colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
 
 
-resize_to = 4096  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
+resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
 extension_spm = ".sxm"
 
 dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
@@ -217,6 +217,13 @@ Returns the filename it created (without the directory prefix)"""
 function create_image(image::SpmImage, filename_original::String, channel_name::String, background_correction::String; resize_to::Int=0, colorscheme::String="gray", base_dir::String="")::String
     # create grayscale image
     d = get_channel(image, channel_name, origin="upper").data;
+
+    ratio = min(1, resize_to / max(image.pixelsize...))
+    if ratio <= 0.0
+        ratio = 1
+    end
+    d = imresize(d, ratio=ratio)
+
     d = correct_background(d, background_correction_list[background_correction])
     d_ = filter(!isnan,d)
     vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
@@ -229,13 +236,9 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
         im_arr = colorize(d, colorscheme)
     end
     
-    ratio = min(1, resize_to / max(image.pixelsize...))
-    if ratio <= 0.0
-        ratio = 1
-    end
 
     filename_display = filename_original[1:end-4] * "_$(channel_name)_$(background_correction)_$(colorscheme).png"
-    save(joinpath(base_dir, filename_display), imresize(im_arr, ratio=ratio))  # ImageIO should be installed, gives speed improvement for saving pngs
+    save(joinpath(base_dir, filename_display), im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
     # println(joinpath(dir_cache, fname))
     
     return filename_display
