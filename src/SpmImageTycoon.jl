@@ -15,20 +15,21 @@ using SpmImages
 export SpmImageGridItem, tycoon
 
 mutable struct SpmImageGridItem
-    filename_original::String
-    filename_display::String
-    channel_name::String
-    scansize::Vector{Float64}
-    scansize_unit::String
-    background_correction::String
-    colorscheme::String
-    rating::Int
-    keywords::Vector{String}
+    filename_original::String        # original filename (.sxm)
+    filename_display::String         # generated png image
+    channel_name::String             # channel name (" bwd" indicates backward direction)
+    scansize::Vector{Float64}        # scan size in physical units
+    scansize_unit::String            # scan size unit
+    background_correction::String    # type of background correction used
+    filters::Vector{String}          # array of filters used (not implemented yet)
+    colorscheme::String              # color scheme
+    rating::Int                      # rating (0 to 5 stars)
+    keywords::Vector{String}         # keywords
 end
 SpmImageGridItem(
     filename_original, filename_display, channel_name, scansize, scansize_unit
 ) = SpmImageGridItem(
-    filename_original, filename_display, channel_name, scansize, scansize_unit, "none", "gray", 0, []
+    filename_original, filename_display, channel_name, scansize, scansize_unit, "none", [], "gray", 0, []
 )
 
 
@@ -349,6 +350,19 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
                 @js_ w update_images($ids_str, $(images_parsed[ids]));
             finally
                 unlock(l)
+            end
+        elseif what[1:3] == "set"
+            if what[5:end] == "rating"
+                lock(l)
+                rating = args[3]
+                try
+                    for id in ids
+                        images_parsed[id].rating = rating
+                    end
+                    @js_ w update_images($ids_str, $(images_parsed[ids]));
+                finally
+                    unlock(l)
+                end
             end
         end
     end

@@ -3,6 +3,10 @@ body {
   margin-bottom: 2.5rem;
 }
 
+.img-icon {
+  vertical-align: middle;
+}
+
 .abbreviate {
   white-space: nowrap;
   overflow: hidden;
@@ -136,6 +140,7 @@ body {
   height: calc(var(--vh, 1vh) * 100 - 5rem);
   width: 30%;
   max-width:400px;
+  min-width:300px;
   padding-top: 15px;
   position: sticky;
   top: 3rem;
@@ -168,4 +173,88 @@ body {
 
 #table-container {
   display: none;
+}
+
+
+
+/* star rating in sidebar */
+
+/* settings */
+
+.rating{
+  --ratingSize: 0.8rem;
+  --ratingColor: #eee;
+  --ratingColorActive: #ffdd57;
+}
+
+/* The screen-reader class hides elements that are available only for screen readers. https://github.com/melnik909/screen-reader */
+
+.screen-reader{
+  width: var(--screenReaderWidth, 1px) !important;
+  height: var(--screenReaderHeight, 1px) !important;
+  padding: var(--screenReaderPadding, 0) !important;
+  border: var(--screenReaderBorder, none) !important;
+
+  position: var(--screenReaderPosition, absolute) !important;
+  clip: var(--screenReaderClip, rect(1px, 1px, 1px, 1px)) !important;
+  overflow: var(--screenReaderOverflow, hidden) !important;
+}
+
+.rating{
+  --uiRatingColor: var(--ratingColor, #eee);
+  --uiRatingColorActive: var(--ratingColorActive, #ffcc00);
+
+  display: var(--ratingDisplay, flex);
+  font-size: var(--ratingSize, 1rem);
+  color: var(--uiRatingColor);
+  padding:0.2em 0 0 0;
+}
+    
+.rating__control:nth-of-type(1):focus ~ .rating__item:nth-of-type(1)::before,
+.rating__control:nth-of-type(2):focus ~ .rating__item:nth-of-type(2)::before,
+.rating__control:nth-of-type(3):focus ~ .rating__item:nth-of-type(3)::before,
+.rating__control:nth-of-type(4):focus ~ .rating__item:nth-of-type(4)::before,
+.rating__control:nth-of-type(5):focus ~ .rating__item:nth-of-type(5)::before{
+  content: ""; 
+  /* box-shadow: 0 0 0 var(--ratingOutlineWidth, 4px) var(--uiRatingColorActive); */
+
+  position: absolute;
+  top: -0.15em;
+  right: 0;
+  bottom: -.15em;
+  left: 0;
+  z-index: -1;
+}
+
+.rating__item{
+  cursor: pointer;  
+  position: relative;
+}
+
+.rating__item{
+  padding-left: .15em;
+  padding-right: 0;
+}
+
+.rating__star{
+  display: block;
+  width: 1em;
+  height: 1em;
+
+  fill: currentColor;
+  stroke: var(--ratingStroke, #222);
+  stroke-width: var(--ratingStrokeWidth, 1px);
+}
+
+.rating:hover,
+.rating__control:nth-of-type(1):checked ~ .rating__item:nth-of-type(1),
+.rating__control:nth-of-type(2):checked ~ .rating__item:nth-of-type(-n+2),
+.rating__control:nth-of-type(3):checked ~ .rating__item:nth-of-type(-n+3),
+.rating__control:nth-of-type(4):checked ~ .rating__item:nth-of-type(-n+4),
+.rating__control:nth-of-type(5):checked ~ .rating__item:nth-of-type(-n+5){
+  color: var(--uiRatingColorActive);
+}
+
+.rating__item:hover ~ .rating__item{
+  color: var(--uiRatingColor);
 }

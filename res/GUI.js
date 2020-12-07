@@ -23,14 +23,14 @@ function show_help() {
     }
 }
 
-function toggle_sidebar() {
+function toggle_sidebar(show_sidebar=false) {
     // toggles sidebar
     let sidebar = document.getElementById('sidebar_grid');
-    if (sidebar.style.display == "none") {
-        sidebar.style.display = "block";
+    if (sidebar.classList.contains("is-hidden") || show_sidebar) {
+        sidebar.classList.remove("is-hidden");
         get_image_info();  // update info of current or last image
     } else {
-        sidebar.style.display = "none";
+        sidebar.classList.add("is-hidden");
     }
 }
 
@@ -380,7 +380,6 @@ function load_images(ids, images_parsed, delete_previous = false) {
     // load all images into the page
 
     // delete previous images
-    Blink.msg("debug", [delete_previous]);
     if (delete_previous) {
         // remove all nodes
         let els = document.getElementById('imagegrid').getElementsByClassName('item');
@@ -429,6 +428,15 @@ function show_info(id, info_json) {
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
     document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
 
+    const rating = window.items[id].rating;
+    if (rating > 0) {
+        document.getElementsByName("image_info_rating")[rating -1].checked = true;
+    } else {
+        document.getElementsByName("image_info_rating").forEach((el) => {
+            el.checked = false;
+        })
+    }
+
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
             searchable: true,
@@ -463,7 +471,7 @@ function header_data(json) {
 
 function change_item(what, message, jump = 1) {
     console.log("change: " + what);
-    els_id = get_active_element_ids();
+    ids = get_active_element_ids();
 
     if (get_view() == "zoom") {
         full_resolution = true;
@@ -471,11 +479,11 @@ function change_item(what, message, jump = 1) {
         full_resolution = false;
     }
 
-    if (els_id.length > 0) {
-        Blink.msg("grid_item", ["next_" + what, els_id, jump, full_resolution]);
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["next_" + what, ids, jump, full_resolution]);
+        open_jobs(1);
+        show_message(message)
     }
-    show_message(message)
-    open_jobs(1);
 }
 
 function get_image_info(id = -1) {
@@ -512,6 +520,26 @@ function re_parse_images(message) {
     }
 }
 
+function set_rating(rating, only_current=false) {
+    // sets the rating for items.
+    // if "only_current" is true, then only set the rating for the item displayed int he sidebar.
+
+    let ids = [];
+    if (only_current) {
+        if (window.image_info_id == -1) {
+            return;
+        }
+        ids = [window.image_info_id];
+    } else {
+        ids = get_active_element_ids();
+    }
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["set_rating", ids, rating]);
+        open_jobs(1);  // julia will then set the radiobox
+    }
+}
+
 
 
 // keyboard events etc
@@ -530,6 +558,12 @@ key_commands = {
     a: { command: toggle_all_active, args: [] },
     m: { command: toggle_sidebar, args: [] },
     z: { command: toggle_imagezoom, args: [] },
+    0: { command: set_rating, args: [0] },
+    1: { command: set_rating, args: [1] },
+    2: { command: set_rating, args: [2] },
+    3: { command: set_rating, args: [3] },
+    4: { command: set_rating, args: [4] },
+    5: { command: set_rating, args: [5] },
     p: { command: image_info_search_parameter, args: [] },
     h: { command: show_help, args: [] },
     "?": { command: show_help, args: [] },
@@ -589,8 +623,19 @@ function afterDOMLoaded() {
 function event_handlers() {
     //extra event handlers, this functions is called form "load_page", when all elements are present
 
+    // star ratings
+    document.getElementsByName("image_info_rating").forEach((el) => {
+        el.addEventListener("change", function(event) {
+            set_rating(event.target.value, only_current=true);
+        });
+        el.addEventListener("dblclick", function(event) {
+            set_rating(0, only_current=true);
+        });
+    });
+    
+
     // modals
-    let els = document.getElementById("modal_help").getElementsByTagName("button");
+    let els = document.getElementById("modal_help").getElementsByTagName("button");   // the "forEach" method does not work here
     for (let i = 0; i < els.length; i++) {
         els[i].addEventListener('click', show_help);
     }
@@ -601,4 +646,13 @@ function event_handlers() {
             toggle_imagezoom("grid");
         }
     });
+    
+    // menu
+    document.getElementById('nav_home').addEventListener('click', (e) => {
+        toggle_imagezoom("grid");
+        toggle_sidebar(true);
+    });
+    document.getElementById('nav_help').addEventListener('click', (e) => {
+        show_help();
+});
 }
