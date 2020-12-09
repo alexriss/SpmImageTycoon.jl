@@ -2,25 +2,79 @@ window.dir_res = "";  // resources directory
 window.dir_cache = "";  // will be set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
-window.last_selected = -1;  // last selected item
+window.last_selected = "";  // last selected item
 window.last_scroll_grid = 0;  // last scroll position in grid view
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
-window.zoom_last_selected = -1;  // last selected image for zoom
+window.zoom_last_selected = "";  // last selected image for zoom
 
 window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
 window.timeout_image_info = null;  //timeout refrence for get_image_info function
-window.image_info_id = -1;  // current image, for which data is displayed
+window.image_info_id = "";  // current image, for which data is displayed
 window.datatable = null;  // holds the datatable
 
+window.keywords_input = null;  // holds the keywords object
+window.keywords_all = new Set();  // set of all possible keywords (for suggestions)
 
-function show_help() {
+
+function number_max_decimals(num, max_decimals) {
+    // returns a numbers with a maxmimum precision of max_decimals
+    return Math.round((num) * 10**max_decimals) / 10**max_decimals
+}
+
+function toggle_help() {
     // toggle  help modal
     if (document.getElementById("modal_help").classList.contains("is-active")) {
         document.getElementById("modal_help").classList.remove("is-active");
     } else {
         document.getElementById("modal_help").classList.add("is-active");
     }
+}
+
+function toggle_keywords_dialog(only_current=false) {
+    // toggle keywords dialog
+    if (document.getElementById("modal_keywords").classList.contains("is-active")) {
+        document.getElementById("modal_keywords").classList.remove("is-active");
+    } else {
+        window.keywords_only_current = only_current;
+
+        let ids = get_active_element_ids(only_current);
+        let keywords_with_duplicates = [].concat.apply([], [...Object.values(window.items).map(a => a.keywords)]);
+        let keywords_unique = Array.from(new Set(keywords_with_duplicates));
+        if (ids.length > 0) {
+            if (window.keywords_input === null) {
+                window.keywords_input = new Tagify(document.getElementById("modal_keywords_input"), {
+                    whitelist: [],
+                    dropdown: {
+                        maxItems: 20,           // <- mixumum allowed rendered suggestions
+                        classname: "tags-look", // <- custom classname for this dropdown, so it could be targeted
+                        enabled: 0,             // <- show suggestions on focus
+                        closeOnSelect: false    // <- do not hide the suggestions dropdown once an item has been selected
+                    }
+                });
+            }
+            let whitelist =  Array.from(window.keywords_all);
+            window.keywords_input.settings.whitelist.splice(0, whitelist.length, ...whitelist);
+            window.keywords_input.on('copy', e => console.log(e.detail))
+            window.keywords_input.removeAllTags();
+            window.keywords_input.addTags(keywords_unique);
+            if (ids.length == 1) {
+                filename_original = window.items[ids[0]].filename_original;
+                document.getElementById("modal_keywords_files").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
+            } else {
+                document.getElementById("modal_keywords_files").innerText = ids.length.toString() + ' files';
+            }
+            document.getElementById("modal_keywords").classList.add("is-active");
+            window.keywords_input.DOM.input.focus();
+        }
+    }
+}
+
+function keywords_copy_to_clipboard(event) {
+    // copies all keywords to the clipboard
+    const {clipboard} = require('electron');
+    let text = window.keywords_input.value.map(a => a.value).join(",");
+    clipboard.writeText(text);
 }
 
 function toggle_sidebar(show_sidebar=false) {
@@ -37,6 +91,8 @@ function toggle_sidebar(show_sidebar=false) {
 function get_view() {
     if (document.getElementById("modal_help").classList.contains("is-active")) {
         return "help";
+    } else if (document.getElementById("modal_keywords").classList.contains("is-active")) {
+        return "keywords";
     } else if (document.getElementById('imagegrid_container').classList.contains("is-hidden")) {
         return "zoom";
     } else {
@@ -47,7 +103,7 @@ function get_view() {
 function toggle_imagezoom_mouse(event) {
     // switches to imagezoom mode via a mouse event (only if no modifier is pressed)
     if (!event.ctrlKey && !event.shiftKey) {
-        toggle_imagezoom("zoom")
+        toggle_imagezoom("zoom");
     }
 }
 
@@ -59,7 +115,9 @@ function toggle_imagezoom(target_view = "") {
     const footer_num_images_container = document.getElementById('footer_num_images_container');
 
     if (get_view() == "help") {
-        show_help();
+        toggle_help();
+    } else if (get_view() == "keywords") {
+        toggle_keywords_dialog();
     } else if (get_view() == "zoom" || target_view == "grid") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
@@ -148,10 +206,11 @@ function toggle_all_active() {
     check_hover_enabled();
 }
 
-function get_active_element_ids() {
+function get_active_element_ids(only_current=false) {
     // returns all active element ids
     // for zoom view, an array with this one element is returned
     // for grid view, if any are selected (i.e active), then these are returned
+    //    .. unless only_current is true, then only this is returned
     // otherwise if one is hovered, then this is returned
     // otherwise an empty array is returned
 
@@ -168,12 +227,24 @@ function get_active_element_ids() {
     const grid = document.getElementById('imagegrid');
     let els = grid.getElementsByClassName('active');
 
+    if (only_current) {
+        if (window.image_info_id == "") {
+            return [];
+        } else {
+            return [window.image_info_id];
+        }
+    }
+
     if (els.length == 0) {
         els = grid.querySelectorAll('div.item:not(.active):hover')
     }
 
     if (els.length == 0) {
-        return [];
+        if (window.image_info_id == "") {
+            return [];
+        } else {
+            return [window.image_info_id];
+        }
     }
 
     els_id = new Array(els.length)
@@ -195,8 +266,13 @@ function check_hover_enabled() {
         grid.classList.remove('hover_enabled');
     }
 
-    const el_num = document.getElementById('footer_num_images');
-    el_num.innerText = els.length;
+    document.getElementById('footer_num_images').innerText = els.length;
+
+    if (els.length > 1) {
+        document.getElementById('footer_num_images_container').classList.add("has-text-weight-bold");
+    } else {
+        document.getElementById('footer_num_images_container').classList.remove("has-text-weight-bold");
+    }
 }
 
 function next_item(jump) {
@@ -244,7 +320,7 @@ function select_item(event) {
     const items = Array.from(this.parentNode.children);
     const idx = items.indexOf(this);
     let start = window.last_selected;
-    if (modifier && window.last_selected != -1 && (idx != start)) {
+    if (modifier && window.last_selected != "" && (idx != start)) {
         let end = idx;
         if (idx < window.last_selected) {
             start = idx;
@@ -273,15 +349,15 @@ function select_item(event) {
     check_hover_enabled();
 }
 
-function image_info_quick(id = -1) {
+function image_info_quick(id = "") {
     // display quick info in footer
-    if (id == -1) {
+    if (id == "") {
         const el = document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
             id = el.id;
         }
     }
-    if (id != -1) {
+    if (id != "") {
         document.getElementById('image_info_footer').innerText = window.items[id]["filename_original"] + ': ' + window.items[id]["channel_name"];
     }
 }
@@ -397,6 +473,9 @@ function load_images(ids, images_parsed, delete_previous = false) {
     for (let i = 0; i < ids.length; i++) {
         add_image(ids[i], images_parsed[i].filename_display);
         window.items[ids[i]] = images_parsed[i];
+        images_parsed[i].keywords.forEach((keyword) => {
+            window.keywords_all.add(keyword);
+        })
     }
 }
 
@@ -405,6 +484,9 @@ function update_images(ids, images_parsed) {
     for (let i = 0; i < ids.length; i++) {
         update_image(ids[i], images_parsed[i].filename_display);
         window.items[ids[i]] = images_parsed[i];
+        images_parsed[i].keywords.forEach((keyword) => {
+            window.keywords_all.add(keyword);
+        })
     }
 
     // update image info
@@ -424,7 +506,9 @@ function show_info(id, info_json) {
     const filename_original = window.items[id].filename_original
     document.getElementById("image_info_filename").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
     document.getElementById("image_info_channel_name").innerText = window.items[id].channel_name;
-    document.getElementById("image_info_scansize").innerText = window.items[id].scansize[0] + " x " + window.items[id].scansize[1] + " " + window.items[id].scansize_unit;
+    document.getElementById("image_info_scansize").innerText =
+        number_max_decimals(window.items[id].scansize[0], 3) + " x " + number_max_decimals(window.items[id].scansize[1], 3)
+        + " " + window.items[id].scansize_unit;
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
     document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
 
@@ -437,12 +521,25 @@ function show_info(id, info_json) {
         })
     }
 
+    // remove old keywords
+    let els = document.getElementById('sidebar_keywords_container').getElementsByClassName('tag');
+    while (els.length > 0) {
+        els[0].remove();
+    }
+    const template_keyword = document.getElementById('sidebar_keywords');
+    window.items[id].keywords.forEach(keyword => {
+        let el_keyword = template_keyword.content.firstElementChild.cloneNode(true);
+        el_keyword.innerText = keyword;
+        document.getElementById("sidebar_keywords_container").appendChild(el_keyword);
+    });
+
+    
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
             searchable: true,
             // fixedHeight: true,
             paging: false,
-            scrollY: "calc(var(--vh, 1vh) * 100 - 204px)",
+            scrollY: "calc(var(--vh, 1vh) * 100 - 13.88rem)",
             // fixedColumns: true,
             // columns: { select: [2], sortable: false },
         })
@@ -486,12 +583,12 @@ function change_item(what, message, jump = 1) {
     }
 }
 
-function get_image_info(id = -1) {
+function get_image_info(id = "") {
     // gets info (header data) for the current image
 
     // console.log("get info");
     // window.t0 = performance.now();
-    if (id == -1) {
+    if (id == "") {
         const el = document.getElementById('imagegrid').querySelector('div.item:hover');
         if (el != null) {
             id = el.id;
@@ -505,7 +602,7 @@ function get_image_info(id = -1) {
             }
         }
     }
-    if (id != -1) {
+    if (id != "") {
         window.image_info_id = id;
         Blink.msg("grid_item", ["get_info", [id]]);
     }
@@ -523,19 +620,24 @@ function re_parse_images(message) {
 function set_rating(rating, only_current=false) {
     // sets the rating for items.
     // if "only_current" is true, then only set the rating for the item displayed int he sidebar.
+    console.log("set rating to: " + rating);
 
-    let ids = [];
-    if (only_current) {
-        if (window.image_info_id == -1) {
-            return;
-        }
-        ids = [window.image_info_id];
-    } else {
-        ids = get_active_element_ids();
-    }
+    let ids = get_active_element_ids(only_current);
 
     if (ids.length > 0) {
         Blink.msg("grid_item", ["set_rating", ids, rating]);
+        open_jobs(1);  // julia will then set the radiobox
+    }
+}
+
+function set_keywords() {
+    // sets keywords for items
+    console.log("set keywords.")
+
+    let ids = get_active_element_ids(window.keywords_only_current);
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["set_keywords", ids, window.keywords_input.value.map(a => a.value)]);
         open_jobs(1);  // julia will then set the radiobox
     }
 }
@@ -564,11 +666,12 @@ key_commands = {
     3: { command: set_rating, args: [3] },
     4: { command: set_rating, args: [4] },
     5: { command: set_rating, args: [5] },
+    k: { command: toggle_keywords_dialog, args: [] },
     p: { command: image_info_search_parameter, args: [] },
-    h: { command: show_help, args: [] },
-    "?": { command: show_help, args: [] },
-    "/": { command: show_help, args: [] },
-    F1: { command: show_help, args: [] },
+    h: { command: toggle_help, args: [] },
+    "?": { command: toggle_help, args: [] },
+    "/": { command: toggle_help, args: [] },
+    F1: { command: toggle_help, args: [] },
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: toggle_imagezoom, args: ["grid"] },
@@ -577,9 +680,23 @@ key_commands = {
 
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (event) {
-    if (get_view() == "help") {    // only certain buttons allowed
-        if (["Escape", "?", "/", "h", "F1"].includes(event.key)) {
-            show_help();
+    let view = get_view();
+    if (view == "help" || view == "keywords") {    // only certain buttons allowed
+        if (view == "help" && ["Escape", "?", "/", "h", "F1"].includes(event.key)) {
+            toggle_help();
+        }
+        if (view == "keywords") {
+            if (event.key == "Escape") {
+                toggle_keywords_dialog();
+            } else if (event.ctrlKey || event.shiftKey) {  // save
+                if (event.key == "s") {
+                    set_keywords();
+                    toggle_keywords_dialog();
+                } else if (event.key == "c") {
+                    keywords_copy_to_clipboard(event);
+                    event.preventDefault();
+                }
+            }
         }
         return;
     }
@@ -626,19 +743,32 @@ function event_handlers() {
     // star ratings
     document.getElementsByName("image_info_rating").forEach((el) => {
         el.addEventListener("change", function(event) {
-            set_rating(event.target.value, only_current=true);
+            set_rating(parseInt(event.target.value), only_current=true);
         });
         el.addEventListener("dblclick", function(event) {
             set_rating(0, only_current=true);
         });
     });
     
-
     // modals
     let els = document.getElementById("modal_help").getElementsByTagName("button");   // the "forEach" method does not work here
     for (let i = 0; i < els.length; i++) {
-        els[i].addEventListener('click', show_help);
+        els[i].addEventListener('click', toggle_help);
     }
+
+    els = document.getElementById("modal_keywords").getElementsByTagName("button");   // the "forEach" method does not work here
+    for (let i = 0; i < els.length; i++) {
+        if (els[i].classList.contains("is-success")) {
+            els[i].addEventListener('click', (e) => {
+                set_keywords();
+                toggle_keywords_dialog();
+            });
+        } else {
+            els[i].addEventListener('click', toggle_keywords_dialog);
+        }
+    }
+    // make keywords modal draggable
+    dragElement(document.getElementById("modal_keywords"), document.getElementById("modal_keywords_header"));
 
     // imagezoom
     document.getElementById('imagezoom_container').addEventListener('dblclick', (e) => {
@@ -653,6 +783,6 @@ function event_handlers() {
         toggle_sidebar(true);
     });
     document.getElementById('nav_help').addEventListener('click', (e) => {
-        show_help();
-});
+        toggle_help();
+    });
 }

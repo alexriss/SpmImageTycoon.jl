@@ -351,13 +351,25 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
             finally
                 unlock(l)
             end
-        elseif what[1:3] == "set"
+        elseif what[1:4] == "set_"
             if what[5:end] == "rating"
                 lock(l)
                 rating = args[3]
                 try
                     for id in ids
                         images_parsed[id].rating = rating
+                    end
+                    @js_ w update_images($ids_str, $(images_parsed[ids]));
+                finally
+                    unlock(l)
+                end
+            elseif what[5:end] == "keywords"
+                lock(l)
+                keywords = args[3]
+                println(keywords)
+                try
+                    for id in ids
+                        images_parsed[id].keywords = keywords
                     end
                     @js_ w update_images($ids_str, $(images_parsed[ids]));
                 finally

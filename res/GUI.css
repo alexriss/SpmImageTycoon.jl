@@ -153,7 +153,7 @@ body {
   width: 400px;
   display: flex;
   height: 85vh; 
-  height: calc(var(--vh, 1vh) * 100 - 150px);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
+  height: calc(var(--vh, 1vh) * 100 - 11.8rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
   overflow-y: scroll;
 }
 
@@ -175,6 +175,16 @@ body {
   display: none;
 }
 
+#table-container .dataTable-input {  /* a quick hack to save some vertical space */
+  position: absolute;
+  right: 0.8rem;
+  width: 6rem;
+  opacity: 0.8;
+  margin-top: 0.37rem;
+  background-color:#ffffffb4;
+  border: 1px solid #999;
+}
+
 
 
 /* star rating in sidebar */
@@ -184,7 +194,7 @@ body {
 .rating{
   --ratingSize: 0.8rem;
   --ratingColor: #eee;
-  --ratingColorActive: #ffdd57;
+  --ratingColorActive: #e0bf00;
 }
 
 /* The screen-reader class hides elements that are available only for screen readers. https://github.com/melnik909/screen-reader */
@@ -202,7 +212,7 @@ body {
 
 .rating{
   --uiRatingColor: var(--ratingColor, #eee);
-  --uiRatingColorActive: var(--ratingColorActive, #ffcc00);
+  --uiRatingColorActive: var(--ratingColorActive, #ffd865);
 
   display: var(--ratingDisplay, flex);
   font-size: var(--ratingSize, 1rem);
@@ -258,3 +268,47 @@ body {
 .rating__item:hover ~ .rating__item{
   color: var(--uiRatingColor);
 }
+
+
+/* keywords in sidebar */
+
+#sidebar_grid .tags {
+  height:2.9rem;
+  overflow:auto;
+}
+
+#sidebar_grid .tags .tag{
+  border: 1px dotted #666;
+  margin: 0.1rem;
+  padding: 0 0.2rem;
+  background-color: #cdddfb;
+  line-height: 110%;
+  color: #363636;
+  height:1.68em;
+}
+
+/* keywords autosuggestions  dropdown */
+.tags-look .tagify__dropdown__item{
+  display: inline-block;
+  border-radius: 3px;
+  padding: .3em .5em;
+  border: 1px solid #CCC;
+  background: #F3F3F3;
+  margin: .2em;
+  font-size: .85em;
+  color: black;
+  transition: 0s;
+}
+
+.tags-look .tagify__dropdown__item--active{
+  background: lightyellow;
+  border-color: gold;
+  color: black;
+}
+
+.tags-look .tagify__dropdown__item:hover{
+  background: lightyellow;
+  border-color: gold;
+}
+
+
