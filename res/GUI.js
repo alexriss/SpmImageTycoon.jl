@@ -22,6 +22,13 @@ function number_max_decimals(num, max_decimals) {
     return Math.round((num) * 10**max_decimals) / 10**max_decimals
 }
 
+function file_url(id) {
+    // returns the display filename url
+    const item = window.items[id];
+    return 'file:///' + window.dir_cache + item.filename_display +
+         "?" + item.channel_name + "_" + item.background_correction + "_" + item.colorscheme;  // to prevent caching and force reload
+}
+
 function toggle_help() {
     // toggle  help modal
     if (document.getElementById("modal_help").classList.contains("is-active")) {
@@ -46,10 +53,10 @@ function toggle_keywords_dialog(only_current=false) {
                 window.keywords_input = new Tagify(document.getElementById("modal_keywords_input"), {
                     whitelist: [],
                     dropdown: {
-                        maxItems: 20,           // <- mixumum allowed rendered suggestions
-                        classname: "tags-look", // <- custom classname for this dropdown, so it could be targeted
-                        enabled: 0,             // <- show suggestions on focus
-                        closeOnSelect: false    // <- do not hide the suggestions dropdown once an item has been selected
+                        maxItems: 20,           // maximum number of suggestions
+                        classname: "tags-look", // custom classname for dropdown
+                        enabled: 0,             // show suggestions on focus
+                        closeOnSelect: false    // do not hide suggestion dropdown after an item has been selected
                     }
                 });
             }
@@ -140,7 +147,7 @@ function toggle_imagezoom(target_view = "") {
                 window.zoom_control_setup = true;
             }
             if (window.zoom_last_selected != el.id) {
-                document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + window.items[el.id]["filename_display"];
+                document.getElementById('imagezoom_image').src = file_url(el.id);
                 zoom_drag_reset(zoom_content);
             }
             window.zoom_last_selected = el.id;
@@ -302,7 +309,7 @@ function next_item(jump) {
         el = elnext;
     }
     if (el.id in window.items) {
-        document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + window.items[el.id]["filename_display"];
+        document.getElementById('imagezoom_image').src = file_url(el.id)
         window.image_info_id = el.id;
         window.zoom_last_selected = el.id;
         get_image_info(el.id);
@@ -399,17 +406,13 @@ function image_info_search_parameter() {
     return false;
 }
 
-function add_image(id, filename) {
+function add_image(id) {
     // adds image to the DOM
     const grid = document.getElementById('imagegrid');
     const t = document.getElementById('griditem');
     const el = t.content.firstElementChild.cloneNode(true)
-    // let el = document.createElement('div');
     el.id = id;
-    // el.className = 'item';
-    // filename = filename.replace(/\\/g, '/');
-    // el.innerHTML = '<img src="file:///' + window.dir_cache + filename + '" /><span class="caption">' + filename + '</span>';
-    el.querySelector('img').src = 'file:///' + window.dir_cache + filename;
+    el.querySelector('img').src = file_url(id);
     grid.appendChild(el);
     el.addEventListener('click', select_item);
     el.addEventListener('dblclick', clear_all_active_mouse);  // with a modifier
@@ -418,12 +421,12 @@ function add_image(id, filename) {
     el.addEventListener('mouseleave', image_info_timeout_clear);
 }
 
-function update_image(id, filename) {
+function update_image(id) {
     // updates the image to a new channel
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
-        document.getElementById('imagezoom_image').src = 'file:///' + window.dir_cache + filename;
+        document.getElementById('imagezoom_image').src = file_url(id);
     }
-    document.getElementById(id).firstElementChild.firstElementChild.src = 'file:///' + window.dir_cache + filename;
+    document.getElementById(id).firstElementChild.firstElementChild.src = file_url(id);
 }
 
 
@@ -471,8 +474,8 @@ function load_images(ids, images_parsed, delete_previous = false) {
 
     // loads new images
     for (let i = 0; i < ids.length; i++) {
-        add_image(ids[i], images_parsed[i].filename_display);
         window.items[ids[i]] = images_parsed[i];
+        add_image(ids[i]);
         images_parsed[i].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         })
@@ -482,8 +485,8 @@ function load_images(ids, images_parsed, delete_previous = false) {
 function update_images(ids, images_parsed) {
     // updates images
     for (let i = 0; i < ids.length; i++) {
-        update_image(ids[i], images_parsed[i].filename_display);
         window.items[ids[i]] = images_parsed[i];
+        update_image(ids[i]);
         images_parsed[i].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         })

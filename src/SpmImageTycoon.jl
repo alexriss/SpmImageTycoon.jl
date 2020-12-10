@@ -240,7 +240,7 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
     end
     
 
-    filename_display = filename_original[1:end-4] * "_$(channel_name)_$(background_correction)_$(colorscheme).png"
+    filename_display = filename_original[1:end-3] * "png"
     save(joinpath(base_dir, filename_display), im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
     # println(joinpath(dir_cache, fname))
     
