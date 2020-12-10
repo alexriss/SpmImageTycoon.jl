@@ -3,7 +3,6 @@ window.dir_cache = "";  // will be set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
 window.last_selected = "";  // last selected item
-window.last_scroll_grid = 0;  // last scroll position in grid view
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 
@@ -129,11 +128,9 @@ function toggle_imagezoom(target_view = "") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
         footer_num_images_container.classList.remove("is-invisible")
-        window.scrollTo(0, window.last_scroll_grid);
     } else {
         let el = grid.querySelector('div.item:hover');
         if (el != null) {
-            window.last_scroll_grid = window.scrollY;
             grid.classList.add("is-hidden");
             zoom.classList.remove("is-hidden");
             footer_num_images_container.classList.add("is-invisible")
