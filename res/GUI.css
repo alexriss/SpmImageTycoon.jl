@@ -107,7 +107,7 @@ body {
 
 #imagezoom_content {
 	width: 100%;
-	height: calc(100vh - 4rem);
+	height: calc(100vh - 6rem);
   overflow: hidden;
 }
 

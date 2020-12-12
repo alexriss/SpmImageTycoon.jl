@@ -8,29 +8,40 @@ using DataStructures
 using Dates
 using Images
 using ImageIO
+using JLD2
 using JSON
+using NaturalSort
 using SpmImages
 # import Blink.AtomShell: resolve_blink_asset
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem
+mutable struct SpmImageGridItem_v13
+    id::String                       # id (will be filename and suffixes for virtual copies)
     filename_original::String        # original filename (.sxm)
+    created::DateTime                # file creation date
+    last_modified::DateTime          # file last modified date
     filename_display::String         # generated png image
     channel_name::String             # channel name (" bwd" indicates backward direction)
     scansize::Vector{Float64}        # scan size in physical units
     scansize_unit::String            # scan size unit
+    comment::String                  # comment in the file
     background_correction::String    # type of background correction used
-    filters::Vector{String}          # array of filters used (not implemented yet)
     colorscheme::String              # color scheme
-    rating::Int                      # rating (0 to 5 stars)
+    filters::Vector{String}          # array of filters used (not implemented yet)
     keywords::Vector{String}         # keywords
+    rating::Int                      # rating (0 to 5 stars)
+    status::Int                      # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk
+    virtual_copy::Bool               # specifies whether this is a virtual copy (not implemented yet)
+    
+    SpmImageGridItem_v13(
+        id, filename_original, created, last_modified, filename_display, channel_name, scansize, scansize_unit, comment
+    ) = new(
+        id, filename_original, created, last_modified, filename_display, channel_name, scansize, scansize_unit, comment,
+        "none", "gray", [], [], 0, 0, false
+    )
 end
-SpmImageGridItem(
-    filename_original, filename_display, channel_name, scansize, scansize_unit
-) = SpmImageGridItem(
-    filename_original, filename_display, channel_name, scansize, scansize_unit, "none", [], "gray", 0, []
-)
+SpmImageGridItem = SpmImageGridItem_v13
 
 
 # default settings (should be overriden by config file later)
@@ -76,6 +87,8 @@ extension_spm = ".sxm"
 dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
 dir_res = "../res/"  # relative to module directory
 
+filename_db = "db.jld2"  # save all data to this file (in cache_dir)
+auto_save_minutes = 5  # auto-save every n minutes
 
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
@@ -214,12 +227,12 @@ end
 
 
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
-Returns the filename it created (without the directory prefix)"""
-function create_image(image::SpmImage, filename_original::String, channel_name::String, background_correction::String; resize_to::Int=0, colorscheme::String="gray", base_dir::String="")::String
+The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)"""
+function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="")
     # create grayscale image
-    d = get_channel(image, channel_name, origin="upper").data;
+    d = get_channel(im_spm, griditem.channel_name, origin="upper").data;
 
-    ratio = min(1, resize_to / max(image.pixelsize...))
+    ratio = min(1, resize_to / max(im_spm.pixelsize...))
     if ratio <= 0.0
         ratio = 1
     end
@@ -227,29 +240,28 @@ function create_image(image::SpmImage, filename_original::String, channel_name::
         d = imresize(d, ratio=ratio)
     end
 
-    d = correct_background(d, background_correction_list[background_correction])
+    d = correct_background(d, background_correction_list[griditem.background_correction])
     d_ = filter(!isnan,d)
     vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
     d = (d .- vmin) ./ (vmax - vmin)
     clamp01nan!(d)
 
-    if colorscheme == "gray"  # special case, we dont need the actual colorscheme
+    if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
     else
-        im_arr = colorize(d, colorscheme)
+        im_arr = colorize(d, griditem.colorscheme)
     end
     
-
-    filename_display = filename_original[1:end-3] * "png"
+    filename_display = griditem.filename_original[1:end-3] * "png"
     save(joinpath(base_dir, filename_display), im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
-    # println(joinpath(dir_cache, fname))
-    
-    return filename_display
+
+    griditem.filename_display = filename_display
+    return nothing
 end
 
 
 """Loads the header data for an image and returns a dictionary with all the data"""
-function get_image_header(id::Int, dir_data::String, images_parsed::Vector{SpmImageGridItem})::OrderedDict{String,String}
+function get_image_header(id::String, dir_data::String, images_parsed::Dict{String,SpmImageGridItem})::OrderedDict{String,String}
     filename_original = images_parsed[id].filename_original
     im_spm = load_image(joinpath(dir_data, filename_original), header_only=true, output_info=0)
     return im_spm.header
@@ -261,7 +273,7 @@ for the images specified by ids. The type of change is specified by the argument
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
 Modifies the images_parsed array."""
-function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String, images_parsed::Vector{SpmImageGridItem}, what::String, jump::Int, full_resolution::Bool)
+function switch_channel_direction_background!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, what::String, jump::Int, full_resolution::Bool)
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
         filename_original = images_parsed[id].filename_original
@@ -290,19 +302,30 @@ function switch_channel_direction_background!(ids::Vector{Int}, dir_data::String
             images_parsed[id].colorscheme = colorscheme
         end
         resize_to_ = full_resolution ? 0 : resize_to
-        filename_display = create_image(im_spm, filename_original, channel_name,
-            background_correction, resize_to=resize_to_, colorscheme=images_parsed[id].colorscheme, base_dir=dir_cache)
-        images_parsed[id].filename_display = filename_display
+        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
     end
     return nothing
 end
 
 
+"""returns a subset of the dictionary parsed_images. this can then be passed to the js"""
+function get_subset(images_parsed::Dict{String, SpmImageGridItem}, ids::Vector{String})::Dict{String, SpmImageGridItem}
+    images_parsed_sub = Dict{String, SpmImageGridItem}()
+    map(ids) do id
+        images_parsed_sub[id] = images_parsed[id]
+    end
+    return images_parsed_sub
+end
+
+
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridItem}
+function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
+
+    # load saved data - if available
+    images_parsed = load_all(dir_data)
+    
     datafiles = filter!(x -> isfile(x) && endswith(x, extension_spm), readdir(dir_data, join=true))
-    images_parsed = Vector{SpmImageGridItem}(undef, size(datafiles))
     time_start = Dates.now()
     Threads.@threads for (i, datafile) in collect(enumerate(datafiles))  # the "collect" is needed for the threads macro
         im_spm = load_image(datafile, output_info=0)
@@ -311,9 +334,26 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
         channel_name = default_channel_name(im_spm, channels_feedback, channels_no_feedback)
         
         filename_original = basename(datafile)
-        filename_display = create_image(im_spm, filename_original, channel_name, "none", resize_to=resize_to, base_dir=dir_cache)
+        created = unix2datetime(ctime(datafile))
+        last_modified = unix2datetime(mtime(datafile))
         
-        images_parsed[i] = SpmImageGridItem(filename_original, filename_display, channel_name, im_spm.scansize, im_spm.scansize_unit)
+        unique_id = filename_original
+
+        if haskey(images_parsed, unique_id)
+            # still update a few fields (the files may have changed)
+            images_parsed[unique_id].filename_original = filename_original
+            images_parsed[unique_id].created = created
+            images_parsed[unique_id].last_modified = last_modified
+            images_parsed[unique_id].scansize = im_spm.scansize
+            images_parsed[unique_id].scansize_unit = im_spm.scansize_unit
+            images_parsed[unique_id].comment = im_spm.header["Comment"]
+        else
+            images_parsed[unique_id] = SpmImageGridItem(
+                unique_id, filename_original, created, last_modified, "", channel_name,
+                im_spm.scansize, im_spm.scansize_unit, im_spm.header["Comment"]
+            )
+        end
+        create_image!(images_parsed[unique_id], im_spm, resize_to=resize_to, base_dir=dir_cache)
     end
 
     elapsed_time = Dates.now() - time_start
@@ -324,15 +364,53 @@ function parse_files(dir_data::String; output_info::Int=0)::Vector{SpmImageGridI
 end
 
 
+"""load data from saved file"""
+function load_all(dir_data::String)::Dict{String, SpmImageGridItem}
+    dir_cache = get_dir_cache(dir_data)
+    images_parsed = Dict{String, SpmImageGridItem}()
+    
+    f = joinpath(get_dir_cache(dir_data), filename_db)
+    if isfile(f)
+        JLD2.@load f images_parsed_save
+
+        t_save = typeof(first(values(images_parsed_save)))
+        if t_save != SpmImageGridItem  # there was a change in the struct specification, lets try to copy field by field
+            print("Old database detected. Converting... ")
+            fieldnames_save = fieldnames(t_save)
+            fieldnames_common = findall(x -> x in fieldnames_save, fieldnames(SpmImageGridItem))
+
+            for (k, v) in images_parsed_save
+                for f in fieldnames_common
+                    setfield!(images_parsed[k], f, getfield(v, f))
+                end
+            end
+
+            println("ok.")
+        else
+            images_parsed = images_parsed_save
+        end
+    end
+
+    return images_parsed
+end
+
+
+"""saves the images_parsed dictionary to file"""
+function save_all(dir_data::String, images_parsed::Dict{String, SpmImageGridItem})
+    f = joinpath(get_dir_cache(dir_data), filename_db)
+    JLD2.@save f images_parsed_save=images_parsed
+    return nothing
+end
+
+
 """sets the julia handlers that are triggered by javascript events"""
-function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{SpmImageGridItem})
+function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{String,SpmImageGridItem})
     # change channel
     l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
         # @show args
         what = args[1]
-        ids_str = args[2]
-        ids = [parse(Int64, id) for id in ids_str]
+        ids = String.(args[2])  # for some reason its type is "Any" and not String
         if what == "get_info"
             id = ids[1]
             # get header data
@@ -347,7 +425,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
             full_resolution = args[4]
             try
                 switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump, full_resolution)
-                @js_ w update_images($ids_str, $(images_parsed[ids]));
+                images_parsed_sub = get_subset(images_parsed, ids)
+                @js_ w update_images($images_parsed_sub);
             finally
                 unlock(l)
             end
@@ -359,7 +438,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
                     for id in ids
                         images_parsed[id].rating = rating
                     end
-                    @js_ w update_images($ids_str, $(images_parsed[ids]));
+                    images_parsed_sub = get_subset(images_parsed, ids)
+                    @js_ w update_images($images_parsed_sub);
                 finally
                     unlock(l)
                 end
@@ -371,7 +451,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
                     for id in ids
                         images_parsed[id].keywords = keywords
                     end
-                    @js_ w update_images($ids_str, $(images_parsed[ids]));
+                    images_parsed_sub = get_subset(images_parsed, ids)
+                    @js_ w update_images($images_parsed_sub);
                 finally
                     unlock(l)
                 end
@@ -382,9 +463,21 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Vector{S
     handle(w, "re_parse_images") do args
         lock(l)
         try
+            save_all(dir_data, images_parsed)
             images_parsed = parse_files(dir_data)
-            ids = collect(1:length(images_parsed))
-            @js_ w load_images($ids, $images_parsed, true)
+            images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.created, im.id))  # NaturalSort will sort number suffixes better
+            @js_ w load_images($images_parsed_values, true)
+        finally
+            unlock(l)
+        end
+    end
+
+    handle(w, "save_all") do args
+        lock(l)
+        exit = args[1]  # TODO: close process when closing window
+        try
+            save_all(dir_data, images_parsed)
+            @js_ w saved_all()
         finally
             unlock(l)
         end
@@ -433,12 +526,11 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
 
-    @js_ w set_base_href($dir_asset)
-    @js_ w set_dir_cache($dir_cache_js)
+    @js_ w set_params($dir_asset, $dir_cache_js, $auto_save_minutes)
     @js_ w load_page()
     
-    ids = collect(1:length(images_parsed))
-    @js_ w load_images($ids, $images_parsed)
+    images_parsed_values = sort!(collect(values(images_parsed)), by=im -> im.created)
+    @js_ w load_images($images_parsed_values)
 
     set_event_handlers(w, dir_data, images_parsed)
 

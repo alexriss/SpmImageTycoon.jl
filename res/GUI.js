@@ -2,6 +2,8 @@ window.dir_res = "";  // resources directory
 window.dir_cache = "";  // will be set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
+window.auto_save_minutes = 0  // auto-save every n minutes (will be set by julia)
+
 window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
@@ -16,6 +18,8 @@ window.keywords_input = null;  // holds the keywords object
 window.keywords_all = new Set();  // set of all possible keywords (for suggestions)
 
 
+// helper functions
+
 function number_max_decimals(num, max_decimals) {
     // returns a numbers with a maxmimum precision of max_decimals
     return Math.round((num) * 10**max_decimals) / 10**max_decimals
@@ -28,6 +32,20 @@ function file_url(id) {
          "?" + item.channel_name + "_" + item.background_correction + "_" + item.colorscheme;  // to prevent caching and force reload
 }
 
+function open_jobs(diff) {
+    // tracks the number of open julia jobs and displays spinner as long as there are some
+    window.num_open_jobs += diff;
+    if (window.num_open_jobs > 0) {
+        document.getElementById("spinner_title").classList.remove("is-invisible");
+    } else {
+        document.getElementById("spinner_title").classList.add("is-invisible");
+    }
+}
+
+
+
+// GUI functions
+
 function toggle_help() {
     // toggle  help modal
     if (document.getElementById("modal_help").classList.contains("is-active")) {
@@ -35,6 +53,11 @@ function toggle_help() {
     } else {
         document.getElementById("modal_help").classList.add("is-active");
     }
+}
+
+function toggle_dev_tools() {
+    // toggles dev tools
+    require('electron').remote.getCurrentWindow().toggleDevTools();
 }
 
 function toggle_keywords_dialog(only_current=false) {
@@ -45,7 +68,10 @@ function toggle_keywords_dialog(only_current=false) {
         window.keywords_only_current = only_current;
 
         let ids = get_active_element_ids(only_current);
-        let keywords_with_duplicates = [].concat.apply([], [...Object.values(window.items).map(a => a.keywords)]);
+        let keywords_with_duplicates = []
+        ids.forEach(id => {
+            keywords_with_duplicates = keywords_with_duplicates.concat(window.items[id].keywords);
+        });
         let keywords_unique = Array.from(new Set(keywords_with_duplicates));
         if (ids.length > 0) {
             if (window.keywords_input === null) {
@@ -66,7 +92,7 @@ function toggle_keywords_dialog(only_current=false) {
             window.keywords_input.addTags(keywords_unique);
             if (ids.length == 1) {
                 filename_original = window.items[ids[0]].filename_original;
-                document.getElementById("modal_keywords_files").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
+                document.getElementById("modal_keywords_files").innerText = filename_original.substring(0, filename_original.length - 4);
             } else {
                 document.getElementById("modal_keywords_files").innerText = ids.length.toString() + ' files';
             }
@@ -160,16 +186,6 @@ function show_message(msg = "") {
     let el = document.getElementById('footer_message');
     el.innerText = msg;
     window.timeout = setTimeout(show_message, 2500);
-}
-
-function open_jobs(diff) {
-    // tracks the number of open julia jobs and displays spinner as long as there are some
-    window.num_open_jobs += diff;
-    if (window.num_open_jobs > 0) {
-        document.getElementById("spinner_title").classList.remove("is-invisible");
-    } else {
-        document.getElementById("spinner_title").classList.add("is-invisible");
-    }
 }
 
 function clear_all_active_mouse(event) {
@@ -427,6 +443,7 @@ function update_image(id) {
 }
 
 
+
 // called from julia
 
 function load_page() {
@@ -440,19 +457,17 @@ function load_page() {
     event_handlers();
 }
 
-function set_dir_cache(dir_cache) {
-    // stes the global variable of dir cache
-    window.dir_cache = dir_cache;
-}
-
-function set_base_href(dir_res) {
-    // sets a base directory for all relative paths
+function set_params(dir_res, dir_cache, auto_save_minutes) {
+    // set base directory for all relative paths (dir_res), global variable of dir cache, and continuous auto-save
     const el = document.createElement('base');
     el.href = dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);
+
+    window.dir_cache = dir_cache;
+    window.auto_save_minutes = auto_save_minutes;
 }
 
-function load_images(ids, images_parsed, delete_previous = false) {
+function load_images(images_parsed_arr, delete_previous = false) {  // here we use the array "images_parsed_arr", because we have to rpeserve order
     // load all images into the page
 
     // delete previous images
@@ -465,26 +480,28 @@ function load_images(ids, images_parsed, delete_previous = false) {
 
         // delete saved items
         window.items = {};
-
-        open_jobs(-1);  // this is interactively called only with delete_previous=true
     }
 
     // loads new images
-    for (let i = 0; i < ids.length; i++) {
-        window.items[ids[i]] = images_parsed[i];
-        add_image(ids[i]);
-        images_parsed[i].keywords.forEach((keyword) => {
+    for (let i = 0; i < images_parsed_arr.length; i++) {
+        window.items[images_parsed_arr[i].id] = images_parsed_arr[i];
+        add_image(images_parsed_arr[i].id);
+        images_parsed_arr[i].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         })
     }
+
+    if (delete_previous) {
+        open_jobs(-1);  // this is interactively called only with delete_previous=true
+    }
 }
 
-function update_images(ids, images_parsed) {
+function update_images(images_parsed) {  // "images_parsed" is a dictionary here
     // updates images
-    for (let i = 0; i < ids.length; i++) {
-        window.items[ids[i]] = images_parsed[i];
-        update_image(ids[i]);
-        images_parsed[i].keywords.forEach((keyword) => {
+    for (let key in images_parsed) {
+        window.items[key] = images_parsed[key];
+        update_image(key);
+        images_parsed[key].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         })
     }
@@ -555,6 +572,11 @@ function show_info(id, info_json) {
     // console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
 }
 
+function saved_all() {
+    // current state has been saved to disk
+    open_jobs(-1);
+}
+
 function header_data(json) {
     // just for testing
     let t0 = performance.now();
@@ -608,15 +630,6 @@ function get_image_info(id = "") {
     }
 }
 
-function re_parse_images(message) {
-    // delete all images from DOM and re-parses them
-    if (get_view() == "grid") {
-        Blink.msg("re_parse_images", []);
-        show_message(message)
-        open_jobs(1);
-    }
-}
-
 function set_rating(rating, only_current=false) {
     // sets the rating for items.
     // if "only_current" is true, then only set the rating for the item displayed int he sidebar.
@@ -642,20 +655,37 @@ function set_keywords() {
     }
 }
 
+function re_parse_images() {
+    // delete all images from DOM and re-parses them
+    if (get_view() == "grid") {
+        Blink.msg("re_parse_images", []);
+        show_message("reloading.")
+        open_jobs(1);
+    }
+}
+
+function save_all(exit=false) {
+    // saves the current state to disk
+    console.log("save all")
+    Blink.msg("save_all", [exit]);
+    show_message("saving.")
+    open_jobs(1);
+}
+
 
 
 // keyboard events etc
 
-key_commands = {
+let key_commands = {
     c: { command: change_item, args: ["channel", "change channel."] },
     d: { command: change_item, args: ["direction", "change direction."] },
     b: { command: change_item, args: ["background_correction", "change background."] },
-    f: { command: change_item, args: ["colorscheme", "change colorscheme."] },
+    p: { command: change_item, args: ["colorscheme", "change colorscheme."] },
     i: { command: change_item, args: ["inverted", "invert colorscheme."] },
     C: { command: change_item, args: ["channel", "change channel.", -1] },
     D: { command: change_item, args: ["direction", "change direction.", -1] },
     B: { command: change_item, args: ["background_correction", "change background.", -1] },
-    F: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
+    P: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
     I: { command: change_item, args: ["inverted", "invert colorscheme."] },
     a: { command: toggle_all_active, args: [] },
     m: { command: toggle_sidebar, args: [] },
@@ -667,7 +697,7 @@ key_commands = {
     4: { command: set_rating, args: [4] },
     5: { command: set_rating, args: [5] },
     k: { command: toggle_keywords_dialog, args: [] },
-    p: { command: image_info_search_parameter, args: [] },
+    f: { command: image_info_search_parameter, args: [] },
     h: { command: toggle_help, args: [] },
     "?": { command: toggle_help, args: [] },
     "/": { command: toggle_help, args: [] },
@@ -675,41 +705,44 @@ key_commands = {
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: toggle_imagezoom, args: ["grid"] },
+}
+
+// with ctrl-modifier
+let ctrl_key_commands = {
+    a: { command: toggle_all_active, args: [] },
+    s: { command: save_all, args: [] },
+    F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [] },
 }
 
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (event) {
     let view = get_view();
-    if (view == "help" || view == "keywords") {    // only certain buttons allowed
-        if (view == "help" && ["Escape", "?", "/", "h", "F1"].includes(event.key)) {
+    if (view == "help") {    // only certain buttons allowed
+        if (["Escape", "?", "/", "h", "F1"].includes(event.key)) {
             toggle_help();
         }
-        if (view == "keywords") {
-            if (event.key == "Escape") {
-                toggle_keywords_dialog();
-            } else if (event.ctrlKey || event.shiftKey) {  // save
-                if (event.key == "s") {
-                    set_keywords();
-                    toggle_keywords_dialog();
-                } else if (event.key == "c") {
-                    keywords_copy_to_clipboard(event);
-                    event.preventDefault();
-                }
-            }
-        }
-        return;
-    }
-    if (event.target.nodeName == "INPUT" || event.target.nodeName == "TEXTAREA" || event.target.isContentEditable) {
+        return;  // no other special keys allowed
+    } else if (view == "keywords") {
         if (event.key == "Escape") {
-            if (event.ctrlKey || event.shiftKey) {
-                event.target.blur();
+            toggle_keywords_dialog();
+        } else if (event.ctrlKey || event.shiftKey) {  // save
+            if (event.key == "s") {
+                set_keywords();
+                toggle_keywords_dialog();
+            } else if (event.key == "c") {
+                keywords_copy_to_clipboard(event);
+                event.preventDefault();
             }
         }
-        return;
-    }
-    if (event.key == "F12") {  // F12
-        require('electron').remote.getCurrentWindow().toggleDevTools();
+    } else if (event.target.nodeName == "INPUT" || event.target.nodeName == "TEXTAREA" || event.target.isContentEditable) {
+        if (event.key == "Escape") {
+            event.target.blur();
+        }
+    } else if (event.ctrlKey) {
+        if (event.key in ctrl_key_commands) {
+            ctrl_key_commands[event.key].command(...ctrl_key_commands[event.key].args);
+        }
     } else if (event.key in key_commands) {
         key_commands[event.key].command(...key_commands[event.key].args);
         event.preventDefault();
@@ -785,4 +818,15 @@ function event_handlers() {
     document.getElementById('nav_help').addEventListener('click', (e) => {
         toggle_help();
     });
+
+    // on close
+    require('electron').remote.getCurrentWindow().on('close', (e) => {
+        save_all(true);
+        return false;
+    });
+
+    // auto-save every n minutes
+    if (window.auto_save_minutes > 0) {
+        setInterval(save_all, 1000 * 60 * window.auto_save_minutes);
+    }
 }
