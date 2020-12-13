@@ -268,6 +268,26 @@ function get_image_header(id::String, dir_data::String, images_parsed::Dict{Stri
 end
 
 
+"""sets keywords"""
+function set_keywords!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, mode::String, keywords::Vector{String})
+    for id in ids
+        if mode == "add"
+            for keyword in keywords
+                if keyword ∉ images_parsed[id].keywords
+                    push!(images_parsed[id].keywords, keyword)
+                end
+            end
+        elseif mode == "remove"
+            filter!(k -> k ∉ keywords, images_parsed[id].keywords)
+        else  # set
+            images_parsed[id].keywords = keywords
+        end
+        sort!(images_parsed[id].keywords)
+    end
+    return nothing
+end
+
+
 """Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
 for the images specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
@@ -410,7 +430,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
     handle(w, "grid_item") do args  # cycle through scan channels
         # @show args
         what = args[1]
-        ids = String.(args[2])  # for some reason its type is "Any" and not String
+        ids = string.(args[2])  # for some reason its type is "Any" and not String
         if what == "get_info"
             id = ids[1]
             # get header data
@@ -445,12 +465,13 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 end
             elseif what[5:end] == "keywords"
                 lock(l)
-                keywords = args[3]
-                println(keywords)
+                mode = args[3]
+                keywords = string.(args[4])
+                if length(keywords) == 0  # for whatever reason an empty array does not get converted to a stirng type empty array
+                    keywords = String[]
+                end
                 try
-                    for id in ids
-                        images_parsed[id].keywords = keywords
-                    end
+                    set_keywords!(ids, dir_data, images_parsed, mode, keywords)
                     images_parsed_sub = get_subset(images_parsed, ids)
                     @js_ w update_images($images_parsed_sub);
                 finally

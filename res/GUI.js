@@ -17,6 +17,12 @@ window.datatable = null;  // holds the datatable
 window.keywords_input = null;  // holds the keywords object
 window.keywords_all = new Set();  // set of all possible keywords (for suggestions)
 
+window.keywords_input_initial_value = "";  // balue that is set when opening the dialog (we want to know if the user changed it)
+
+window.keywords_mode = "set";  // current mode for editing keywords
+window.keywords_modes = ["set", "add", "remove"];   // different modes for editing keywords - warning: any change needs to be also done in the js code below and in Julia
+window.keywords_modes_display = ["set", "add", "remove"];  // these descriptions are shown to the user
+
 
 // helper functions
 
@@ -66,13 +72,8 @@ function toggle_keywords_dialog(only_current=false) {
         document.getElementById("modal_keywords").classList.remove("is-active");
     } else {
         window.keywords_only_current = only_current;
-
         let ids = get_active_element_ids(only_current);
-        let keywords_with_duplicates = []
-        ids.forEach(id => {
-            keywords_with_duplicates = keywords_with_duplicates.concat(window.items[id].keywords);
-        });
-        let keywords_unique = Array.from(new Set(keywords_with_duplicates));
+
         if (ids.length > 0) {
             if (window.keywords_input === null) {
                 window.keywords_input = new Tagify(document.getElementById("modal_keywords_input"), {
@@ -85,11 +86,17 @@ function toggle_keywords_dialog(only_current=false) {
                     }
                 });
             }
-            let whitelist =  Array.from(window.keywords_all);
+
+            if (ids.length > 1) {  // show different modes
+                document.getElementById("modal_keywords_mode_container").classList.remove("is-hidden");
+            } else {
+                document.getElementById("modal_keywords_mode_container").classList.add("is-hidden");
+            }
+            toggle_keywords_mode(jump=0, initial=true);  // also sets the inital keywords
+
+            let whitelist =  Array.from(window.keywords_all).sort();
             window.keywords_input.settings.whitelist.splice(0, whitelist.length, ...whitelist);
-            window.keywords_input.on('copy', e => console.log(e.detail))
-            window.keywords_input.removeAllTags();
-            window.keywords_input.addTags(keywords_unique);
+
             if (ids.length == 1) {
                 filename_original = window.items[ids[0]].filename_original;
                 document.getElementById("modal_keywords_files").innerText = filename_original.substring(0, filename_original.length - 4);
@@ -100,6 +107,59 @@ function toggle_keywords_dialog(only_current=false) {
             window.keywords_input.DOM.input.focus();
         }
     }
+}
+
+function toggle_keywords_mode(jump=1, initial=false) {
+    // toggles the keywords mode (and sets the keywords if initial=true or the user hasn't changed anything)
+    const el = document.getElementById("modal_keywords_mode");
+    let index = window.keywords_modes.indexOf(window.keywords_mode) + jump;
+    index = index % window.keywords_modes.length;
+    if (index < 0) {
+        index = 0;
+    }
+
+    window.keywords_mode = window.keywords_modes[index];
+    el.innerText = window.keywords_modes_display[index];
+
+    if (initial || window.keywords_input_initial_value == JSON.stringify(window.keywords_input.value)) {  // user has not changed anything
+        window.keywords_input.removeAllTags();
+        window.keywords_input.addTags(keywords_initial_value());
+        window.keywords_input_initial_value = JSON.stringify(window.keywords_input.value);  // need to copy
+    }
+
+    if (el.innerText == "remove") {
+        document.getElementById("modal_keywords_mode").classList.add("is-danger");
+    } else {
+        document.getElementById("modal_keywords_mode").classList.remove("is-danger");
+    }
+}
+
+function keywords_initial_value() {
+    // depending on the mode, we will put a different set of keywords into the text-input
+    let ids = get_active_element_ids(window.keywords_only_current);
+    let keywords_result = [];
+    let mode = window.keywords_mode;
+    if (ids.length <= 1) {
+        mode = "set";
+    }
+    if (mode == "add") {
+        keywords_result = [];
+        // // put the intersection of all keywords
+        // keywords_result = window.items[ids[0]].keywords;
+        // ids.forEach(id => {
+        //     keywords_result = keywords_result.filter(k => window.items[id].keywords.includes(k));
+        // });
+    } else if (mode == "remove") {  // put empty list
+        keywords_result = [];
+    } else {  // "set", put the union of all keywords
+        let keywords_with_duplicates = [];
+        ids.forEach(id => {
+            keywords_with_duplicates = keywords_with_duplicates.concat(window.items[id].keywords);
+        });
+        keywords_result = Array.from(new Set(keywords_with_duplicates));
+    }
+    keywords_result.sort();
+    return keywords_result;
 }
 
 function keywords_copy_to_clipboard(event) {
@@ -369,7 +429,7 @@ function select_item(event) {
     check_hover_enabled();
 }
 
-function image_info_quick(id = "") {
+function image_info_quick(id="") {
     // display quick info in footer
     if (id == "") {
         const el = document.getElementById('imagegrid').querySelector('div.item:hover');
@@ -647,10 +707,11 @@ function set_keywords() {
     // sets keywords for items
     console.log("set keywords.")
 
+    window.keywords_input.DOM.input.blur();  // so that the last typed keyword is transformed into a keyword, too
     let ids = get_active_element_ids(window.keywords_only_current);
 
     if (ids.length > 0) {
-        Blink.msg("grid_item", ["set_keywords", ids, window.keywords_input.value.map(a => a.value)]);
+        Blink.msg("grid_item", ["set_keywords", ids, window.keywords_mode, window.keywords_input.value.map(a => a.value)]);
         open_jobs(1);  // julia will then set the radiobox
     }
 }
@@ -733,6 +794,9 @@ document.addEventListener("keydown", function (event) {
             } else if (event.key == "c") {
                 keywords_copy_to_clipboard(event);
                 event.preventDefault();
+            } else if (event.key == "m") {
+                toggle_keywords_mode();
+                event.preventDefault();
             }
         }
     } else if (event.target.nodeName == "INPUT" || event.target.nodeName == "TEXTAREA" || event.target.isContentEditable) {
@@ -796,6 +860,8 @@ function event_handlers() {
                 set_keywords();
                 toggle_keywords_dialog();
             });
+        } else if (els[i].id == "modal_keywords_mode") {
+            els[i].addEventListener('click', (e) => { toggle_keywords_mode(); });  // we have to make sure that the event object is not passed as an argument
         } else {
             els[i].addEventListener('click', toggle_keywords_dialog);
         }

@@ -188,18 +188,22 @@
 <!-- modal-keywords -->
 <div id="modal_keywords" class="modal">
   <div class="modal-background" style="position:fixed;"></div>
-  <div id="model_keywords_card" class="modal-card">
+  <div id="modal_keywords_card" class="modal-card">
     <header id="modal_keywords_header" class="modal-card-head">
       <p class="modal-card-title is-size-6 has-text-weight-bold">Change keywords for <span id="modal_keywords_files"></span></p>
-      <button class="delete" aria-label="close"></button>
+      <div id="modal_keywords_mode_container" class="has-text-right pr-0 mr-0">
+        <button class="button is-static is-outline mr-0 pr-1" style="border:none;">Mode: </button>
+        <button id="modal_keywords_mode" class="button is-link is-light"></button>
+      </div>
+      <!-- <button class="delete" aria-label="close"></button> -->
     </header>
-    <section class="modal-card-body" style="line-height:160%;">
+    <section class="modal-card-body" style="line-height:160%;padding-bottom:3rem;">
       <textarea id="modal_keywords_input"></textarea>
  
     </section>
     <footer class="modal-card-foot">
-      <button class="button is-success">Save</button>
-      <button class="button">Cancel</button>
+          <button class="button is-success">Save</button>
+          <button class="button">Cancel</button>
     </footer>
   </div>
 </div>
@@ -278,12 +282,15 @@
           <span class="tag is-light p-2">Escape</span> Back to grid view
         </li>
         <li>
+          <span class="tag is-light p-2">&lt;</span>, <span class="tag is-light p-2">&gt;</span>
+          Next/previous image <span class="tag is-info is-light">zoom view only</span>
+        </li>
+        <li>
           <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">F5</span> Re-parse images
         </li>
         <li>
-          <span class="tag is-light p-2">&lt;</span>, <span class="tag is-light p-2">&gt;</span>
-          Next/previous image <span class="tag is-info is-light">zoom view only</span>
-          </li>
+          <span class="tag is-light p-2">ctrl</span>s<span class="tag is-light p-2">F5</span> Save all (in addition, all changes are automatically saved on close and auto-saved every few minutes)
+        </li>
         <li>
           <span class="tag is-light p-2">h</span>, <span class="tag is-light p-2">?</span> or
           <span class="tag is-light p-2">F1</span> Show help
