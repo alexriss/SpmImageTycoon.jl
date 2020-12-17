@@ -182,15 +182,17 @@ function keywords_copy_to_clipboard(event) {
     clipboard.writeText(text);
 }
 
-function toggle_sidebar(what="info", show_sidebar=false) {
+function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
     // toggles sidebar
     let sidebars = document.getElementsByClassName("sidebar");
     let sidebar = document.getElementById('sidebar_' + what);
 
     // hide all other sidebars
-    for (let i=0; i<sidebars.length; i++) {
-        if (sidebars[i] != sidebar) {
-            sidebars[i].classList.add("is-hidden");
+    if (hide_others) {
+        for (let i=0; i<sidebars.length; i++) {
+            if (sidebars[i] != sidebar) {
+                sidebars[i].classList.add("is-hidden");
+            }
         }
     }
     
@@ -434,13 +436,11 @@ function select_item(event) {
 
     const modifier = (event.ctrlKey || event.shiftKey);
     const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden)'));
-    const idx = items.indexOf(this);
-    let start = window.last_selected;
-    if (modifier && window.last_selected != "" && (idx != start)) {
-        let end = idx;
-        if (idx < window.last_selected) {
-            start = idx;
-            end = window.last_selected;
+    let end = items.indexOf(this);
+    let start = items.indexOf(document.getElementById(window.last_selected));
+    if (modifier && window.last_selected != "" && start != end) {
+        if (start > end) {
+            [start, end] = [end, start];
         }
 
         els = items.slice(start, end + 1);
@@ -461,7 +461,7 @@ function select_item(event) {
     } else {
         this.classList.toggle('active');
     }
-    window.last_selected = idx;
+    window.last_selected = this.id;
     check_hover_enabled();
 }
 

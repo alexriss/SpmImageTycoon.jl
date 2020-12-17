@@ -146,6 +146,7 @@ body {
   top: 3rem;
   transition: 0.1s;
   background-color:#37a8ff;
+  border-left:1px solid #afdafa;
 }
 
 
