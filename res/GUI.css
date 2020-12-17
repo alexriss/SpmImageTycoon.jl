@@ -40,7 +40,7 @@ body {
 .imagegrid {
   display: grid;
   grid-gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));  /* repeat(auto-fit, minmax(150px, 1fr)); */
 }
 
 .imagegrid .item {
@@ -66,8 +66,8 @@ body {
 .imagegrid .item img {
   width: 100%;
   height: 100%;
-  max-width: 256px;
-  max-height: 256px;
+  max-width: 320px;
+  max-height: 320px;
   object-fit: contain;
   vertical-align: middle;
 }
@@ -136,7 +136,7 @@ body {
 
 /* sidebar */
 
-#sidebar_grid {
+.sidebar {
   height: calc(var(--vh, 1vh) * 100 - 5rem);
   width: 30%;
   max-width:400px;
@@ -148,31 +148,30 @@ body {
   background-color:#37a8ff;
 }
 
-.table-container {
+
+/* sidebar table for image info */
+
+#table-container {
   max-width: 400px;
-  width: 400px;
   display: flex;
   height: 85vh; 
   height: calc(var(--vh, 1vh) * 100 - 11.8rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
-  overflow-y: scroll;
+  overflow-y: hidden;
+  display: none;
 }
 
-.table-container table {
+#table-container table {
   table-layout: fixed;
   overflow-wrap: break-word;  
   overflow-y: scroll;
 }
 
-.table-container input  {
+#table-container input  {
   font-size: 0.75rem;
 }
 
-.table-container .dataTable-container {
+#table-container .dataTable-container {
   overflow-y: scroll;
-}
-
-#table-container {
-  display: none;
 }
 
 #table-container .dataTable-input {  /* a quick hack to save some vertical space */
@@ -185,8 +184,6 @@ body {
   border: 1px solid #999;
 }
 
-
-
 /* star rating in sidebar */
 
 /* settings */
@@ -195,6 +192,8 @@ body {
   --ratingSize: 0.8rem;
   --ratingColor: #eee;
   --ratingColorActive: #e0bf00;
+
+  --ratingSizeFilter: 1.0rem;
 }
 
 /* The screen-reader class hides elements that are available only for screen readers. https://github.com/melnik909/screen-reader */
@@ -217,14 +216,15 @@ body {
   display: var(--ratingDisplay, flex);
   font-size: var(--ratingSize, 1rem);
   color: var(--uiRatingColor);
-  padding:0.2em 0 0 0;
+  padding: 0.2em 0 0 0;
 }
     
 .rating__control:nth-of-type(1):focus ~ .rating__item:nth-of-type(1)::before,
 .rating__control:nth-of-type(2):focus ~ .rating__item:nth-of-type(2)::before,
 .rating__control:nth-of-type(3):focus ~ .rating__item:nth-of-type(3)::before,
 .rating__control:nth-of-type(4):focus ~ .rating__item:nth-of-type(4)::before,
-.rating__control:nth-of-type(5):focus ~ .rating__item:nth-of-type(5)::before{
+.rating__control:nth-of-type(5):focus ~ .rating__item:nth-of-type(5)::before,
+.rating__control:nth-of-type(6):focus ~ .rating__item:nth-of-type(6)::before{
   content: ""; 
   /* box-shadow: 0 0 0 var(--ratingOutlineWidth, 4px) var(--uiRatingColorActive); */
 
@@ -261,7 +261,8 @@ body {
 .rating__control:nth-of-type(2):checked ~ .rating__item:nth-of-type(-n+2),
 .rating__control:nth-of-type(3):checked ~ .rating__item:nth-of-type(-n+3),
 .rating__control:nth-of-type(4):checked ~ .rating__item:nth-of-type(-n+4),
-.rating__control:nth-of-type(5):checked ~ .rating__item:nth-of-type(-n+5){
+.rating__control:nth-of-type(5):checked ~ .rating__item:nth-of-type(-n+5),
+.rating__control:nth-of-type(6):checked ~ .rating__item:nth-of-type(-n+6){
   color: var(--uiRatingColorActive);
 }
 
@@ -272,19 +273,19 @@ body {
 
 /* keywords in sidebar */
 
-#sidebar_grid .tags {
+#sidebar_info .tags {
   height:2.9rem;
   overflow:auto;
 }
 
-#sidebar_grid .tags .tag{
+#sidebar_info .tags .tag{
   border: 1px dotted #666;
   margin: 0.1rem;
   padding: 0 0.2rem;
   background-color: #cdddfb;
   line-height: 110%;
   color: #363636;
-  height:1.68em;
+  height: 1.68em;
 }
 
 /* keywords autosuggestions  dropdown */
@@ -312,3 +313,32 @@ body {
 }
 
 
+
+/*  sidebar for filtering */
+
+#sidebar_filter_table {
+  background-color: #ffffff00;
+}
+
+#sidebar_filter_table td, #sidebar_filter_table th {
+  vertical-align: middle;
+}
+
+#sidebar_filter_table select.is-arrowless::after {
+  content: "";
+  border: none;
+}
+
+#sidebar_filter_table .rating{
+  font-size: var(--ratingSizeFilter, 1rem);
+  padding:0.38em 0 0 0;
+}
+
+
+#sidebar_filter_table button.delete {
+  margin-top:0.0rem;
+}
+
+#sidebar_filter_table img.warning {
+  margin-top:0.2rem;
+}

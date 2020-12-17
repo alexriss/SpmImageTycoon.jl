@@ -23,12 +23,25 @@ window.keywords_mode = "set";  // current mode for editing keywords
 window.keywords_modes = ["set", "add", "remove"];   // different modes for editing keywords - warning: any change needs to be also done in the js code below and in Julia
 window.keywords_modes_display = ["set", "add", "remove"];  // these descriptions are shown to the user
 
+window.timeout_filter = null;  //timeout refrence for filter function
+window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
+
 
 // helper functions
 
 function number_max_decimals(num, max_decimals) {
     // returns a numbers with a maxmimum precision of max_decimals
     return Math.round((num) * 10**max_decimals) / 10**max_decimals
+}
+
+function create_regexp(inputstring) {
+    // creates regexp form user input
+    let flags = inputstring.replace(/.*\/([gimy]*)$/, '$1');
+    if (flags == inputstring) {
+        flags = ""
+    }
+    let pattern = inputstring.replace(new RegExp('^(.*?)/'+flags+'$'), '$1');
+    return new RegExp(pattern, flags); 
 }
 
 function file_url(id) {
@@ -169,12 +182,24 @@ function keywords_copy_to_clipboard(event) {
     clipboard.writeText(text);
 }
 
-function toggle_sidebar(show_sidebar=false) {
+function toggle_sidebar(what="info", show_sidebar=false) {
     // toggles sidebar
-    let sidebar = document.getElementById('sidebar_grid');
+    let sidebars = document.getElementsByClassName("sidebar");
+    let sidebar = document.getElementById('sidebar_' + what);
+
+    // hide all other sidebars
+    for (let i=0; i<sidebars.length; i++) {
+        if (sidebars[i] != sidebar) {
+            sidebars[i].classList.add("is-hidden");
+        }
+    }
+    
+    // toggle the selected sidebar
     if (sidebar.classList.contains("is-hidden") || show_sidebar) {
         sidebar.classList.remove("is-hidden");
-        get_image_info();  // update info of current or last image
+        if (what == "info") {
+            get_image_info();  // update info of current or last image
+        }
     } else {
         sidebar.classList.add("is-hidden");
     }
@@ -269,18 +294,29 @@ function clear_all_active() {
     check_hover_enabled();
 }
 
-function toggle_all_active() {
+function toggle_all_active(ignored_filtered=false) {
     // toggles between select-all and select-none
     if (get_view() != "grid") {
         return;
     }
-    const grid = document.getElementById('imagegrid');
-    const els = grid.querySelectorAll('.item:not(.active)');
-    if (els.length == 0) {
-        clear_all_active();
+
+    if (ignored_filtered) {
+        const els = document.querySelectorAll('#imagegrid .item:not(.active)');
+        if (els.length == 0) {
+            clear_all_active();
+        } else {
+            for (let i = 0; i < els.length; i++) {
+                els[i].classList.add('active');
+            }
+        }
     } else {
-        for (let i = 0; i < els.length; i++) {
-            els[i].classList.add('active');
+        const els = document.querySelectorAll('#imagegrid .item:not(.is-hidden):not(.active)');
+        if (els.length == 0) {
+            clear_all_active();
+        } else {
+            for (let i = 0; i < els.length; i++) {
+                els[i].classList.add('active');
+            }
         }
     }
     check_hover_enabled();
@@ -397,7 +433,7 @@ function select_item(event) {
     }
 
     const modifier = (event.ctrlKey || event.shiftKey);
-    const items = Array.from(this.parentNode.children);
+    const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden)'));
     const idx = items.indexOf(this);
     let start = window.last_selected;
     if (modifier && window.last_selected != "" && (idx != start)) {
@@ -446,7 +482,7 @@ function image_info_timeout() {
     image_info_quick(this.id);
 
     // for main info we start a timeout when mouse enters the element - only after a short while julia will be asked to get all the info
-    if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
+    if (document.getElementById('sidebar_info').classList.contains("is-hidden")) {   // dont do anything is  sidebar is not enabled
         return;
     }
     const this_id = this.id;
@@ -470,9 +506,220 @@ function image_info_timeout_clear() {
     }, 350);
 }
 
+function filter_timeout() {
+    // timeout for filtering (we do not always want to start immediately)
+    if (document.getElementById('sidebar_filter').classList.contains("is-hidden")) {  // dont do anything if filter-sidebar is not enabled
+        return;
+    }
+    filter_timeout_clear();
+    window.timeout_filter = window.setTimeout(filter_items, 100);
+}
+
+function filter_timeout_clear() {
+    // clears timeout when mouse leaves the element
+    if (window.timeout_filter != null) {
+        clearTimeout(window.timeout_filter);
+    }
+}
+
+function filter_items(ids=[], random_id=-1) {
+    // filters items as specified by the input fields in the filter-sidebar
+    // if ids is specified (when certain images have been updated, re-filter those images)
+
+    if (random_id == -1) {
+        random_id = Date.now();
+    }
+
+    if (window.queue_filter_items.length == 0) {  // we can start
+        window.queue_filter_items.push(random_id);
+    } else if (window.queue_filter_items[0] != random_id) {
+        window.queue_filter_items.push(random_id);  // queue up
+        setTimeout(function(){
+            filter_items(ids, random_id);
+        }, 50);
+        return;
+    }  // else can start as well (and are already queued up)
+
+    open_jobs(1);
+
+    const progressbar = document.getElementById('filter_progress');
+    const filter_number = document.getElementById('filter_number');
+
+    progressbar.value=0;
+    filter_number.classList.add('is-hidden');
+    progressbar.classList.remove('is-hidden');
+
+    const filter_rating = document.querySelector('#sidebar_filter input[name=filter_rating]:checked').value;
+    const filter_rating_comparator = document.getElementById('filter_rating_comparator').value;
+    const filter_keywords_raw = document.getElementById('filter_keywords').value;
+    let filter_keywords = null;
+    if (filter_keywords_raw.length > 0) {
+        try {
+            filter_keywords = create_regexp(filter_keywords_raw);
+            document.getElementById('warning_filter_keywords').classList.add("is-invisible");
+        } catch(e) {
+            document.getElementById('warning_filter_keywords').classList.remove("is-invisible");
+        }
+    } else {
+        document.getElementById('warning_filter_keywords').classList.add("is-invisible");
+    }
+
+    const filter_selected = document.getElementById('filter_selected').checked;
+
+    const filters_textfield = {};  // will be populated only with the ones that are non-empty
+    const textfields = ["filename_original", "comment", "channel_name"];
+    textfields.forEach(field => {
+        const val_raw = document.getElementById('filter_' + field).value;
+        if (val_raw.length > 0) {
+            try {
+                filters_textfield[field] = create_regexp(val_raw);
+                document.getElementById('warning_filter_' + field).classList.add("is-invisible")
+            } catch(e) {
+                document.getElementById('warning_filter_' + field).classList.remove("is-invisible")
+            }
+        } else {
+            document.getElementById('warning_filter_' + field).classList.add("is-invisible")
+        }
+    });
+
+    let t0 = performance.now();
+    
+    if (ids != []) {  // if no ids are specified (this happens when images are updated), we run the filter over all items
+        ids = Object.keys(window.items);
+    }
+
+    let item = null;
+    let filtered_out = false;
+    let id = "";
+    for (let i=0, imax=ids.length; i<imax; i++) {  // for-loop, so we can do the continue
+        id = ids[i];
+        item = window.items[id];
+
+        if (i % 20 == 0) {
+            progressbar.value = 100 * i / imax;
+        }
+
+        if (filter_selected) {  // we do this first because it might limit the number of items a lot
+            if (filter_items__selected(id)) {
+                continue;
+            }
+        }
+        if (filter_items__rating(id, item, filter_rating, filter_rating_comparator)) {
+            continue;
+        }
+        if (filter_keywords != null) {
+            if (filter_items__keywords(id, item, filter_keywords)) {
+                continue;
+            }
+        }
+        filtered_out = false;
+        for (let field in filters_textfield) {
+            if (filter_items__textfield(id, item, field, filters_textfield[field])) {
+                filtered_out = true;
+                break;
+            }
+        }
+        if (filtered_out) {
+            continue;
+        }
+        // item is not filtered out, unhide it
+        document.getElementById(id).classList.remove('is-hidden');
+    }
+
+    let num_result = document.querySelectorAll('#imagegrid .item:not(.is-hidden').length;
+    progressbar.classList.add('is-hidden');
+    filter_number.innerText = num_result;
+    filter_number.classList.remove('is-hidden');
+
+    let t1 = performance.now();
+    console.log("filter items:" + (t1 - t0) + " ms.");
+
+    window.queue_filter_items.shift();  // unqueue
+    open_jobs(-1);
+}
+
+function filter_items__selected(id) {
+    // filters by whether the item is selected or not
+    let el = document.getElementById(id)
+    if (el.classList.contains('active')) {
+        return false;
+    } else {
+        el.classList.add('is-hidden');
+        return true;
+    }
+}
+
+function filter_items__rating(id, item, filter_rating, filter_rating_comparator) {
+    // filters items by rating
+    if (filter_rating_comparator == ">=") {
+        if (item.rating >= filter_rating) {
+            return false;
+        } else {
+            document.getElementById(id).classList.add('is-hidden');
+            return true;
+        }
+    } else if (filter_rating_comparator == ">") {
+        if (item.rating > filter_rating) {
+            return false;
+        } else {
+            document.getElementById(id).classList.add('is-hidden');
+            return true;
+        }
+    } else if (filter_rating_comparator == "=") {
+        if (item.rating == filter_rating) {
+            return false;
+        } else {
+            document.getElementById(id).classList.add('is-hidden');
+            return true;
+        }
+    } else if (filter_rating_comparator == "<") {
+        if (item.rating < filter_rating) {
+            return false;
+        } else {
+            document.getElementById(id).classList.add('is-hidden');
+            return true;
+        }
+    } else if (filter_rating_comparator == "<=") {
+        if (item.rating <= filter_rating) {
+            return false;
+        } else {
+            document.getElementById(id).classList.add('is-hidden');
+            return true;
+        }
+    }
+}
+
+function filter_items__keywords(id, item, filter_keywords) {
+    // filters items by keywords (filter_keywords shold be a regular expression)
+    let found = false;
+    for (let i=0, imax=item.keywords.length; i<imax; i++) {
+        if (filter_keywords.test(item.keywords[i])) {
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        return false;
+    } else {
+        document.getElementById(id).classList.add('is-hidden');
+        return true;
+    }
+}
+
+function filter_items__textfield(id, item, field, filter) {
+    // filters item by any text field (filter should be a regular expression)
+    if (filter.test(item[field])) {
+        return false;
+    } else {
+        document.getElementById(id).classList.add('is-hidden');
+        return true;
+    }
+}
+
+
 function image_info_search_parameter() {
-    // starts timeout when mouse enters the element - after a short while ulia will be asked to get all the info
-    if (document.getElementById('sidebar_grid').style.display == "none") {   // dont do anything is  sidebar is not enabled
+    if (document.getElementById('sidebar_info').classList.contains("is-hidden")) {   // dont do anything if sidebar is not enabled
         return;
     }
     document.querySelector(".dataTable-search .dataTable-input").focus();
@@ -543,13 +790,16 @@ function load_images(images_parsed_arr, delete_previous = false) {  // here we u
     }
 
     // loads new images
-    for (let i = 0; i < images_parsed_arr.length; i++) {
+    for (let i = 0, imax = images_parsed_arr.length; i < imax; i++) {
         window.items[images_parsed_arr[i].id] = images_parsed_arr[i];
         add_image(images_parsed_arr[i].id);
         images_parsed_arr[i].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         })
     }
+
+    filter_items();
+    document.getElementById('footer_num_images_total').innerText = images_parsed_arr.length;
 
     if (delete_previous) {
         open_jobs(-1);  // this is interactively called only with delete_previous=true
@@ -569,6 +819,8 @@ function update_images(images_parsed) {  // "images_parsed" is a dictionary here
     // update image info
     image_info_quick();
     get_image_info();
+
+    filter_items(Object.keys(images_parsed));
 
     open_jobs(-1);
 }
@@ -590,13 +842,7 @@ function show_info(id, info_json) {
     document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
 
     const rating = window.items[id].rating;
-    if (rating > 0) {
-        document.getElementsByName("image_info_rating")[rating -1].checked = true;
-    } else {
-        document.getElementsByName("image_info_rating").forEach((el) => {
-            el.checked = false;
-        })
-    }
+    document.getElementsByName("image_info_rating")[rating].checked = true;
 
     // remove old keywords
     let els = document.getElementById('sidebar_keywords_container').getElementsByClassName('tag');
@@ -749,7 +995,9 @@ let key_commands = {
     P: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
     I: { command: change_item, args: ["inverted", "invert colorscheme."] },
     a: { command: toggle_all_active, args: [] },
-    m: { command: toggle_sidebar, args: [] },
+    A: { command: toggle_all_active, args: [true] },
+    m: { command: toggle_sidebar, args: ["info"] },
+    f: { command: toggle_sidebar, args: ["filter"] },
     z: { command: toggle_imagezoom, args: [] },
     0: { command: set_rating, args: [0] },
     1: { command: set_rating, args: [1] },
@@ -758,7 +1006,6 @@ let key_commands = {
     4: { command: set_rating, args: [4] },
     5: { command: set_rating, args: [5] },
     k: { command: toggle_keywords_dialog, args: [] },
-    f: { command: image_info_search_parameter, args: [] },
     h: { command: toggle_help, args: [] },
     "?": { command: toggle_help, args: [] },
     "/": { command: toggle_help, args: [] },
@@ -770,8 +1017,9 @@ let key_commands = {
 
 // with ctrl-modifier
 let ctrl_key_commands = {
-    a: { command: toggle_all_active, args: [] },
+    a: { command: toggle_all_active, args: [true] },
     s: { command: save_all, args: [] },
+    f: { command: image_info_search_parameter, args: [] },
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [] },
 }
@@ -875,11 +1123,50 @@ function event_handlers() {
             toggle_imagezoom("grid");
         }
     });
-    
+
+    // filter sidebar
+    document.querySelectorAll('#sidebar_filter_table input,select').forEach((el) => {
+        el.addEventListener("input", filter_timeout);
+    });
+
+    Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
+        if (el.id == "button_delete_filter_rating") {
+            el.addEventListener('click', function(e) {
+                document.getElementById('filter_rating_0').checked = true;
+                document.getElementById('filter_rating_comparator').value= ">=";
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    filter_items();
+                }
+            })
+        } else if (el.id == "button_delete_filter_selected") {
+            el.addEventListener('click', function(e) {
+                document.getElementById('filter_selected').checked = false;
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    filter_items();
+                }
+            });
+        } else {
+            let id_field = el.id.replace("button_delete_", "");
+            el.addEventListener('click', function(e) {
+                document.getElementById(id_field).value = '';
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    filter_items();
+                }
+            });
+        }
+    });
+
+    document.getElementById('button_delete_all_filters').addEventListener('click', function() {
+        Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
+            el.click();
+        });
+        filter_items();
+    });
+
     // menu
     document.getElementById('nav_home').addEventListener('click', (e) => {
         toggle_imagezoom("grid");
-        toggle_sidebar(true);
+        toggle_sidebar("info", true);
     });
     document.getElementById('nav_help').addEventListener('click', (e) => {
         toggle_help();

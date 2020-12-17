@@ -88,7 +88,7 @@ dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and us
 dir_res = "../res/"  # relative to module directory
 
 filename_db = "db.jld2"  # save all data to this file (in cache_dir)
-auto_save_minutes = 5  # auto-save every n minutes
+auto_save_minutes = 10  # auto-save every n minutes
 
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
