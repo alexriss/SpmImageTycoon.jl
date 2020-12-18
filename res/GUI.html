@@ -282,6 +282,10 @@
               <p class="pt-2">
                 Other regular expression syntax works as well, such as "." denoting any character. If you want to match ".", you need to escape it (i.e. "\.").
               </p>
+              <p class="pt-2">
+                For keywords, the search-input will be matched against one comma-delimited string of image-keywords.
+                This makes it possible to e.g. filter images that contain two keywords: keyword1.*keyword2
+              </p>
             </td>
           </tr>
         </table>
@@ -332,7 +336,7 @@
       </div>
       <!-- <button class="delete" aria-label="close"></button> -->
     </header>
-    <section class="modal-card-body" style="line-height:160%;padding-bottom:3rem;">
+    <section class="modal-card-body">
       <textarea id="modal_keywords_input"></textarea>
  
     </section>

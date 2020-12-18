@@ -91,11 +91,13 @@ function toggle_keywords_dialog(only_current=false) {
             if (window.keywords_input === null) {
                 window.keywords_input = new Tagify(document.getElementById("modal_keywords_input"), {
                     whitelist: [],
+                    placeholder: "Add keywords",
                     dropdown: {
-                        maxItems: 20,           // maximum number of suggestions
-                        classname: "tags-look", // custom classname for dropdown
-                        enabled: 0,             // show suggestions on focus
-                        closeOnSelect: false    // do not hide suggestion dropdown after an item has been selected
+                        maxItems: 16,                 // maximum number of suggestions
+                        classname: "tags-look",       // custom classname for dropdown
+                        enabled: 1,                   // show suggestions after 1 character
+                        // enabled: 0,                // show suggestions on focus
+                        closeOnSelect: false          // do not hide suggestion dropdown after an item has been selected
                     }
                 });
             }
@@ -691,15 +693,9 @@ function filter_items__rating(id, item, filter_rating, filter_rating_comparator)
 
 function filter_items__keywords(id, item, filter_keywords) {
     // filters items by keywords (filter_keywords shold be a regular expression)
-    let found = false;
-    for (let i=0, imax=item.keywords.length; i<imax; i++) {
-        if (filter_keywords.test(item.keywords[i])) {
-            found = true;
-            break;
-        }
-    }
 
-    if (found) {
+    const keyword_str = "," + item.keywords.join(',') + ",";  // add the delimited in front and end, so that for the search you know that every keyword is enclosed by the delimiter
+    if (filter_keywords.test(keyword_str)) {
         return false;
     } else {
         document.getElementById(id).classList.add('is-hidden');

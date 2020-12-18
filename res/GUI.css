@@ -289,7 +289,15 @@ body {
   height: 1.68em;
 }
 
+/* keywords modal */
+
+#modal_keywords .modal-card-body {
+  line-height:160%;
+  padding-bottom:5rem;
+}
+
 /* keywords autosuggestions  dropdown */
+
 .tags-look .tagify__dropdown__item{
   display: inline-block;
   border-radius: 3px;
