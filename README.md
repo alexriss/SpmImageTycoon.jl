@@ -1,6 +1,8 @@
 # SpmImage Tycoon
 
-Cross-platform app to manage and edit scanning probe microscopy (SPM) images. Currently [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images are supported. Under development.
+Cross-platform app to manage and edit scanning probe microscopy (SPM) images.
+
+Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images are supported. Under development.
 
 ## Features
 
