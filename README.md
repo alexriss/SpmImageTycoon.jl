@@ -1,6 +1,6 @@
 # SpmImage Tycoon
 
-App to manage and edit SPM (scanning probe microscopy) images. Under development.
+Cross-platform app to manage and edit SPM (scanning probe microscopy) images. Under development.
 
 ## Features
 
