@@ -1,5 +1,7 @@
 window.dir_res = "";  // resources directory
 window.dir_cache = "";  // will be set by julia
+window.dir_colorbars = "";  // colorbars are saved here, ste by julia
+window.filenames_colorbar = {};  // dictionary specifying the filenames for the colorbars, set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
 window.auto_save_minutes = 0  // auto-save every n minutes (will be set by julia)
@@ -11,6 +13,7 @@ window.zoom_last_selected = "";  // last selected image for zoom
 window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
 window.timeout_image_info = null;  //timeout refrence for get_image_info function
+window.timeout_image_info_quick = null;  //timeout refrence for get_image_info_quick function
 window.image_info_id = "";  // current image, for which data is displayed
 window.datatable = null;  // holds the datatable
 
@@ -49,6 +52,12 @@ function file_url(id) {
     const item = window.items[id];
     return 'file:///' + window.dir_cache + item.filename_display +
          "?" + item.channel_name + "_" + item.background_correction + "_" + item.colorscheme;  // to prevent caching and force reload
+}
+
+function file_url_colorbar(id) {
+    // returns the colorbar url
+    const item = window.items[id];
+    return 'file:///' + window.dir_colorbars + window.filenames_colorbar[item.colorscheme];
 }
 
 function open_jobs(diff) {
@@ -242,7 +251,8 @@ function toggle_imagezoom(target_view = "") {
     } else if (get_view() == "zoom" || target_view == "grid") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
-        footer_num_images_container.classList.remove("is-invisible")
+        footer_num_images_container.classList.remove("is-invisible");
+        image_info_quick_timeout_clear();  // if we leave zoom-mode, we imght need to get rid of the quick image info (if mouse is not hovering anything)
     } else {
         let el = grid.querySelector('div.item:hover');
         if (el != null) {
@@ -251,7 +261,7 @@ function toggle_imagezoom(target_view = "") {
             footer_num_images_container.classList.add("is-invisible")
 
             window.image_info_id = el.id;  // should be set already, but just to make sure
-            get_image_info(el.id);  // should also not be necessary
+            // get_image_info(el.id);  // should also not be necessary
 
             const zoom_content = document.getElementById('imagezoom_content');
             if (!window.zoom_control_setup) {
@@ -259,10 +269,11 @@ function toggle_imagezoom(target_view = "") {
                 window.zoom_control_setup = true;
             }
             if (window.zoom_last_selected != el.id) {
-                document.getElementById('imagezoom_image').src = file_url(el.id);
+                // document.getElementById('imagezoom_image').src = file_url(el.id);
                 zoom_drag_reset(zoom_content);
             }
             window.zoom_last_selected = el.id;
+            next_item(0); // sets the img src and displays colorbar etc
         }
     }
 }
@@ -403,6 +414,7 @@ function next_item(jump) {
 
     let el = document.getElementById(window.zoom_last_selected);
     let elnext = el;
+    let out_of_range = false;
     i = 0;
     while (i != jump) {
         if (jump > 0) {
@@ -414,18 +426,25 @@ function next_item(jump) {
         }
 
         if (elnext === null || elnext.classList === undefined) {
+            out_of_range = true;  // we do not need to update anything, because we stay at the current element
             break;
         } else if (elnext.classList.contains("is-hidden") || !elnext.classList.contains("item")) {    // do not count hidden items
-            i = i - Math.sign(jump);
+            i = i - Math.sign(jump);  // revert - hidden elementsa do not count
         }
 
         el = elnext;
     }
-    if (el.id in window.items) {
+    if (el.id in window.items && !out_of_range) {
         document.getElementById('imagezoom_image').src = file_url(el.id)
+        document.getElementById('imagezoom_colorbar').src = file_url_colorbar(el.id);
+        
+        // clear old histogram
+        // const canvas = document.getElementById('imagezoom_histogram_canvas');
+        // canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
         window.image_info_id = el.id;
         window.zoom_last_selected = el.id;
-        get_image_info(el.id);
+        image_info_timeout(null, el.id, histogram=true, timeout_ms=30);
     }
 }
 
@@ -480,24 +499,35 @@ function image_info_quick(id="") {
     }
 }
 
-function image_info_timeout() {
-    image_info_quick(this.id);
-
-    // for main info we start a timeout when mouse enters the element - only after a short while julia will be asked to get all the info
-    if (document.getElementById('sidebar_info').classList.contains("is-hidden")) {   // dont do anything is  sidebar is not enabled
-        return;
+function image_info_timeout(event, id="", histogram=false, timeout_ms=10) {
+    if (id == "") {
+        const id = this.id;
     }
-    const this_id = this.id;
-    window.timeout_image_info = window.setTimeout(function () {
-        get_image_info(this_id);
-    }, 10);
+    image_info_quick(id);
 
-}
-
-function image_info_timeout_clear() {
-    // clears timeout when mouse leaves the element
+    // clear old timeout
     if (window.timeout_image_info != null) {
         clearTimeout(window.timeout_image_info);
+    }
+
+    // for main info we start a timeout when mouse enters the element - only after a short while julia will be asked to get all the info
+    if (document.getElementById('sidebar_info').classList.contains("is-hidden") && get_view() != "zoom") {   // dont do anything if sidebar is not enabled or we are not in zoom-mode
+        return;
+    }
+
+    window.timeout_image_info = window.setTimeout(function() {
+        get_image_info(id, histogram);
+    }, timeout_ms);
+}
+
+function image_info_quick_timeout_clear() {
+    // clears timeout when mouse leaves the element
+    if (get_view() != "grid") {  // do not do anything when we are not in grid mode
+        return
+    }
+
+    if (window.timeout_image_info != null) {
+        clearTimeout(window.timeout_image_info_quick);
     }
 
     // clear quick info (if no hover anymore)
@@ -734,13 +764,13 @@ function add_image(id) {
     el.addEventListener('dblclick', clear_all_active_mouse);  // with a modifier
     el.addEventListener('dblclick', toggle_imagezoom_mouse);  // only without a modifier
     el.addEventListener('mouseenter', image_info_timeout);
-    el.addEventListener('mouseleave', image_info_timeout_clear);
+    el.addEventListener('mouseleave', image_info_quick_timeout_clear);
 }
 
 function update_image(id) {
     // updates the image to a new channel
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
-        document.getElementById('imagezoom_image').src = file_url(id);
+        next_item(0);  // updates the img src etc
     }
     document.getElementById(id).firstElementChild.firstElementChild.src = file_url(id);
 }
@@ -760,13 +790,15 @@ function load_page() {
     event_handlers();
 }
 
-function set_params(dir_res, dir_cache, auto_save_minutes) {
+function set_params(dir_res, dir_cache, dir_colorbars, filenames_colorbar, auto_save_minutes) {
     // set base directory for all relative paths (dir_res), global variable of dir cache, and continuous auto-save
     const el = document.createElement('base');
     el.href = dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);
 
     window.dir_cache = dir_cache;
+    window.dir_colorbars = dir_colorbars;
+    window.filenames_colorbar = filenames_colorbar;
     window.auto_save_minutes = auto_save_minutes;
 }
 
@@ -813,8 +845,10 @@ function update_images(images_parsed) {  // "images_parsed" is a dictionary here
     }
 
     // update image info
-    image_info_quick();
-    get_image_info();
+    if (get_view() != "zoom") {  // zoom view updates the image by itself
+        image_info_quick();
+        get_image_info();
+    }
 
     filter_items(Object.keys(images_parsed));
 
@@ -874,6 +908,14 @@ function show_info(id, info_json) {
     // console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
 }
 
+function show_histogram(id, width, counts) {
+    if (get_view() == "zoom" && window.zoom_last_selected == id) {
+        const canvas = document.getElementById('imagezoom_histogram_canvas');
+        plot_histogram(canvas, width, counts);
+    }
+    open_jobs(-1);
+}
+
 function saved_all() {
     // current state has been saved to disk
     open_jobs(-1);
@@ -907,7 +949,7 @@ function change_item(what, message, jump = 1) {
     }
 }
 
-function get_image_info(id = "") {
+function get_image_info(id="", histogram=false) {
     // gets info (header data) for the current image
 
     // console.log("get info");
@@ -928,7 +970,10 @@ function get_image_info(id = "") {
     }
     if (id != "") {
         window.image_info_id = id;
-        Blink.msg("grid_item", ["get_info", [id]]);
+        if (histogram) {
+            open_jobs(1);
+        }
+        Blink.msg("grid_item", ["get_info", [id], histogram]);
     }
 }
 

@@ -11,6 +11,7 @@ using ImageIO
 using JLD2
 using JSON
 using NaturalSort
+using StatsBase
 using SpmImages
 # import Blink.AtomShell: resolve_blink_asset
 
@@ -85,6 +86,7 @@ resize_to = 2048  # we set it very high, so probably no images will be resized. 
 extension_spm = ".sxm"
 
 dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
+dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
 dir_res = "../res/"  # relative to module directory
 
 filename_db = "db.jld2"  # save all data to this file (in cache_dir)
@@ -110,6 +112,56 @@ function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorSch
             getfield(v, :notes)
         )
     end
+end
+
+
+"""saves all colorbars as pngs in the cache directory. Returns a dictionary that associates each colorscheme name with a png file"""
+function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::Dict{String,String}
+    dir_cache = get_dir_cache(dir_data)
+    res = Dict()
+    for (k,v) in dict_colorschemes
+        m = repeat(transpose(collect(0:1/(width-1):1)), inner=(height,1))
+        img = get(v, m)
+        fname = k * ".png"
+        save(joinpath(dir_cache, dir_colorbars, fname), img)      # you'll need FileIO or similar to do this
+        res[k] = fname
+    end
+
+    return res
+end
+
+
+"""scales and offsets an array, so that each value lies between 0 and 1."""
+function normalize01!(d::AbstractArray)
+    d_ = filter(!isnan, d)
+    vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
+    if vmin == vmax
+        d .= 0
+    else
+        d[:] = (d .- vmin) ./ (vmax - vmin)
+    end
+end
+
+
+"""calculates the histogram for the image specified by id. Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
+function get_histogram(id::String, dir_data::String, images_parsed::Dict{String, SpmImageGridItem})::Tuple{Float32,Vector{Float32}}
+    im_spm = load_image(joinpath(dir_data, images_parsed[id].filename_original), output_info=0)
+    d = vec(get_image_data(images_parsed[id], im_spm, resize_to=resize_to, normalize=false, clamp=false))
+
+    filter!(!isnan, d)
+    normalize01!(d)  # we normalize here, otherwise the hist generation does not seem to be robust
+    # clamp01nan!(d)
+    N = length(d)
+    nbins = min(ceil(Int, sqrt(N)), 256)
+    nbins = 256
+    hist = StatsBase.fit(StatsBase.Histogram, d, nbins=nbins)  # the function will give "approximate" number of bins
+
+    counts = hist.weights ./ maximum(hist.weights)
+    # normalize width so that the bin-positions are between 0 and 1
+    hist_range = hist.edges[1]  # 1 because it gives out a tuple
+    width = step(hist_range)
+
+    return width, counts
 end
 
 
@@ -226,10 +278,8 @@ function colorize(data::Array{<:Number,2}, colorscheme::String)::Array{RGB{Float
 end
 
 
-"""Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
-The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)"""
-function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="")
-    # create grayscale image
+"""Get, resize, background correct and filter image data for a specific griditem. Returns a 2d array"""
+function get_image_data(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)
     d = get_channel(im_spm, griditem.channel_name, origin="upper").data;
 
     ratio = min(1, resize_to / max(im_spm.pixelsize...))
@@ -241,10 +291,22 @@ function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::
     end
 
     d = correct_background(d, background_correction_list[griditem.background_correction])
-    d_ = filter(!isnan,d)
-    vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
-    d = (d .- vmin) ./ (vmax - vmin)
-    clamp01nan!(d)
+    if normalize
+        normalize01!(d)  # normalize each value in the array to values between 0 and 1
+    end
+    if clamp
+        clamp01nan!(d)
+    end
+
+    return d
+end
+
+
+"""Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
+The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)"""
+function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="")
+    # create grayscale image
+    d = get_image_data(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
 
     if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
@@ -433,12 +495,17 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         ids = string.(args[2])  # for some reason its type is "Any" and not String
         if what == "get_info"
             id = ids[1]
+            histogram = args[3]
             # get header data
             image_header = get_image_header(id, dir_data, images_parsed)
             k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
             v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
             image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
             @js_ w show_info($id, $image_header_json);
+            if histogram
+                width, counts = get_histogram(id, dir_data, images_parsed)
+                @js_ w show_histogram($id, $width, $counts)
+            end
         elseif what[1:5] == "next_"
             lock(l)
             jump = args[3]
@@ -526,6 +593,7 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     end
 
     colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
+    filenames_colorbar = save_colorbars(colorscheme_list, dir_data)
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 
@@ -546,8 +614,9 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     # call js functions to setup everything
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
+    dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
 
-    @js_ w set_params($dir_asset, $dir_cache_js, $auto_save_minutes)
+    @js_ w set_params($dir_asset, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar, $auto_save_minutes)
     @js_ w load_page()
     
     images_parsed_values = sort!(collect(values(images_parsed)), by=im -> im.created)
