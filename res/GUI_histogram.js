@@ -20,7 +20,9 @@ function plot_histogram(canvas, width, counts) {
     ctx = canvas.getContext("2d");
     canvas.width = 1024;
     canvas.height = 64;
-    for (let i=0, imax=counts.length; i<imax; i++) {
-        drawBar(ctx, i * width * canvas.width, (1 - counts[i]) * canvas.height, width * canvas.width, counts[i] * canvas.height, '#606060');
+    if (counts.length > 1) {  // if there is only one bin (i.e. all values equal), we do not display anything
+        for (let i=0, imax=counts.length; i<imax; i++) {
+            drawBar(ctx, i * width * canvas.width, (1 - counts[i]) * canvas.height, width * canvas.width, counts[i] * canvas.height, '#606060');
+        }
     }
 }
