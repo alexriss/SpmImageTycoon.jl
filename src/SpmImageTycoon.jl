@@ -13,36 +13,37 @@ using JSON
 using NaturalSort
 using StatsBase
 using SpmImages
-# import Blink.AtomShell: resolve_blink_asset
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v13
-    id::String                       # id (will be filename and suffixes for virtual copies)
-    filename_original::String        # original filename (.sxm)
-    created::DateTime                # file creation date
-    last_modified::DateTime          # file last modified date
-    filename_display::String         # generated png image
-    channel_name::String             # channel name (" bwd" indicates backward direction)
-    scansize::Vector{Float64}        # scan size in physical units
-    scansize_unit::String            # scan size unit
-    comment::String                  # comment in the file
-    background_correction::String    # type of background correction used
-    colorscheme::String              # color scheme
-    filters::Vector{String}          # array of filters used (not implemented yet)
-    keywords::Vector{String}         # keywords
-    rating::Int                      # rating (0 to 5 stars)
-    status::Int                      # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk
-    virtual_copy::Bool               # specifies whether this is a virtual copy (not implemented yet)
-    
-    SpmImageGridItem_v13(
-        id, filename_original, created, last_modified, filename_display, channel_name, scansize, scansize_unit, comment
-    ) = new(
-        id, filename_original, created, last_modified, filename_display, channel_name, scansize, scansize_unit, comment,
-        "none", "gray", [], [], 0, 0, false
-    )
+mutable struct SpmImageGridItem_v15
+    id::String                               # id (will be filename and suffixes for virtual copies)
+    filename_original::String                # original filename (.sxm)
+    created::DateTime                        # file creation date
+    last_modified::DateTime                  # file last modified date
+    filename_display::String                 # generated png image
+    channel_name::String                     # channel name (" bwd" indicates backward direction)
+    scansize::Vector{Float64}                # scan size in physical units
+    scansize_unit::String                    # scan size unit
+    comment::String                          # comment in the file
+    background_correction::String            # type of background correction used
+    colorscheme::String                      # color scheme
+    channel_range::Vector{Float64}           # min/max of current channel
+    channel_range_selected::Vector{Float64}  # selected min/max for current channel
+    filters::Vector{String}                  # array of filters used (not implemented yet)
+    keywords::Vector{String}                 # keywords
+    rating::Int                              # rating (0 to 5 stars)
+    status::Int                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
+    virtual_copy::Bool                       # specifies whether this is a virtual copy (not implemented yet)
+
+    SpmImageGridItem_v15(; id="", filename_original="", created=DateTime(0), last_modified=DateTime(0), filename_display="",
+        channel_name="", scansize=[], scansize_unit="", comment="", background_correction="none", colorscheme="gray",
+        channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=false) =
+    new(id, filename_original, created, last_modified, filename_display,
+        channel_name, scansize, scansize_unit, comment, background_correction, colorscheme,
+        channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v13
+SpmImageGridItem = SpmImageGridItem_v15
 
 
 # default settings (should be overriden by config file later)
@@ -152,7 +153,7 @@ function get_histogram(id::String, dir_data::String, images_parsed::Dict{String,
     normalize01!(d)  # we normalize here, otherwise the hist generation does not seem to be robust
     # clamp01nan!(d)
     N = length(d)
-    nbins = min(ceil(Int, sqrt(N)), 256)
+    # nbins = min(ceil(Int, sqrt(N)), 256)
     nbins = 256
     hist = StatsBase.fit(StatsBase.Histogram, d, nbins=nbins)  # the function will give "approximate" number of bins
 
@@ -168,11 +169,6 @@ end
 """adds a trailing slash to a directory if necessary"""
 function add_trailing_slash(directory::String)::String
     return joinpath(directory, "")
-    # if directory[end] in ['/', '\\'] 
-    #     return directory
-    # else
-    #     return directory * "/"
-    # end
 end
 
 
@@ -431,8 +427,8 @@ function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImag
             images_parsed[unique_id].comment = im_spm.header["Comment"]
         else
             images_parsed[unique_id] = SpmImageGridItem(
-                unique_id, filename_original, created, last_modified, "", channel_name,
-                im_spm.scansize, im_spm.scansize_unit, im_spm.header["Comment"]
+                id=unique_id, filename_original=filename_original, created=created, last_modified=last_modified,
+                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=im_spm.header["Comment"]
             )
         end
         create_image!(images_parsed[unique_id], im_spm, resize_to=resize_to, base_dir=dir_cache)
@@ -455,15 +451,27 @@ function load_all(dir_data::String)::Dict{String, SpmImageGridItem}
     if isfile(f)
         JLD2.@load f images_parsed_save
 
-        t_save = typeof(first(values(images_parsed_save)))
+        if length(images_parsed_save) == 0
+            return images_parsed
+        end
+
+        first_value = first(values(images_parsed_save))
+        t_save = typeof(first_value)
+        if t_save <: Pair # JLD2 apparently reconstructs an array of pairs{id, SpmImageGridItem}
+            t_save = typeof(first_value[2])
+        end
+        
         if t_save != SpmImageGridItem  # there was a change in the struct specification, lets try to copy field by field
             print("Old database detected. Converting... ")
             fieldnames_save = fieldnames(t_save)
-            fieldnames_common = findall(x -> x in fieldnames_save, fieldnames(SpmImageGridItem))
+            fieldnames_common = filter(x -> x in fieldnames_save, fieldnames(SpmImageGridItem))
 
-            for (k, v) in images_parsed_save
+            for pair in images_parsed_save  # JLD2 apparently reconstructs an array of pairs{id, SpmImageGridItem}
+                id = pair[1]
+                griditem = pair[2]
+                images_parsed[id] = SpmImageGridItem()
                 for f in fieldnames_common
-                    setfield!(images_parsed[k], f, getfield(v, f))
+                    setfield!(images_parsed[id], f, getfield(griditem, f))
                 end
             end
 

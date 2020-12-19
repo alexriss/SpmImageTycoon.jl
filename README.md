@@ -30,12 +30,13 @@ The program relies on
 which is currently not yet in the  default Julia package registry.
 
 
-### Third party libraries
+#### Third party libraries
 
 The following javascript libraries are included in the app:
 
 - [tagify](https://github.com/yairEO/tagify): MIT License
 - [Simple-DataTables](https://github.com/fiduswriter/Simple-DataTables): LGPL License
+- [Bulma](https://bulma.io/): MIT License
 
 ## Related projects
 
