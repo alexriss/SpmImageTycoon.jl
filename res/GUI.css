@@ -133,6 +133,11 @@ body {
   /* height: 100%; */
 }
 
+
+#imagezoom_histogram_container {
+  width:100%;
+}
+
 #imagezoom_histogram {
   height: 4rem;
   padding: 0.15rem 0 0.1rem 0;
@@ -141,7 +146,6 @@ body {
   margin: auto;
   width: 96%;
   max-width: 1200px;
-  border: 1px solid red;
 }
 
 #imagezoom_histogram_canvas_container {
@@ -149,6 +153,7 @@ body {
   height: 1.77rem;
   padding: 0;
   margin: 0.15rem 0;
+  box-shadow: -1px 0 0px 0px #606060, 1px 0 0px 0px #606060;
 }
 
 #imagezoom_histogram_canvas {
@@ -157,15 +162,51 @@ body {
 }
 
 #imagezoom_colorbar_container {
-  width:100%;
+  position: absolute;
+  left: 0;  /* left and right will be changed by js when user drags it */
+  right: 0;
   height: 1.68rem;
   padding: 0;
   margin: 0;
+  box-shadow: -1px 0 0px 0px #606060, 1px 0 0px 0px #606060;
 }
 
 #imagezoom_colorbar {
   width: 100%;
   height: 100%;
+}
+
+#imagezoom_table_range {
+  font-size: 0.75rem;
+  height: 4rem;
+}
+
+#imagezoom_table_range td {
+  padding: 3px;
+  height: 2rem;
+  vertical-align: bottom;
+}
+
+#imagezoom_table_range input {
+  width: 2.6rem;
+  margin: 0; 
+  border: none;
+  border-bottom: 1px solid #909090;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #4a4a4a;
+}
+
+/* remove up and down arrows */
+#imagezoom_table_range input::-webkit-outer-spin-button,
+#imagezoom_table_range input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#imagezoom_table_range .range_number, 
+#imagezoom_table_range .range_unit  {
+  text-align: right;
 }
 
 

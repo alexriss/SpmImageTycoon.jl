@@ -16,13 +16,14 @@ using SpmImages
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v15
+mutable struct SpmImageGridItem_v11
     id::String                               # id (will be filename and suffixes for virtual copies)
     filename_original::String                # original filename (.sxm)
     created::DateTime                        # file creation date
     last_modified::DateTime                  # file last modified date
     filename_display::String                 # generated png image
     channel_name::String                     # channel name (" bwd" indicates backward direction)
+    channel_unit::String                     # unit for the respective channel
     scansize::Vector{Float64}                # scan size in physical units
     scansize_unit::String                    # scan size unit
     comment::String                          # comment in the file
@@ -34,16 +35,16 @@ mutable struct SpmImageGridItem_v15
     keywords::Vector{String}                 # keywords
     rating::Int                              # rating (0 to 5 stars)
     status::Int                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
-    virtual_copy::Bool                       # specifies whether this is a virtual copy (not implemented yet)
+    virtual_copy::Int                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v15(; id="", filename_original="", created=DateTime(0), last_modified=DateTime(0), filename_display="",
-        channel_name="", scansize=[], scansize_unit="", comment="", background_correction="none", colorscheme="gray",
-        channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=false) =
+    SpmImageGridItem_v11(; id="", filename_original="", created=DateTime(0), last_modified=DateTime(0), filename_display="",
+        channel_name="", channel_unit="", scansize=[], scansize_unit="", comment="", background_correction="none", colorscheme="gray",
+        channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, filename_original, created, last_modified, filename_display,
-        channel_name, scansize, scansize_unit, comment, background_correction, colorscheme,
+        channel_name, channel_unit, scansize, scansize_unit, comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v15
+SpmImageGridItem = SpmImageGridItem_v11
 
 
 # default settings (should be overriden by config file later)
@@ -116,7 +117,8 @@ function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorSch
 end
 
 
-"""saves all colorbars as pngs in the cache directory. Returns a dictionary that associates each colorscheme name with a png file"""
+"""saves all colorbars as pngs in the cache directory.
+Returns a dictionary that associates each colorscheme name with a png file"""
 function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::Dict{String,String}
     dir_cache = get_dir_cache(dir_data)
     res = Dict()
@@ -132,22 +134,32 @@ function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_
 end
 
 
-"""scales and offsets an array, so that each value lies between 0 and 1."""
-function normalize01!(d::AbstractArray)
+"""scales and offsets an array, so that each value lies between 0 and 1.
+If range_selected is given, this range is normalized to lie between 0 and 1.
+Returns the minimum and maximum value of the original array."""
+function normalize01!(d::AbstractArray; range_selected::Array{<:Number}=Float64[])::Tuple{Number,Number}
     d_ = filter(!isnan, d)
-    vmin, vmax = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
-    if vmin == vmax
+    vmin_original, vmax_original = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
+    if vmin_original == vmax_original
         d .= 0
     else
+        vmin, vmax = vmin_original, vmax_original
+        if length(range_selected) == 2 && range_selected[1] != range_selected[2]
+            span = vmax - vmin
+            vmax = vmin + span * range_selected[2]
+            vmin += span * range_selected[1]
+        end
         d[:] = (d .- vmin) ./ (vmax - vmin)
     end
+    return vmin_original, vmax_original
 end
 
 
-"""calculates the histogram for the image specified by id. Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
+"""calculates the histogram for the image specified by id.
+Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
 function get_histogram(id::String, dir_data::String, images_parsed::Dict{String, SpmImageGridItem})::Tuple{Float32,Vector{Float32}}
     im_spm = load_image(joinpath(dir_data, images_parsed[id].filename_original), output_info=0)
-    d = vec(get_image_data(images_parsed[id], im_spm, resize_to=resize_to, normalize=false, clamp=false))
+    d = vec(get_image_data(images_parsed[id], im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
     normalize01!(d)  # we normalize here, otherwise the hist generation does not seem to be robust
@@ -274,9 +286,11 @@ function colorize(data::Array{<:Number,2}, colorscheme::String)::Array{RGB{Float
 end
 
 
-"""Get, resize, background correct and filter image data for a specific griditem. Returns a 2d array"""
-function get_image_data(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)
-    d = get_channel(im_spm, griditem.channel_name, origin="upper").data;
+"""Get, resize, background correct and filter image data for a specific griditem. Returns a 2d array, the channel unit, minimum and maximum values."""
+function get_image_data(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+    channel = get_channel(im_spm, griditem.channel_name, origin="upper");
+    d = channel.data
+    unit = channel.unit
 
     ratio = min(1, resize_to / max(im_spm.pixelsize...))
     if ratio <= 0.0
@@ -288,13 +302,15 @@ function get_image_data(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to:
 
     d = correct_background(d, background_correction_list[griditem.background_correction])
     if normalize
-        normalize01!(d)  # normalize each value in the array to values between 0 and 1
+        vmin, vmax = normalize01!(d, range_selected=griditem.channel_range_selected)  # normalize each value in the array to values between 0 and 1
+    else
+        vmin, vmax = 0, 0  # we only need it when also normalizing it
     end
     if clamp
         clamp01nan!(d)
     end
 
-    return d
+    return d, unit, vmin, vmax
 end
 
 
@@ -302,7 +318,9 @@ end
 The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)"""
 function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="")
     # create grayscale image
-    d = get_image_data(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
+    d, unit, vmin, vmax = get_image_data(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
+    griditem.channel_unit = unit
+    griditem.channel_range = [vmin, vmax]
 
     if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
@@ -346,6 +364,19 @@ function set_keywords!(ids::Vector{String}, dir_data::String, images_parsed::Dic
 end
 
 
+"""sets selected range and recreates images"""
+function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, range_selected::Array{Float64}, full_resolution::Bool)
+    dir_cache = get_dir_cache(dir_data)
+    Threads.@threads for id in ids
+        filename_original = images_parsed[id].filename_original
+        im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
+        images_parsed[id].channel_range_selected = range_selected
+        resize_to_ = full_resolution ? 0 : resize_to
+        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+    end
+end
+
+
 """Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
 for the images specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
@@ -362,6 +393,7 @@ function switch_channel_direction_background!(ids::Vector{String}, dir_data::Str
         if what == "channel"
             channel_name = next_channel_name(im_spm, channel_name, jump)
             images_parsed[id].channel_name = channel_name
+            images_parsed[id].channel_range_selected = [] # reset selected range when switching channel (we try to keep it for all other cases for now)
         elseif what == "direction"
             if endswith(channel_name, " bwd")
                 channel_name = channel_name[1:end-4]
@@ -460,7 +492,7 @@ function load_all(dir_data::String)::Dict{String, SpmImageGridItem}
         if t_save <: Pair # JLD2 apparently reconstructs an array of pairs{id, SpmImageGridItem}
             t_save = typeof(first_value[2])
         end
-        
+
         if t_save != SpmImageGridItem  # there was a change in the struct specification, lets try to copy field by field
             print("Old database detected. Converting... ")
             fieldnames_save = fieldnames(t_save)
@@ -552,6 +584,17 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 finally
                     unlock(l)
                 end
+            elseif what[5:end] == "range_selected"
+                lock(l)
+                range_selected = float.(args[3])
+                full_resolution = args[4]
+                try
+                    set_range_selected!(ids, dir_data, images_parsed, range_selected, full_resolution)
+                    images_parsed_sub = get_subset(images_parsed, ids)
+                    @js_ w update_images($images_parsed_sub);
+                finally
+                    unlock(l)
+                end
             end
         end
     end
@@ -600,7 +643,9 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
         @js w require("electron").remote.getCurrentWindow().maximize()
     end
 
-    colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
+    if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
+        colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
+    end
     filenames_colorbar = save_colorbars(colorscheme_list, dir_data)
 
     images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one

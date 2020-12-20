@@ -10,6 +10,8 @@ window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 
+window.histogram_object = null;  // holds the histogram object
+
 window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
 window.timeout_image_info = null;  //timeout refrence for get_image_info function
@@ -29,6 +31,7 @@ window.keywords_modes_display = ["set", "add", "remove"];  // these descriptions
 window.timeout_filter = null;  //timeout refrence for filter function
 window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
 
+window.t0 = 0;   // for performance measurements
 
 // helper functions
 
@@ -51,7 +54,8 @@ function file_url(id) {
     // returns the display filename url
     const item = window.items[id];
     return 'file:///' + window.dir_cache + item.filename_display +
-         "?" + item.channel_name + "_" + item.background_correction + "_" + item.colorscheme;  // to prevent caching and force reload
+         "?" + item.channel_name + "_" + item.background_correction + "_" + item.colorscheme +
+         "_range" + item.channel_range_selected[0] + "_" + item.channel_range_selected[1];  // to prevent caching and force reload
 }
 
 function file_url_colorbar(id) {
@@ -437,10 +441,10 @@ function next_item(jump) {
     if (el.id in window.items && !out_of_range) {
         document.getElementById('imagezoom_image').src = file_url(el.id)
         document.getElementById('imagezoom_colorbar').src = file_url_colorbar(el.id);
-        
-        // clear old histogram
-        // const canvas = document.getElementById('imagezoom_histogram_canvas');
-        // canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        if (window.histogram_object === null) {
+            window.histogram_object = new Histogram();
+        }
+        window.histogram_object.set_range_initial(window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
 
         window.image_info_id = el.id;
         window.zoom_last_selected = el.id;
@@ -630,6 +634,10 @@ function load_images(images_parsed_arr, delete_previous = false) {  // here we u
 
 function update_images(images_parsed) {  // "images_parsed" is a dictionary here
     // updates images
+
+    // let t1 = performance.now();
+    // console.log("Update info get:" + (t1 - window.t0) + " ms.");
+
     for (let key in images_parsed) {
         window.items[key] = images_parsed[key];
         update_image(key);
@@ -638,11 +646,17 @@ function update_images(images_parsed) {  // "images_parsed" is a dictionary here
         })
     }
 
+    // t1 = performance.now();
+    // console.log("Update info get1:" + (t1 - window.t0) + " ms.");
+
     // update image info
     if (get_view() != "zoom") {  // zoom view updates the image by itself
         image_info_quick();
         get_image_info();
     }
+
+    // t1 = performance.now();
+    // console.log("Update info get2:" + (t1 - window.t0) + " ms.");
 
     filter_items(Object.keys(images_parsed));
 
@@ -704,8 +718,9 @@ function show_info(id, info_json) {
 
 function show_histogram(id, width, counts) {
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
-        const canvas = document.getElementById('imagezoom_histogram_canvas');
-        plot_histogram(canvas, width, counts);
+        if (window.histogram_object != null) {
+            window.histogram_object.plot_histogram(width, counts);
+        }
     }
     open_jobs(-1);
 }
@@ -730,10 +745,9 @@ function change_item(what, message, jump = 1) {
     console.log("change: " + what);
     ids = get_active_element_ids();
 
+    let full_resolution = false;
     if (get_view() == "zoom") {
         full_resolution = true;
-    } else {
-        full_resolution = false;
     }
 
     if (ids.length > 0) {
@@ -742,6 +756,15 @@ function change_item(what, message, jump = 1) {
         show_message(message)
     }
 }
+
+function change_item_range(id, range_selected) {
+    // changes the displayed range for the image
+    const full_resolution = true;
+    window.t0 = performance.now();
+    Blink.msg("grid_item", ["set_range_selected", [id], range_selected, full_resolution])
+    open_jobs(1);
+}
+
 
 function get_image_info(id="", histogram=false) {
     // gets info (header data) for the current image

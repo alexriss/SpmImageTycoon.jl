@@ -59,15 +59,39 @@
             <img id="imagezoom_image" />
           </section>
         </div>
-        <div id="imagezoom_histogram">
-          <div id="imagezoom_histogram_canvas_container">
-            <canvas id="imagezoom_histogram_canvas"></canvas>
+        <div id="imagezoom_histogram_table_container" class="columns is-gapless">
+          <div class="column">
+            <div id="imagezoom_histogram_container" class="unselectable">
+              <div id="imagezoom_histogram" class="unselectable">
+                <div id="imagezoom_histogram_canvas_container" class="unselectable">
+                  <canvas id="imagezoom_histogram_canvas"></canvas>
+                </div>
+                <div id="imagezoom_colorbar_container" class="unselectable">
+                  <img id="imagezoom_colorbar" class="unselectable" />
+                </div>
+              </div>
+            </div>
           </div>
-          <div id="imagezoom_colorbar_container">
-            <img id="imagezoom_colorbar" />
+          <div class="column is-narrow">
+            <table id="imagezoom_table_range">
+              <!-- <tr><th colspan="4">Full:</th></tr> -->
+              <tr>
+                <td class="range_number"><span id="imagezoom_range_start"></span></td>
+                <td>to</td>
+                <td class="range_number"><span id="imagezoom_range_end"></span></td>
+                <td class="range_unit"></td>
+              </tr>
+              <!--  <tr><th colspan="4">Selected:</th></tr> -->
+              <tr>
+                <td class="range_number"><input type="number" id="imagezoom_range_selected_start" step="0.01"></td>
+                <td>to</td>
+                <td class="range_number"><input type="number" id="imagezoom_range_selected_end" step="0.01"></td>
+                <td class="range_unit"></td>
+              </tr>
+            </table>
           </div>
         </div>
-    </div>
+      </div>
     </div>
 
     <!-- side bar info -->
