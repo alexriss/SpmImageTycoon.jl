@@ -53,6 +53,7 @@ channels_no_feedback = ["Frequency Shift", "Current"]
 
 background_correction_list = OrderedDict{String,Background}(
     "none" => no_correction,
+    "offset" => subtract_minimum,
     "plane" => plane_linear_fit,
     "line average" => line_average,
     "vline average" => vline_average,

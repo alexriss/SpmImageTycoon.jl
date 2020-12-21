@@ -29,7 +29,6 @@ The program relies on
 
 which is currently not yet in the  default Julia package registry.
 
-
 #### Third party libraries
 
 The following javascript libraries are included in the app:

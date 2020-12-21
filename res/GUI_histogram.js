@@ -57,7 +57,15 @@ Histogram.prototype = {
         return number.toFixed(2);
     },
 
+    convert_absolute_to_absolute_display(range) {
+        return [
+            this.format_number(range[0] / 10**this.unit_exponent),
+            this.format_number(range[1] / 10**this.unit_exponent) 
+        ];
+    },
+
     convert_relative_to_absolute_display(range) {
+        // converts a relative range to a string that is displayed (absolute numbers, with unit adapted)
         const span = (this.range[1] - this.range[0]);
         return [
             this.format_number((this.range[0] + span * range[0]) / 10**this.unit_exponent),
@@ -66,6 +74,7 @@ Histogram.prototype = {
     },
 
     convert_absolute_display_to_relative(range_str) {
+        // converts a absolute range from a string (with units adapted) to a relative range
         const span = (this.range[1] - this.range[0]);
 
         let range_selected_start = parseFloat(range_str[0]) * 10**this.unit_exponent;
@@ -90,10 +99,17 @@ Histogram.prototype = {
     set_prefix() {
         // sets the prefix and exponent
         if (this.range.length != 2) {
+            this.unit_prefix = "";
+            this.unit_exponent = 0;
             return;
         }
 
-        const max_num = Math.max(Math.abs(this.range[0], Math.abs(this.range[1])));
+        const max_num = Math.max(Math.abs(this.range[0]), Math.abs(this.range[1]));
+        if (max_num == 0) {
+            this.unit_prefix = "";
+            this.unit_exponent = 0;
+            return;
+        }
         for (let i=0; i<this.unit_exponents.length;i++) {
             if (max_num > 10**this.unit_exponents[i]) {
                 this.unit_exponent = this.unit_exponents[i];
@@ -147,8 +163,9 @@ Histogram.prototype = {
         this.set_prefix();  // sets the prefix and exponent for the unit
 
         // full-range values in table
-        this.imagezoom_range_start.innerText = this.format_number(range[0] * 10**this.unit_exponent);
-        this.imagezoom_range_end.innerText = this.format_number(range[1] * 10**this.unit_exponent);
+        const range_display = this.convert_absolute_to_absolute_display(range);
+        this.imagezoom_range_start.innerText = range_display[0];
+        this.imagezoom_range_end.innerText = range_display[1];
 
         this.texts_range_unit.forEach(el => {
             el.innerText = this.unit;
