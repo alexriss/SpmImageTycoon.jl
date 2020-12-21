@@ -3,7 +3,7 @@ function Histogram() {
 
     this.range = [0.0, 0.0];  // full range of current histogram
     this.unit = "";  // unit for current channel
-    this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f)
+    this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f, ...)
     this.unit_exponent = 0;  // exonent for the unit
     this.drag = false;  // specifies whether we are dragging the colorbar
     this.drag_left = false;  // specifies whether we are dragging the left or right edge of the colorbar
