@@ -3,6 +3,8 @@ function Histogram() {
 
     this.range = [0.0, 0.0];  // full range of current histogram
     this.unit = "";  // unit for current channel
+    this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f)
+    this.unit_exponent = 0;  // exonent for the unit
     this.drag = false;  // specifies whether we are dragging the colorbar
     this.drag_left = false;  // specifies whether we are dragging the left or right edge of the colorbar
     this.timeout_change_item_range = null;  // timeout reference for change_item_range function
@@ -25,17 +27,17 @@ function Histogram() {
     this.imagezoom_range_selected_end = document.getElementById("imagezoom_range_selected_end");
 
     this.inputs_range_selected = document.querySelectorAll('#imagezoom_table_range input');
-    this.texts_range_unit = document.querySelectorAll('#imagezoom_table_range .range_unit');
+    this.texts_range_unit = document.querySelectorAll('#imagezoom_table_range .range_unit_unit');
+    this.texts_range_unit_prefix = document.querySelectorAll('#imagezoom_table_range .range_unit_prefix');
+
+    this.unit_prefixes = ["E", "P", "T", "G", "M", "k", "", "m", "µ", "n", "p", "f", "a"];
+    this.unit_exponents = [18, 15, 12, 9, 6, 3, 0, -3, -6, -9, -12, -15, -18];
    
 
     // setup event handlers
     this.setup_event_handlers();
-
-    this.format_number = function(number, decimals=2) {
-        // formats a number using a unit-prefix and a certain amount of decimals
-        return number.toFixed(2);
-    }
 }
+
 
 Histogram.prototype = {
     limit_range_selected(range_selected) {
@@ -48,6 +50,62 @@ Histogram.prototype = {
         }
 
         return range_selected;
+    },
+
+    format_number(number, decimals=2) {
+        // formats a number using a unit-prefix and a certain amount of decimals
+        return number.toFixed(2);
+    },
+
+    convert_relative_to_absolute_display(range) {
+        const span = (this.range[1] - this.range[0]);
+        return [
+            this.format_number((this.range[0] + span * range[0]) / 10**this.unit_exponent),
+            this.format_number((this.range[0] + span * range[1]) / 10**this.unit_exponent) 
+        ];
+    },
+
+    convert_absolute_display_to_relative(range_str) {
+        const span = (this.range[1] - this.range[0]);
+
+        let range_selected_start = parseFloat(range_str[0]) * 10**this.unit_exponent;
+        let range_selected_end = parseFloat(range_str[1]) * 10**this.unit_exponent;
+        if (isNaN(range_selected_start)) {
+            range_selected_start = this.range[0];
+        }
+        if (isNaN(range_selected_end)) {
+            range_selected_end = this.range[1];
+        }
+        if (range_selected_start > range_selected_end) {
+            [range_selected_start, range_selected_end] = [range_selected_end, range_selected_start];
+        }
+
+        // convert to relative ranges
+        range_selected_start = (range_selected_start - this.range[0]) / span;
+        range_selected_end = (range_selected_end - this.range[0]) / span;
+
+        return [range_selected_start, range_selected_end];
+    },
+
+    set_prefix() {
+        // sets the prefix and exponent
+        if (this.range.length != 2) {
+            return;
+        }
+
+        const max_num = Math.max(Math.abs(this.range[0], Math.abs(this.range[1])));
+        for (let i=0; i<this.unit_exponents.length;i++) {
+            if (max_num > 10**this.unit_exponents[i]) {
+                this.unit_exponent = this.unit_exponents[i];
+                this.unit_prefix = this.unit_prefixes[i];
+                break;
+            }
+        }
+
+        this.texts_range_unit_prefix.forEach(el => {
+            el.innerText = this.unit_prefix;
+        });
+
     },
 
     draw_bar(upperLeftCornerX, upperLeftCornerY, width, height, color){
@@ -86,9 +144,11 @@ Histogram.prototype = {
         this.range = range;
         this.unit = unit;
 
+        this.set_prefix();  // sets the prefix and exponent for the unit
+
         // full-range values in table
-        this.imagezoom_range_start.innerText = this.format_number(range[0]);
-        this.imagezoom_range_end.innerText = this.format_number(range[1]);
+        this.imagezoom_range_start.innerText = this.format_number(range[0] * 10**this.unit_exponent);
+        this.imagezoom_range_end.innerText = this.format_number(range[1] * 10**this.unit_exponent);
 
         this.texts_range_unit.forEach(el => {
             el.innerText = this.unit;
@@ -105,35 +165,16 @@ Histogram.prototype = {
 
     set_range_selected(range_selected) {
         // updates the selected-range input fields
-        const span = this.range[1] - this.range[0];
-        
-        const range_selected_end = this.range[0] + span * range_selected[1];
-        const range_selected_start = this.range[0] + span * range_selected[0];
-        this.imagezoom_range_selected_start.value = this.format_number(range_selected_start);
-        this.imagezoom_range_selected_end.value = this.format_number(range_selected_end);
+
+        const range_selected_display = this.convert_relative_to_absolute_display(range_selected);
+        this.imagezoom_range_selected_start.value = range_selected_display[0];
+        this.imagezoom_range_selected_end.value = range_selected_display[1];
     },
 
     set_range_selected_user() {
         // triggers when the selected-range input fields are changed by the user
-        const span = this.range[1] - this.range[0];
-
-        let range_selected_start = parseFloat(this.imagezoom_range_selected_start.value);
-        let range_selected_end = parseFloat(this.imagezoom_range_selected_end.value);
-        if (isNaN(range_selected_start)) {
-            range_selected_start = this.range[0];
-        }
-        if (isNaN(range_selected_end)) {
-            range_selected_end = this.range[1];
-        }
-        if (range_selected_start > range_selected_end) {
-            [range_selected_start, range_selected_end] = [range_selected_end, range_selected_start];
-        }
-
-        // convert to relative ranges
-        range_selected_start = (range_selected_start - this.range[0]) / span;
-        range_selected_end = (range_selected_end - this.range[0]) / span;
-
-        const range_selected = this.limit_range_selected([range_selected_start, range_selected_end])
+        let range_selected = this.convert_absolute_display_to_relative([this.imagezoom_range_selected_start.value, this.imagezoom_range_selected_end.value]);
+        range_selected = this.limit_range_selected(range_selected);
         this.change_item_range_timeout(window.zoom_last_selected, range_selected, timeout_ms=40);  // call julia
     },
 
@@ -219,7 +260,9 @@ Histogram.prototype = {
 
         // imagezoom select range
         this.imagezoom_histogram_table_container.addEventListener('dblclick', (e) => {
-            that.set_range_user(e, mode="reset");
+            if (e.target.tagName != "INPUT") {   // double click in inputs is used to select all
+                that.set_range_user(e, mode="reset");
+            }
         });
 
         this.imagezoom_histogram_container.addEventListener('mousedown', (e) => {

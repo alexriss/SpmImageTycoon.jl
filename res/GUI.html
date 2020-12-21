@@ -79,14 +79,14 @@
                 <td class="range_number"><span id="imagezoom_range_start"></span></td>
                 <td>to</td>
                 <td class="range_number"><span id="imagezoom_range_end"></span></td>
-                <td class="range_unit"></td>
+                <td class="range_unit"><span class="range_unit_prefix"></span><span class="range_unit_unit"></span></td>
               </tr>
               <!--  <tr><th colspan="4">Selected:</th></tr> -->
               <tr>
                 <td class="range_number"><input type="number" id="imagezoom_range_selected_start" step="0.01"></td>
                 <td>to</td>
                 <td class="range_number"><input type="number" id="imagezoom_range_selected_end" step="0.01"></td>
-                <td class="range_unit"></td>
+                <td class="range_unit"><span class="range_unit_prefix"></span><span class="range_unit_unit"></span></td>
               </tr>
             </table>
           </div>
@@ -164,9 +164,10 @@
           <div class="column abbreviate has-text-left pt-0 pb-1">
             <span id="image_info_scansize" class="is-size-7 has-text-weight-normal"></span>
           </div>
-          <div class="column abbreviate has-text-right is-narrow  pt-0 pb-0" style="width:82px;">
+          <div class="column abbreviate has-text-right is-narrow pl-0 pt-0 pb-0" style="width:90px;">
             <span class="ml-2 is-size-7 has-text-weight-normal has-text-grey">
               <!-- <span class="icon is-small img-icon"><img style="opacity:0.7;width:80%;" src="colorwheel.svg" /></span> -->
+              <span id="image_info_colorscheme_clamped" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="clamped.svg" /></span>
               <span id="image_info_colorscheme"></span>
             </span>
           </div>

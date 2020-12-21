@@ -209,6 +209,10 @@ body {
   text-align: right;
 }
 
+#imagezoom_table_range .range_unit_prefix  {
+  text-align: right;
+}
+
 
 /* sidebar */
 

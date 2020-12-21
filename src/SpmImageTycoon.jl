@@ -367,7 +367,7 @@ end
 """sets selected range and recreates images"""
 function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, range_selected::Array{Float64}, full_resolution::Bool)
     dir_cache = get_dir_cache(dir_data)
-    Threads.@threads for id in ids
+    for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = images_parsed[id].filename_original
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         images_parsed[id].channel_range_selected = range_selected

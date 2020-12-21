@@ -679,6 +679,17 @@ function show_info(id, info_json) {
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
     document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
 
+    if (window.items[id].channel_range_selected.length == 2) {
+        const diff = Math.abs(window.items[id].channel_range_selected[0] - 0) + Math.abs(1 - window.items[id].channel_range_selected[1]);
+        if (diff > 0.0005) {
+            document.getElementById("image_info_colorscheme_clamped").classList.remove("is-invisible");
+        } else {
+            document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");    
+        }
+    } else {
+        document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");
+    }
+
     const rating = window.items[id].rating;
     document.getElementsByName("image_info_rating")[rating].checked = true;
 
