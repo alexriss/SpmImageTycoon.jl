@@ -49,6 +49,13 @@ Histogram.prototype = {
             range_selected[1] = 1.0;
         }
 
+        if (range_selected[0] == range_selected[1]) {  // there should be some difference
+            range_selected[0] = range_selected[0] - 1e-6;
+            range_selected[1] = range_selected[1] + 1e-6;
+            range_selected = this.limit_range_selected(range_selected);  // check again
+        }
+
+
         return range_selected;
     },
 
@@ -85,7 +92,7 @@ Histogram.prototype = {
         if (isNaN(range_selected_end)) {
             range_selected_end = this.range[1];
         }
-        if (range_selected_start > range_selected_end) {
+        if (range_selected_start > range_selected_end) {  // do not allow low > high
             [range_selected_start, range_selected_end] = [range_selected_end, range_selected_start];
         }
 
