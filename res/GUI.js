@@ -685,6 +685,9 @@ function insert_images(images_parsed, ids_after) {
         i++;
     }
 
+    filter_items(Object.keys(images_parsed));
+    document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
+
     open_jobs(-1);
 }
 
@@ -696,6 +699,10 @@ function delete_images(ids) {
     }
 
     // TODO: we could update the window.keywords - but for now we just leave it as is
+
+    filter_items([]);  // no need to apply extra filtering now, so give empty array, so we will update the value in the filter sidebar
+    document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
+
     open_jobs(-1);
 }
 
@@ -703,6 +710,10 @@ function show_info(id, info_json) {
     /// shows header data for an image
     if (window.image_info_id != id) return;  // there was some other event already
 
+    if (document.getElementById("sidebar_content").classList.contains("is-hidden")) {
+        document.getElementById("sidebar_content_none").classList.add("is-hidden");
+        document.getElementById("sidebar_content").classList.remove("is-hidden");
+    }
     // let t1 = performance.now();
     // console.log("info unparse:" + (t1 - window.t0) + " ms.");
 
