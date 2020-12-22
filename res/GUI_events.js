@@ -11,6 +11,7 @@ let key_commands = {
     B: { command: change_item, args: ["background_correction", "change background.", -1] },
     P: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
     I: { command: change_item, args: ["inverted", "invert colorscheme."] },
+    "&": { command: virtual_copy, args: ["create"] },
     a: { command: toggle_all_active, args: [] },
     A: { command: toggle_all_active, args: [true] },
     m: { command: toggle_sidebar, args: ["info"] },
@@ -30,6 +31,11 @@ let key_commands = {
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: toggle_imagezoom, args: ["grid"] },
+}
+
+// let 
+let shift_key_commands = {
+    Delete: { command: virtual_copy, args: ["delete"] },
 }
 
 // with ctrl-modifier
@@ -72,6 +78,8 @@ document.addEventListener("keydown", function (event) {
         if (event.key in ctrl_key_commands) {
             ctrl_key_commands[event.key].command(...ctrl_key_commands[event.key].args);
         }
+    } else if (event.shiftKey && event.key in shift_key_commands) {  // this will not block the non-modifier commands (some of those can only be typed with the shift key)
+        shift_key_commands[event.key].command(...shift_key_commands[event.key].args);
     } else if (event.key in key_commands) {
         key_commands[event.key].command(...key_commands[event.key].args);
         event.preventDefault();

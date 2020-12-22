@@ -217,7 +217,7 @@ Histogram.prototype = {
         const histogram_rect = this.histogram.getBoundingClientRect();
         const colorbar_rect = this.colorbar.getBoundingClientRect();
         let x = event.clientX - histogram_rect.left;
-    
+
         let update_values = false;
 
         if (mode == "start") {

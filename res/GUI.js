@@ -64,6 +64,10 @@ function file_url_colorbar(id) {
     return 'file:///' + window.dir_colorbars + window.filenames_colorbar[item.colorscheme];
 }
 
+function insertAfter(newNode, referenceNode) {
+    // inserts node after a certain node (will also handle if the referenceNode is the last node)
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}
 
 
 // GUI functions
@@ -550,14 +554,19 @@ function image_info_search_parameter() {
     return false;
 }
 
-function add_image(id) {
+function add_image(id, id_after=null) {
     // adds image to the DOM
     const grid = document.getElementById('imagegrid');
     const t = document.getElementById('griditem');
     const el = t.content.firstElementChild.cloneNode(true)
     el.id = id;
     el.querySelector('img').src = file_url(id);
-    grid.appendChild(el);
+    if (id_after === null) {
+        grid.appendChild(el);
+    } else {
+        insertAfter(el, document.getElementById(id_after));
+    }
+    
     el.addEventListener('click', select_item);
     el.addEventListener('dblclick', clear_all_active_mouse);  // with a modifier
     el.addEventListener('dblclick', toggle_imagezoom_mouse);  // only without a modifier
@@ -643,7 +652,7 @@ function update_images(images_parsed) {  // "images_parsed" is a dictionary here
         update_image(key);
         images_parsed[key].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
-        })
+        });
     }
 
     // t1 = performance.now();
@@ -660,6 +669,33 @@ function update_images(images_parsed) {  // "images_parsed" is a dictionary here
 
     filter_items(Object.keys(images_parsed));
 
+    open_jobs(-1);
+}
+
+function insert_images(images_parsed, ids_after) {
+    // inserts new images at specific positions (ids_after)
+
+    let i = 0;
+    for (let key in images_parsed) {
+        window.items[key] = images_parsed[key];
+        add_image(key, ids_after[i]);
+        images_parsed[key].keywords.forEach((keyword) => {
+            window.keywords_all.add(keyword);
+        });
+        i++;
+    }
+
+    open_jobs(-1);
+}
+
+function delete_images(ids) {
+    // deletes images
+    for (let i=0;i<ids.length;i++) {
+        document.getElementById(ids[i]).remove();
+        delete window.items[ids[i]];
+    }
+
+    // TODO: we could update the window.keywords - but for now we just leave it as is
     open_jobs(-1);
 }
 
@@ -688,6 +724,12 @@ function show_info(id, info_json) {
         }
     } else {
         document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");
+    }
+
+    if (window.items[id].virtual_copy > 0) {
+        document.getElementById("image_info_virtual_copy").classList.remove("is-hidden");
+    } else {
+        document.getElementById("image_info_virtual_copy").classList.add("is-hidden");
     }
 
     const rating = window.items[id].rating;
@@ -754,7 +796,7 @@ function header_data(json) {
 
 function change_item(what, message, jump = 1) {
     console.log("change: " + what);
-    ids = get_active_element_ids();
+    let ids = get_active_element_ids();
 
     let full_resolution = false;
     if (get_view() == "zoom") {
@@ -765,6 +807,42 @@ function change_item(what, message, jump = 1) {
         Blink.msg("grid_item", ["next_" + what, ids, jump, full_resolution]);
         open_jobs(1);
         show_message(message)
+    }
+}
+
+function virtual_copy(mode) {
+    // creates or deletes virtual images
+    console.log("virtual item: " + mode);
+
+    let ids = get_active_element_ids();
+    if (ids.length > 0) {
+        if (mode == "create") {
+            Blink.msg("grid_item", ["virtual_copy", ids, mode]);
+            open_jobs(1);
+            if (ids.length == 1) {
+                show_message("create virtual copy.");
+            } else {
+                show_message("create virtual copies.");
+            }
+        } else if (mode == "delete") {
+            let ids_virtual = [];
+            for (let i=0; i<ids.length; i++) {
+                if (window.items[ids[i]].virtual_copy > 0) {
+                    ids_virtual.push(ids[i]);
+                }
+            }
+            if (ids_virtual.length > 0) {
+                Blink.msg("grid_item", ["virtual_copy", ids_virtual, mode]);
+                open_jobs(1);
+                if (ids_virtual.length == 1) {
+                    show_message("delete virtual copy.");
+                } else {
+                    show_message("delete virtual copies.");
+                }    
+            } else {
+                show_message("No virtual copies within selection.");
+            }
+        }
     }
 }
 

@@ -16,11 +16,12 @@ using SpmImages
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v11
+mutable struct SpmImageGridItem_v12
     id::String                               # id (will be filename and suffixes for virtual copies)
     filename_original::String                # original filename (.sxm)
     created::DateTime                        # file creation date
     last_modified::DateTime                  # file last modified date
+    recorded::DateTime                       # date recorded
     filename_display::String                 # generated png image
     channel_name::String                     # channel name (" bwd" indicates backward direction)
     channel_unit::String                     # unit for the respective channel
@@ -37,21 +38,32 @@ mutable struct SpmImageGridItem_v11
     status::Int                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
     virtual_copy::Int                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v11(; id="", filename_original="", created=DateTime(0), last_modified=DateTime(0), filename_display="",
+    SpmImageGridItem_v12(; id="", filename_original="", created=DateTime(0), last_modified=DateTime(0), recorded=DateTime(0), filename_display="",
         channel_name="", channel_unit="", scansize=[], scansize_unit="", comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
-    new(id, filename_original, created, last_modified, filename_display,
+    new(id, filename_original, created, recorded, last_modified, filename_display,
         channel_name, channel_unit, scansize, scansize_unit, comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v11
+SpmImageGridItem = SpmImageGridItem_v12
 
 
 # default settings (should be overriden by config file later)
-channels_feedback = ["Z"]
-channels_no_feedback = ["Frequency Shift", "Current"]
+const channels_feedback = ["Z"]
+const channels_no_feedback = ["Frequency Shift", "Current"]
 
-background_correction_list = OrderedDict{String,Background}(
+const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
+const extension_spm = ".sxm"
+
+const dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
+const dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
+const dir_res = "../res/"  # relative to module directory
+
+const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
+const auto_save_minutes = 10  # auto-save every n minutes
+
+
+const background_correction_list = OrderedDict{String,Background}(
     "none" => no_correction,
     "offset" => subtract_minimum,
     "plane" => plane_linear_fit,
@@ -61,7 +73,7 @@ background_correction_list = OrderedDict{String,Background}(
     "vline linear" => vline_linear_fit,
 )
 
-colorscheme_list_pre = OrderedDict{String,ColorScheme}(
+const colorscheme_list_pre = OrderedDict{String,ColorScheme}(
     "gray" => ColorSchemes.grays,  # we wont use this, though, will just be the standard Gray-function
     "thermal" => ColorSchemes.thermal,
     "ice" => ColorSchemes.ice,
@@ -83,17 +95,6 @@ colorscheme_list_pre = OrderedDict{String,ColorScheme}(
     "deepsea" => ColorSchemes.deepsea
 )
 colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
-
-
-resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
-extension_spm = ".sxm"
-
-dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
-dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
-dir_res = "../res/"  # relative to module directory
-
-filename_db = "db.jld2"  # save all data to this file (in cache_dir)
-auto_save_minutes = 10  # auto-save every n minutes
 
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
@@ -329,7 +330,7 @@ function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::
         im_arr = colorize(d, griditem.colorscheme)
     end
     
-    filename_display = griditem.filename_original[1:end-3] * "png"
+    filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).png"
     save(joinpath(base_dir, filename_display), im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
 
     griditem.filename_display = filename_display
@@ -429,42 +430,137 @@ function get_subset(images_parsed::Dict{String, SpmImageGridItem}, ids::Vector{S
 end
 
 
+"""gets a dictionary "original_id" => (array of virtual copies) with all virtual copies in images_parsed"""
+function get_virtual_copies_dict(images_parsed::Dict{String, SpmImageGridItem})::Dict{String,Array{SpmImageGridItem}}
+    virtual_copies = filter(x -> last(x).virtual_copy > 0, images_parsed)
+    virtual_copies_dict = Dict{String, Array{SpmImageGridItem}}()  # create a dict for quick lookup
+    for virtual_copy in values(virtual_copies)
+        id_original = virtual_copy.filename_original
+        if !haskey(virtual_copies_dict, id_original)
+            virtual_copies_dict[id_original] = Array{SpmImageGridItem}(undef, 0);
+        end
+        push!(virtual_copies_dict[id_original], virtual_copy)
+    end
+
+    return virtual_copies_dict
+end
+
+
+"""gets the virtual copies that have been created for id. Returns an array of SpmImageGridItem"""
+function get_virtual_copies(images_parsed::Dict{String, SpmImageGridItem}, id::String)::Array{SpmImageGridItem}
+    virtual_copies = filter(x -> last(x).filename_original==id && last(x).virtual_copy > 0, images_parsed)
+    return collect(values(virtual_copies))
+end
+
+
+"""Generates a new unique id that is not yet present in images_parsed by appending numbers to the given id"""
+function get_new_id(images_parsed::Dict{String, SpmImageGridItem},id_original::String)::String
+    id = id_original
+    i = 1
+    while true
+        id = "$(id_original)_$i"
+        if !haskey(images_parsed, id)
+            break
+        end
+        i += 1
+    end
+    return id
+end
+
+
+"""Sets the virtual_copy-field values in the SpmImageGridItems to consecutive numbers (starting with 1). Creates a position to insert a new virtual copy (after the items with id 'id').
+Returns the new position."""
+function update_virtual_copies_order!(virtual_copies::Array{SpmImageGridItem}, id::String)::Int
+    sort!(virtual_copies, by=x -> x.virtual_copy)
+    i_new = -1
+    i = 1
+    for virtual_copy in virtual_copies
+        virtual_copy.virtual_copy = i
+        i += 1
+        if virtual_copy.id == id
+            i_new = i
+            i += 1
+        end
+    end
+    if i_new == -1
+        i_new = i
+    end
+    return i_new
+end
+
+
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
 function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
 
     # load saved data - if available
     images_parsed = load_all(dir_data)
+
+    # get all virtual copies that are saved
+    virtual_copies_dict = get_virtual_copies_dict(images_parsed)
+    
+    # set all status to -2 (will be then re-set to 0 when the file is found in the directory)
+    map(x -> x.status=-2, values(images_parsed))  # we do not need to use "map! (we even cant use it)
     
     datafiles = filter!(x -> isfile(x) && endswith(x, extension_spm), readdir(dir_data, join=true))
     time_start = Dates.now()
-    Threads.@threads for (i, datafile) in collect(enumerate(datafiles))  # the "collect" is needed for the threads macro
+    Threads.@threads for datafile in datafiles
         im_spm = load_image(datafile, output_info=0)
-        
-        # get the respective image channel (depending on whether the feedback was on or not)
-        channel_name = default_channel_name(im_spm, channels_feedback, channels_no_feedback)
         
         filename_original = basename(datafile)
         created = unix2datetime(ctime(datafile))
         last_modified = unix2datetime(mtime(datafile))
         
-        unique_id = filename_original
+        id = filename_original
 
-        if haskey(images_parsed, unique_id)
-            # still update a few fields (the files may have changed)
-            images_parsed[unique_id].filename_original = filename_original
-            images_parsed[unique_id].created = created
-            images_parsed[unique_id].last_modified = last_modified
-            images_parsed[unique_id].scansize = im_spm.scansize
-            images_parsed[unique_id].scansize_unit = im_spm.scansize_unit
-            images_parsed[unique_id].comment = im_spm.header["Comment"]
+        if haskey(images_parsed, id)
+            # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
+            images_parsed[id].filename_original = filename_original
+            images_parsed[id].created = created
+            images_parsed[id].last_modified = last_modified
+            images_parsed[id].recorded = im_spm.start_time
+            images_parsed[id].scansize = im_spm.scansize
+            images_parsed[id].scansize_unit = im_spm.scansize_unit
+            images_parsed[id].comment = im_spm.header["Comment"]
+            images_parsed[id].status = 0
         else
-            images_parsed[unique_id] = SpmImageGridItem(
-                id=unique_id, filename_original=filename_original, created=created, last_modified=last_modified,
+            # get the respective image channel (depending on whether the feedback was on or not)
+            channel_name = default_channel_name(im_spm, channels_feedback, channels_no_feedback)
+            images_parsed[id] = SpmImageGridItem(
+                id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
                 channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=im_spm.header["Comment"]
             )
         end
-        create_image!(images_parsed[unique_id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+
+        # virtual copies
+        if haskey(virtual_copies_dict, id)
+            for virtual_copy in virtual_copies_dict[id]
+                # update fields here, too - however, most of these fields should stay unchanged
+                images_parsed[virtual_copy.id].filename_original = filename_original
+                images_parsed[virtual_copy.id].created = created
+                images_parsed[virtual_copy.id].last_modified = last_modified
+                images_parsed[virtual_copy.id].recorded = im_spm.start_time
+                images_parsed[virtual_copy.id].scansize = im_spm.scansize
+                images_parsed[virtual_copy.id].scansize_unit = im_spm.scansize_unit
+                images_parsed[virtual_copy.id].comment = im_spm.header["Comment"]
+                images_parsed[virtual_copy.id].status = 0
+                create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+            end
+        end
+    end
+
+    # delete virtual copies that arent associated with anything anymore
+    for (id_original, virtual_copies) in virtual_copies_dict
+        for virtual_copy in virtual_copies
+            if haskey(images_parsed, id_original)
+                if images_parsed[virtual_copy.filename_original].status < 0
+                    delete!(images_parsed, virtual_copy.id)
+                end
+            else  # this should never happen, though
+                delete!(images_parsed, virtual_copy.id)
+            end
+        end
     end
 
     elapsed_time = Dates.now() - time_start
@@ -597,6 +693,42 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     unlock(l)
                 end
             end
+        elseif what == "virtual_copy"
+            lock(l)
+            mode = args[3]
+            try
+                if mode =="create"
+                    updated_virtual_copy_is = Dict{String, Int}()  # save updated virtual copy values (so that we keep js and julia in sync - might be important for js-sorting)
+                    ids_new = Array{String}(undef, 0)
+                    for id in ids
+                        id_original = images_parsed[id].filename_original
+                        virtual_copies = get_virtual_copies(images_parsed, id_original)
+                        new_i = update_virtual_copies_order!(virtual_copies, id) 
+                        id_new = get_new_id(images_parsed, id_original)
+                        virtual_copy_new = deepcopy(images_parsed[id])
+                        virtual_copy_new.id = id_new
+                        virtual_copy_new.virtual_copy = new_i
+                        images_parsed[id_new] = virtual_copy_new
+
+                        push!(ids_new, id_new)
+                        for virtual_copy in virtual_copies
+                            updated_virtual_copy_is[virtual_copy.id] = virtual_copy.virtual_copy
+                        end
+                    end
+
+                    images_parsed_sub = get_subset(images_parsed, ids_new)
+                    @js_ w insert_images($images_parsed_sub, $ids)  # insert images after positions of ids
+                elseif mode =="delete"
+                    for id in ids
+                        if haskey(images_parsed, id) && images_parsed[id].virtual_copy > 0
+                            delete!(images_parsed, id)
+                        end
+                    end
+                    @js_ w delete_images($ids)
+                end
+            finally
+                unlock(l)
+            end
         end
     end
 
@@ -605,7 +737,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         try
             save_all(dir_data, images_parsed)
             images_parsed = parse_files(dir_data)
-            images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.created, im.id))  # NaturalSort will sort number suffixes better
+            images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
             @js_ w load_images($images_parsed_values, true)
         finally
             unlock(l)
@@ -673,7 +805,7 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     @js_ w set_params($dir_asset, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar, $auto_save_minutes)
     @js_ w load_page()
     
-    images_parsed_values = sort!(collect(values(images_parsed)), by=im -> im.created)
+    images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
     @js_ w load_images($images_parsed_values)
 
     set_event_handlers(w, dir_data, images_parsed)

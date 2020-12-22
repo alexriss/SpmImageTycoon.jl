@@ -100,6 +100,7 @@
         <div id="image_info_title" class="columns is-mobile title is-size-6 mb-1 pb-1">
           <div class="column abbreviate">
             <span id="image_info_filename">Image Data</span>
+            <span id="image_info_virtual_copy" class="icon is-small" style="margin-left:-4px;margin-right:-4px;padding-top:3px;"><img style="opacity:0.4;height:80%;" src="virtual_copy.svg" /></span>
           </div>
           <div class="column has-text-left abbreviate">
             <span id="image_info_channel_name" class="is-info"></span>
@@ -405,6 +406,11 @@
         Use the mouse wheel to zoom in and out, <span class="tag is-light p-2">double-click</span> will reset the zoom.
       </p>
 
+      <p>
+        Click or drag the histogram or colorbar to change the display range of the image. Alternatively, you can directly specify the numerical values for the display range.
+        A <span class="tag is-light p-2">double-click</span> on this area will reset the values to show the full range.
+      </p>
+
       <p>Use <span class="tag is-light p-2">Escape</span>,
         <span class="tag is-light p-2">z</span>,
         or <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">double-click</span> to get back to
@@ -436,6 +442,12 @@
           <span class="tag is-light p-2">0</span>-<span class="tag is-light p-2">5</span> Change rating to 0 to 5 stars
         </li>
         <li>
+          <span class="tag is-light p-2">&</span> Create virtual copy
+        </li>
+        <li>
+          <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">Del</span> Delete virtual copy
+        </li>
+        <li>
           <span class="tag is-light p-2">a</span> Select all/none <span class="tag is-info is-light">grid view
             only</span>
         </li>
@@ -462,7 +474,7 @@
           <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">F5</span> Re-parse images
         </li>
         <li>
-          <span class="tag is-light p-2">ctrl</span>s<span class="tag is-light p-2">F5</span> Save all (in addition, all changes are automatically saved on close and auto-saved every few minutes)
+          <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">s</span> Save all (in addition, all changes are automatically saved on close and auto-saved every few minutes)
         </li>
         <li>
           <span class="tag is-light p-2">h</span>, <span class="tag is-light p-2">?</span> or
