@@ -421,8 +421,8 @@ end
 
 
 """returns a subset of the dictionary parsed_images. this can then be passed to the js"""
-function get_subset(images_parsed::Dict{String, SpmImageGridItem}, ids::Vector{String})::Dict{String, SpmImageGridItem}
-    images_parsed_sub = Dict{String, SpmImageGridItem}()
+function get_subset(images_parsed::Dict{String, SpmImageGridItem}, ids::Vector{String})::OrderedDict{String, SpmImageGridItem}
+    images_parsed_sub = OrderedDict{String, SpmImageGridItem}()
     map(ids) do id
         images_parsed_sub[id] = images_parsed[id]
     end
@@ -482,8 +482,13 @@ function update_virtual_copies_order!(virtual_copies::Array{SpmImageGridItem}, i
             i += 1
         end
     end
-    if i_new == -1
-        i_new = i
+    if i_new == -1  # id not found, which means that the id is not a virtual copy, but the main image
+        i_new = 1
+        i = 2
+        for virtual_copy in virtual_copies
+            virtual_copy.virtual_copy = i
+            i += 1
+        end
     end
     return i_new
 end
