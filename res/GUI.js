@@ -480,7 +480,7 @@ function select_item(event) {
         return;
     }
 
-    const modifier = (event.ctrlKey || event.shiftKey);
+    const modifier = event.shiftKey;
     const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden)'));
     let end = items.indexOf(this);
     let start = items.indexOf(document.getElementById(window.last_selected));
