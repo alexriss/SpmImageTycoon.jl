@@ -1,6 +1,7 @@
-window.dir_res = "";  // resources directory
-window.dir_cache = "";  // will be set by julia
-window.dir_colorbars = "";  // colorbars are saved here, ste by julia
+window.dir_res = "";  // resources directory. sey by julia
+window.dir_cache = "";  // cache directory, set by julia
+window.dir_data = "";  // directory with all data
+window.dir_colorbars = "";  // colorbars are saved here, set by julia
 window.filenames_colorbar = {};  // dictionary specifying the filenames for the colorbars, set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
 
@@ -83,11 +84,20 @@ function open_jobs(diff) {
 }
 
 function toggle_help() {
-    // toggle  help modal
+    // toggle help modal
     if (document.getElementById("modal_help").classList.contains("is-active")) {
         document.getElementById("modal_help").classList.remove("is-active");
     } else {
         document.getElementById("modal_help").classList.add("is-active");
+    }
+}
+
+function toggle_error() {
+    // toggle error modal
+    if (document.getElementById("modal_error").classList.contains("is-active")) {
+        document.getElementById("modal_error").classList.remove("is-active");
+    } else {
+        document.getElementById("modal_error").classList.add("is-active");
     }
 }
 
@@ -227,7 +237,9 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
 }
 
 function get_view() {
-    if (document.getElementById("modal_help").classList.contains("is-active")) {
+    if (document.getElementById("modal_error").classList.contains("is-active")) {
+        return "error";
+    } else if (document.getElementById("modal_help").classList.contains("is-active")) {
         return "help";
     } else if (document.getElementById("modal_keywords").classList.contains("is-active")) {
         return "keywords";
@@ -345,13 +357,14 @@ function toggle_all_active(ignored_filtered=false) {
     check_hover_enabled();
 }
 
-function get_active_element_ids(only_current=false) {
+function get_active_element_ids(only_current=false, all_visible_if_none_selected=false) {
     // returns all active element ids
     // for zoom view, an array with this one element is returned
-    // for grid view, if any are selected (i.e active), then these are returned
+    // for grid view, if any are selected (i.e active), then these are returned (irrespective of filter/hidden status)
     //    .. unless only_current is true, then only this is returned
     // otherwise if one is hovered, then this is returned
     // otherwise an empty array is returned
+    // if all_visible_if_none_selected is true, then all not-hidden will be returned (if none are selected)
 
     // help view
     if (get_view() == "help") {
@@ -375,7 +388,11 @@ function get_active_element_ids(only_current=false) {
     }
 
     if (els.length == 0) {
-        els = grid.querySelectorAll('div.item:not(.active):hover')
+        if (all_visible_if_none_selected) {
+            els = grid.querySelectorAll('div.item:not(.hidden)');
+        } else {
+            els = grid.querySelectorAll('div.item:not(.active):hover');
+        }
     }
 
     if (els.length == 0) {
@@ -597,12 +614,13 @@ function load_page() {
     event_handlers();
 }
 
-function set_params(dir_res, dir_cache, dir_colorbars, filenames_colorbar, auto_save_minutes) {
+function set_params(dir_res, dir_data, dir_cache, dir_colorbars, filenames_colorbar, auto_save_minutes) {
     // set base directory for all relative paths (dir_res), global variable of dir cache, and continuous auto-save
     const el = document.createElement('base');
     el.href = dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);
 
+    window.dir_data = dir_data;
     window.dir_cache = dir_cache;
     window.dir_colorbars = dir_colorbars;
     window.filenames_colorbar = filenames_colorbar;
@@ -794,6 +812,24 @@ function saved_all() {
     open_jobs(-1);
 }
 
+function exported() {
+    // exported presentation
+    open_jobs(-1);
+}
+
+function show_error(message) {
+    // shows an error message
+    console.log("error: " + message);
+    let el = document.querySelector('#modal_error .message');
+    if (get_view() == "error") {
+        el.innerHTML = el.innerHTML + "<br /><br />" + message;
+    } else {
+        el.innerHTML = message;
+        toggle_error();
+    }
+    open_jobs(-1);
+}
+
 function header_data(json) {
     // just for testing
     let t0 = performance.now();
@@ -805,7 +841,7 @@ function header_data(json) {
 
 // calling julia
 
-function change_item(what, message, jump = 1) {
+function change_item(what, message, jump=1) {
     console.log("change: " + what);
     let ids = get_active_element_ids();
 
@@ -926,6 +962,43 @@ function re_parse_images() {
         Blink.msg("re_parse_images", []);
         show_message("reloading.")
         open_jobs(1);
+    }
+}
+
+function export_to(what) {
+    // export as a presentation; opens dialog to choose filename
+    if (get_view() != "grid") {
+        return;
+    }
+
+    console.log("Export to " + what);
+    let ids = get_active_element_ids(only_current=false, all_visible_if_none_selected=true);
+
+    if (ids.length > 0) {
+        const {remote} = require('electron');
+        const dialog = remote.dialog;
+        const win = remote.getCurrentWindow();
+        let options = {
+            title: "Export as OpenDocument Presentation",
+            defaultPath : window.dir_data,  // we could specify a filename here
+            buttonLabel : "Export",
+            filters :[
+             {name: 'OpenDocument Presentations', extensions: ['odp']},
+             {name: 'All Files', extensions: ['*']}
+            ]
+        }
+        let filename = dialog.showSaveDialog(win, options)
+        console.log(filename)
+
+        if (filename !== undefined) {
+            Blink.msg("grid_item", ["export_odp", ids, filename]);
+            open_jobs(1);
+            let plural_s = "";
+            if (ids.length > 1) {
+                plural_s = "s";
+            }
+            show_message("export " + ids.length + " file" + plural_s + " to presentation.")
+        }
     }
 }
 

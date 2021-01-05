@@ -33,7 +33,7 @@ let key_commands = {
     Escape: { command: toggle_imagezoom, args: ["grid"] },
 }
 
-// let 
+// with shift-modifier (some of the normal ones also work with the shift key)
 let shift_key_commands = {
     Delete: { command: virtual_copy, args: ["delete"] },
 }
@@ -42,6 +42,7 @@ let shift_key_commands = {
 let ctrl_key_commands = {
     a: { command: toggle_all_active, args: [true] },
     s: { command: save_all, args: [] },
+    e: { command: export_to, args: ["odp"] },
     f: { command: image_info_search_parameter, args: [] },
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [] },
@@ -50,7 +51,12 @@ let ctrl_key_commands = {
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (event) {
     let view = get_view();
-    if (view == "help") {    // only certain buttons allowed
+    if (view == "error") {
+        if (["Escape", "Return"].includes(event.key)) {
+            toggle_error();
+        }
+        return;  // no other special keys allowed
+    } else if (view == "help") {    // only certain buttons allowed
         if (["Escape", "?", "/", "h", "F1"].includes(event.key)) {
             toggle_help();
         }
@@ -121,9 +127,15 @@ function event_handlers() {
     });
     
     // modals
-    let els = document.getElementById("modal_help").getElementsByTagName("button");   // the "forEach" method does not work here
+    let els;
+    els = document.getElementById("modal_help").getElementsByTagName("button");   // the "forEach" method does not work here
     for (let i = 0; i < els.length; i++) {
         els[i].addEventListener('click', toggle_help);
+    }
+
+    els = document.getElementById("modal_error").getElementsByTagName("button");   // the "forEach" method does not work here
+    for (let i = 0; i < els.length; i++) {
+        els[i].addEventListener('click', toggle_error);
     }
 
     els = document.getElementById("modal_keywords").getElementsByTagName("button");   // the "forEach" method does not work here

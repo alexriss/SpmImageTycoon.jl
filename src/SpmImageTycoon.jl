@@ -48,53 +48,8 @@ end
 SpmImageGridItem = SpmImageGridItem_v12
 
 
-# default settings (should be overriden by config file later)
-const channels_feedback = ["Z"]
-const channels_no_feedback = ["Frequency Shift", "Current"]
-
-const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
-const extension_spm = ".sxm"
-
-const dir_cache_name = "_spmimages_cache"  # TODO: move this to user directory (and use unique folder names)
-const dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
-const dir_res = "../res/"  # relative to module directory
-
-const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
-const auto_save_minutes = 10  # auto-save every n minutes
-
-
-const background_correction_list = OrderedDict{String,Background}(
-    "none" => no_correction,
-    "offset" => subtract_minimum,
-    "plane" => plane_linear_fit,
-    "line average" => line_average,
-    "vline average" => vline_average,
-    "line linear" => line_linear_fit,
-    "vline linear" => vline_linear_fit,
-)
-
-const colorscheme_list_pre = OrderedDict{String,ColorScheme}(
-    "gray" => ColorSchemes.grays,  # we wont use this, though, will just be the standard Gray-function
-    "thermal" => ColorSchemes.thermal,
-    "ice" => ColorSchemes.ice,
-    "batlow" => ColorSchemes.batlow,
-    "davos" => ColorSchemes.davos,
-    "hawaii" => ColorSchemes.hawaii,
-    "imola" => ColorSchemes.imola,
-    "lapaz" => ColorSchemes.lapaz,
-    "oslo" => ColorSchemes.oslo,
-    "tokyo" => ColorSchemes.tokyo,
-    "copper" => ColorSchemes.copper,
-    "inferno" => ColorSchemes.inferno,
-    "CMRmap" => ColorSchemes.CMRmap,
-    "avocado" => ColorSchemes.avocado,
-    "rainbow" => ColorSchemes.rainbow,
-    "rust" => ColorSchemes.rust,
-    "valentine" => ColorSchemes.valentine,
-    "fuchsia" => ColorSchemes.fuchsia,
-    "deepsea" => ColorSchemes.deepsea
-)
-colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
+include("export.jl")
+include("config.jl")
 
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
@@ -734,6 +689,23 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             finally
                 unlock(l)
             end
+        elseif what == "export_odp"
+            lock(l)
+            filename_export = args[3]
+            try
+                export_odp(ids, dir_data, images_parsed, filename_export)
+                @js_ w exported()
+            catch e
+                msg = ""
+                if (:msg in fieldnames(typeof(e)))
+                    msg = e.msg
+                else
+                    msg = typeof(e).name
+                end
+                @js_ w show_error($msg)
+            finally
+                unlock(l)
+            end
         end
     end
 
@@ -781,6 +753,8 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
         @js w require("electron").remote.getCurrentWindow().maximize()
     end
 
+    dir_data = abspath(dir_data)
+
     if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
         colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
     end
@@ -803,11 +777,12 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
     end
 
     # call js functions to setup everything
+    dir_data_js = add_trailing_slash(dir_data)
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
     dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
 
-    @js_ w set_params($dir_asset, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar, $auto_save_minutes)
+    @js_ w set_params($dir_asset, $dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar, $auto_save_minutes)
     @js_ w load_page()
     
     images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better

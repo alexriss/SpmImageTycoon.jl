@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<office:document-settings xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"
+    xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"
+    xmlns:ooo="http://openoffice.org/2004/office"
+    xmlns:smil="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0"
+    xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0"
+    xmlns:officeooo="http://openoffice.org/2009/office" office:version="1.2">
+    <office:settings>
+        <config:config-item-set config:name="ooo:view-settings">
+            <config:config-item config:name="VisibleAreaTop" config:type="int">0</config:config-item>
+            <config:config-item config:name="VisibleAreaLeft" config:type="int">0</config:config-item>
+            <config:config-item config:name="VisibleAreaWidth" config:type="int">-32767</config:config-item>
+            <config:config-item config:name="VisibleAreaHeight" config:type="int">-32767</config:config-item>
+        </config:config-item-set>
+    </office:settings>
+</office:document-settings>
