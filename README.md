@@ -7,12 +7,14 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 ## Features
 
 - Load and display Nanonis SPM images: grid and zoom views
-- Fast - keyboard-based navigation
+- Fast keyboard-based navigation
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
 - Various color palettes
 - Star-rating and keyword systems
 - Powerful search
+- Export to [OpenDocument presentation](https://en.wikipedia.org/wiki/OpenDocument)
+  (compatible with [LibreOffice](https://www.libreoffice.org/), [OpenOffice](https://www.openoffice.org/), [PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint), etc.)
 
 ## Technical comments
 
