@@ -6,10 +6,10 @@
         <img class="pt-2 pl-2 pr-3" src="logo_diamond.png" style="height:2.8rem;" />
       </div>
       <div class="is-pulled-right has-text-centered pr-5" style="line-height:1.3;padding-top:0.3rem;">
-        <spam class="is-size-6 is-unselectable" style="line-height:1;">
+        <span class="is-size-6 is-unselectable" style="line-height:1;">
           <span class="has-text-weight-bold">SpmImage</span><br />
           Tycoon
-        </spam>
+        </span>
       </div>
     </div>
   </div>
@@ -32,8 +32,65 @@
 </nav>
 
 
+<!-- start page -->
+<section id="page_start" class="section m-2 p-0">
+  <div class="container is-mobile">
+    <div id="logo_animation">
+      <div class="box_animation outer">
+        <div class="box_animation inner">
+            <img class="is-unselectable" src="logo_diamond.png" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container is-mobile has-text-centered is-unselectable">
+    <span class="is-size-4 is-unselectable" style="line-height:1;margin:auto;">
+      <span class="has-text-weight-bold">SpmImage</span> Tycoon
+    </span>
+
+    <p class="has-text-grey-light is-italic mt-3">
+      <!-- You've always got time for speed. -->
+      Organize scanning probe microscopy images
+    </p>
+  </div>
+
+  <div id="page_start_open_directory" class="container is-mobile has-text-centered mt-2">
+
+    <div class="content has-text-centered mt-3 mb-1">
+      <div class="has-text-left mt-4 mb-3" style="display:inline-block;">
+        <article id="page_start_load_error" class="message is-danger is-hidden" style="border:none;">
+          <div id="page_start_load_error_message" class="message-body" style="border:none;">
+            Error message
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <button id="page_start_open_directory_button" class="button is-link">Open directory...</button>
+    <h2 id="page_start_last_dir_header" class="title is-6 mt-5 mb-0 is-unselectable">Recent directories:</h2>
+    <div class="content has-text-centered mt-0">
+      <div class="has-text-left mt-0" style="display:inline-block;">
+        <ol id="page_start_last_dir_container" class="has-text-left">
+          <template id="page_start_last_dir">
+            <li><a class="page_start_last_dir_name"></a></li>
+          </template>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="page_start_progress" class="container is-mobile has-text-centered mt-6 is-hidden">
+    <progress id="page_start_progress_bar" class="progress is-link mb-2" value="30" max="100" style="max-width:400px;margin:auto;"></progress>
+    <span class="has-text=grey-light">Loading <span id="page_start_progress_num_files"></span> files
+     from directory <span id="page_start_progress_directory" class="is-italic">directory</span>
+    </span>
+  </div>
+
+
+</section>
+
 <!-- main page -->
-<section class="section m-2 p-0">
+<section id="page_project" class="section m-2 p-0 is-hidden">
   <div class="columns is-mobile is-2">
 
     <!-- main part of page: grid and zoom views -->
@@ -339,7 +396,7 @@
 
 
 <!-- footer -->
-<div class="footer p-1 is-light has-text-dark is-size-7">
+<div id="footer_project" class="footer p-1 is-light has-text-dark is-size-7">
   <nav class="level">
     <div class="level-left pl-1">
       <div id="footer_num_images_container" class="level-item">
@@ -485,6 +542,9 @@
         </li>
         <li>
           <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">e</span> Export OpenDocument presentation (can be directly opened by Microsoft PowerPoint)
+        </li>
+        <li>
+          <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">w</span> Close directory
         </li>
         <li>
           <span class="tag is-light p-2">h</span>, <span class="tag is-light p-2">?</span> or

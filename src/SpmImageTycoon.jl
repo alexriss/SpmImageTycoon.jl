@@ -48,30 +48,8 @@ end
 SpmImageGridItem = SpmImageGridItem_v12
 
 
-include("export.jl")
 include("config.jl")
-
-
-"""converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
-The resulting schemes are stored in the OrderedDict dict_colorschemes."""
-function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})
-    for (k,v) in dict_colorschemes_pre
-        dict_colorschemes[k] = loadcolorscheme(
-            Symbol(k * "_256"),
-            [get(v, i) for i in 0.0:1/255:1.0],
-            getfield(v, :category),
-            getfield(v, :notes)
-        )
-
-        # inverted color scheme
-        dict_colorschemes[k * " inv"] = loadcolorscheme(
-            Symbol(k * "_inv_256"),
-            [get(v, i) for i in 1.0:-1/255:0.0],
-            getfield(v, :category),
-            getfield(v, :notes)
-        )
-    end
-end
+include("export.jl")
 
 
 """saves all colorbars as pngs in the cache directory.
@@ -162,13 +140,13 @@ function path_asset(asset::String)::String
 end
 
 
-"""gets the default channel name (according to the lists channels_feedback and channels_nofeedback) and the z-feedback status of image."""
-function default_channel_name(image::SpmImage, channels_feedback::Vector{String}, channels_no_feedback::Vector{String})::String
+"""gets the default channel name (according to the lists channels_feedback_on and channels_feedback_off) and the z-feedback status of image."""
+function default_channel_name(image::SpmImage, channels_feedback_on::Vector{String}, channels_feedback_off::Vector{String})::String
     channel_name = ""
     if image.z_feedback
-        channels = channels_feedback
+        channels = channels_feedback_on
     else
-        channels = channels_no_feedback
+        channels = channels_feedback_off
     end
     for c in channels
         if c in image.channel_names
@@ -450,7 +428,7 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImageGridItem}
+function parse_files(dir_data::String, w::Window=nothing; output_info::Int=0)::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
 
     # load saved data - if available
@@ -463,6 +441,11 @@ function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImag
     map(x -> x.status=-2, values(images_parsed))  # we do not need to use "map! (we even cant use it)
     
     datafiles = filter!(x -> isfile(x) && endswith(x, extension_spm), readdir(dir_data, join=true))
+    if w !== nothing && length(datafiles) > 1  # 1 files will have the plural-s problem in the frontend, so just skip it
+        @js_ w page_start_load_params($(length(datafiles)))
+    end
+
+    num_parsed = 0
     time_start = Dates.now()
     Threads.@threads for datafile in datafiles
         im_spm = load_image(datafile, output_info=0)
@@ -485,7 +468,7 @@ function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImag
             images_parsed[id].status = 0
         else
             # get the respective image channel (depending on whether the feedback was on or not)
-            channel_name = default_channel_name(im_spm, channels_feedback, channels_no_feedback)
+            channel_name = default_channel_name(im_spm, channels_feedback_on, channels_feedback_off)
             images_parsed[id] = SpmImageGridItem(
                 id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
                 channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=im_spm.header["Comment"]
@@ -506,6 +489,15 @@ function parse_files(dir_data::String; output_info::Int=0)::Dict{String, SpmImag
                 images_parsed[virtual_copy.id].comment = im_spm.header["Comment"]
                 images_parsed[virtual_copy.id].status = 0
                 create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+            end
+        end
+
+        num_parsed += 1
+        # indicate progress
+        if num_parsed % show_load_progress_every == 0
+            if w !== nothing
+                progress = ceil(num_parsed / length(datafiles) * 100)
+                @js_ w page_start_load_progress($progress)
             end
         end
     end
@@ -725,8 +717,32 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         lock(l)
         exit = args[1]  # TODO: close process when closing window
         try
-            save_all(dir_data, images_parsed)
+            if dir_data != ""
+                save_all(dir_data, images_parsed)
+            end
             @js_ w saved_all()
+        finally
+            unlock(l)
+        end
+    end
+
+    return nothing
+end
+
+"""sets basic event handlers"""
+function set_event_handlers_basic(w::Window)
+    l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
+
+    handle(w, "load_directory") do arg
+        lock(l)
+        try
+            dir = abspath(arg)
+            if !isdir(dir)
+                msg = "Can not open directory $dir"
+                @js_ w page_start_load_error($msg)
+            else
+                load_directory(dir, w)
+            end
         finally
             unlock(l)
         end
@@ -740,27 +756,52 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
 end
 
 
-"""Start the main GUI and loads images from dir_data"""
-function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
-    if w === nothing
-        file_logo = path_asset("logo_diamond.png")
-        w = Window(Dict(
-            "webPreferences" => Dict("webSecurity" => false),  # to load local files
-            "title" => "SpmImage Tycoon",
-            "icon" => file_logo,
-        ))
-        @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
-        @js w require("electron").remote.getCurrentWindow().maximize()
+"""Loads images in specific directory"""
+function load_directory(dir_data::String, w::Window)
+    # parse images etc
+    filenames_colorbar = save_colorbars(colorscheme_list, dir_data)
+    images_parsed = parse_files(dir_data, w)
+    if length(images_parsed) == 0
+        msg = "There are no SPM files in $dir_data"
+        @js_ w page_start_load_error($msg)
+        return nothing
     end
 
-    dir_data = abspath(dir_data)
+    # call js functions to setup everything
+    dir_data_js = add_trailing_slash(dir_data)
+    dir_cache = get_dir_cache(dir_data)
+    dir_cache_js = add_trailing_slash(dir_cache)
+    dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
+    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar)
+    
+    images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+    @js_ w load_images($images_parsed_values, true)
 
+    set_event_handlers(w, dir_data, images_parsed)
+
+    save_config(dir_data)  # set and save new last dirs
+    @js_ w set_last_directories($last_directories)
+
+    return nothing
+end
+
+
+"""Start the main GUI and loads images from dir_data (if specified)"""
+function tycoon(dir_data::String="")::Window
+    file_logo = path_asset("logo_diamond.png")
+    w = Window(Dict(
+        "webPreferences" => Dict("webSecurity" => false),  # to load local files
+        "title" => "SpmImage Tycoon",
+        "icon" => file_logo,
+    ))
+    @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
+    @js w require("electron").remote.getCurrentWindow().maximize()
+
+
+    load_config()
     if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
         colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
     end
-    filenames_colorbar = save_colorbars(colorscheme_list, dir_data)
-
-    images_parsed = parse_files(dir_data)  # TODO: parse and display image one by one
 
     # load main html file
     file_GUI = path_asset("GUI.html")
@@ -776,20 +817,17 @@ function tycoon(dir_data::String; w::Union{Window,Nothing}=nothing)::Window
         load!(w, asset_file)
     end
 
-    # call js functions to setup everything
-    dir_data_js = add_trailing_slash(dir_data)
-    dir_cache = get_dir_cache(dir_data)
-    dir_cache_js = add_trailing_slash(dir_cache)
-    dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
-
-    @js_ w set_params($dir_asset, $dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar, $auto_save_minutes)
+    @js_ w set_params($dir_asset, $auto_save_minutes)
+    @js_ w set_last_directories($last_directories)
     @js_ w load_page()
+    @js_ w show_start()
+
+    set_event_handlers_basic(w)
+
+    if dir_data != ""
+        load_directory(abspath(dir_data), w)
+    end
     
-    images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
-    @js_ w load_images($images_parsed_values)
-
-    set_event_handlers(w, dir_data, images_parsed)
-
     # bring window to front
     @js w require("electron").remote.getCurrentWindow().show()
     return w

@@ -22,6 +22,136 @@ body {
   text-align: center;
 }
 
+/* start page */
+
+#logo_animation {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  perspective: 600px;
+  margin: auto;
+  margin-top: 50px;
+  margin-bottom: 20px;
+}
+
+#logo_animation .box_animation {
+  /* position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  margin:auto; */
+  transition: all 800ms ease;
+}
+
+#logo_animation img {
+  width:100%;
+}
+
+#logo_animation .box_animation.inner.rotated {
+  transform: rotateY(180deg) rotateZ(45deg);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.inner.rotated2 {
+  transform: rotateY(-180deg) rotateZ(-45deg);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.inner.rotated3 {
+  transform: rotateY(180deg) rotateZ(90deg);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.inner.rotated4 {
+  transform: rotateY(-180deg) rotateZ(-90deg);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.inner.rotated5 {
+  transform: rotate(180deg);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.inner.rotated6 {
+  transform: rotate(-180deg);
+  transition: all 800ms ease;
+}
+
+#logo_animation .box_animation.outer.rotated {
+  transform: translateX(30%);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.outer.rotated2 {
+  transform: translateX(-30%);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.outer.rotated3 {
+  transform: translateX(30%);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.outer.rotated4 {
+  transform: translateX(-30%);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.outer.rotated5 {
+  transform: translateX(30%);
+  transition: all 800ms ease;
+}
+#logo_animation .box_animation.outer.rotated6 {
+  transform: translateX(-30%);
+  transition: all 800ms ease;
+}
+
+.bounce {
+  animation-name: bounce;
+  animation-duration: .8s;
+  animation-delay: 0.35s;
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateX(0px);
+    timing-function: ease-in;
+  }
+  37% {
+    transform: translateX(12px);
+    timing-function: ease-out;
+  }
+  55% {
+    transform: translateX(-12px);
+    timing-function: ease-in;
+  }
+  73% {
+    transform: translateX(8px);
+    timing-function: ease-out;
+  }
+  82% {
+    transform: translateX(-8px);
+    timing-function: ease-in;
+  }
+  91% {
+    transform: translateX(6px);
+    timing-function: ease-out;
+  }
+  96% {
+    transform: translateX(-6px);
+    timing-function: ease-in;
+  }
+  100% {
+    transform: translateX(0px);
+    timing-function: ease-in;
+  }
+}
+
+#page_start_last_dir_container li {
+  word-break: break-all;
+  max-width: 640px;
+}
+
+#page_start_load_error_message {
+  word-break: break-all;
+  max-width: 640px;
+}
+
+
+/* imagegrid */
+
 #imagegrid_container {
   transform: translateZ(0);  /* this will cause the child with to be relaive to this container */
   height: calc(100vh - 5rem);

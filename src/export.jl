@@ -1,5 +1,5 @@
-using Formatting
 using Mustache
+using Printf
 using ZipFile
 
 
@@ -21,7 +21,6 @@ const odp_max_comment_lines = 4  # maximum number of comment lines, otherwise ev
 
 const odp_scalebar_width = 0.26  # approximate target scalebar width as a fraction of the image (will be adjusted so that we have nicer numbers)
 
-const odp_format_number = generate_formatter("%0.1f")   # format function
 const unit_prefixes = ["E", "P", "T", "G", "M", "k", "", "m", "µ", "n", "p", "f", "a"]
 const unit_factors = [10^18, 10^15, 10^12, 10^9, 10^6, 10^3, 1, 10^-3, 10^-6, 10^-9, 10^-12, 10^-15, 10^-18]
 
@@ -46,7 +45,7 @@ function format_with_prefix(number::Number, delimiter::String="")::String
         end
     end
     number = number / unit_factor
-    return odp_format_number(number) * "$delimiter$unit_prefix"
+    return @sprintf("%0.1f", number) * "$delimiter$unit_prefix"
 end
 
 

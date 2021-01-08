@@ -44,6 +44,8 @@ let ctrl_key_commands = {
     s: { command: save_all, args: [] },
     e: { command: export_to, args: ["odp"] },
     f: { command: image_info_search_parameter, args: [] },
+    w: { command: toggle_start_project, args: ["start", true] },
+    W: { command: toggle_start_project, args: ["re-project"] },
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [] },
 }
@@ -202,11 +204,18 @@ function event_handlers() {
 
     // menu
     document.getElementById('nav_home').addEventListener('click', (e) => {
-        toggle_imagezoom("grid");
-        toggle_sidebar("info", true);
+        if (get_view() == "start") {
+            return;
+        }
+        standard_view();
     });
     document.getElementById('nav_help').addEventListener('click', (e) => {
         toggle_help();
+    });
+
+    // load directory button
+    document.getElementById('page_start_open_directory_button').addEventListener('click', (e) => {
+        select_directory();
     });
 
     // on close
