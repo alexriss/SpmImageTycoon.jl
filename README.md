@@ -37,7 +37,7 @@ which is currently not yet in the  default Julia package registry.
 
 #### Third party libraries
 
-The following javascript libraries are included in the app:
+The following javascript and css libraries are included in the app:
 
 - [tagify](https://github.com/yairEO/tagify): MIT License
 - [Simple-DataTables](https://github.com/fiduswriter/Simple-DataTables): LGPL License
