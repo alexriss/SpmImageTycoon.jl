@@ -1,3 +1,5 @@
+![SomImage Tycoon](res/logo_diamond_animated.svg?raw=true "SomImage Tycoon")
+
 # SpmImage Tycoon
 
 Cross-platform app to manage and edit scanning probe microscopy (SPM) images. *Under development.*
