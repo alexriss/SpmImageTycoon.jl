@@ -11,7 +11,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Features](#features)  
 [Technical comments](#technical-comments)  
 [Dependencies](#dependencies)  
-[Third party libraries](#third-party-libraries)  
+[Third party libraries](#third-party-libraries-included)  
 [Related projects](#related-projects)  
 
 
@@ -42,7 +42,7 @@ The program relies on
 
 which is currently not yet in the  default Julia package registry.
 
-#### Third party libraries
+#### Third party libraries (included)
 
 The following javascript and css libraries are included in the app:
 
