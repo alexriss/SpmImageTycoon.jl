@@ -16,7 +16,7 @@ const dir_res = "../res/"  # relative to module directory
 
 const show_load_progress_every = 20  # show load progress every n files
 
-const dir_template_odp = joinpath(dir_res, "template_odp")  # template for openoffice document
+const dir_template_odp = abspath(joinpath(@__DIR__, dir_res, "template_odp"))  # template for openoffice document
 const odp_ignore_comment_lines = ["User"]   # comment lines starting with these words are ignored
 odp_channel_names_short = OrderedDict(  # channel names to be replaced for shorter versions
     "Frequency Shift" => "Δf",

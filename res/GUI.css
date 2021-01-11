@@ -1,5 +1,5 @@
 body {
-  min-height: 100vh;
+  /* min-height: 100vh; */
   margin-bottom: 2.5rem;
 }
 
@@ -24,128 +24,13 @@ body {
 
 /* start page */
 
-#logo_animation {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  perspective: 600px;
-  margin: auto;
-  margin-top: 50px;
-  margin-bottom: 20px;
-}
-
-#logo_animation .box_animation {
-  /* position:absolute;
-  top:0;
-  bottom:0;
-  left:0;
-  right:0;
-  margin:auto; */
-  transition: all 800ms ease;
-}
-
-#logo_animation img {
-  width:100%;
-}
-
-#logo_animation .box_animation.inner.rotated {
-  transform: rotateY(180deg) rotateZ(45deg);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.inner.rotated2 {
-  transform: rotateY(-180deg) rotateZ(-45deg);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.inner.rotated3 {
-  transform: rotateY(180deg) rotateZ(90deg);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.inner.rotated4 {
-  transform: rotateY(-180deg) rotateZ(-90deg);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.inner.rotated5 {
-  transform: rotate(180deg);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.inner.rotated6 {
-  transform: rotate(-180deg);
-  transition: all 800ms ease;
-}
-
-#logo_animation .box_animation.outer.rotated {
-  transform: translateX(30%);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.outer.rotated2 {
-  transform: translateX(-30%);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.outer.rotated3 {
-  transform: translateX(30%);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.outer.rotated4 {
-  transform: translateX(-30%);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.outer.rotated5 {
-  transform: translateX(30%);
-  transition: all 800ms ease;
-}
-#logo_animation .box_animation.outer.rotated6 {
-  transform: translateX(-30%);
-  transition: all 800ms ease;
-}
-
-.bounce {
-  animation-name: bounce;
-  animation-duration: .8s;
-  animation-delay: 0.35s;
-}
-
-@keyframes bounce {
-  0% {
-    transform: translateX(0px);
-    timing-function: ease-in;
-  }
-  37% {
-    transform: translateX(12px);
-    timing-function: ease-out;
-  }
-  55% {
-    transform: translateX(-12px);
-    timing-function: ease-in;
-  }
-  73% {
-    transform: translateX(8px);
-    timing-function: ease-out;
-  }
-  82% {
-    transform: translateX(-8px);
-    timing-function: ease-in;
-  }
-  91% {
-    transform: translateX(6px);
-    timing-function: ease-out;
-  }
-  96% {
-    transform: translateX(-6px);
-    timing-function: ease-in;
-  }
-  100% {
-    transform: translateX(0px);
-    timing-function: ease-in;
-  }
-}
-
 #page_start_last_dir_container li {
-  word-break: break-all;
+  word-break: break-word;
   max-width: 640px;
 }
 
 #page_start_load_error_message {
-  word-break: break-all;
+  word-break: break-word;
   max-width: 640px;
 }
 
@@ -202,21 +87,46 @@ body {
   vertical-align: middle;
 }
 
-.imagegrid div.active {
-  outline: 6px solid #d62350;
+.imagegrid div.item.active {
+  /* outline: 6px solid #2a5aa1; */
+  box-shadow: 0px 0px 8px 7px  #234b88;
+  transform: scale(0.92);
 }
 
-/* .imagegrid.hover_enabled div.item:not(.active):hover    we do not need the not-active now, because hover_enabled takes care of it*/
+.imagegrid div.item.active:before {
+  background-color: #2a5aa1;
+  color: white;
+  content: "\2713";
+  font-weight: bold;
+  border: 2px solid #cccccc;
+  border-radius: 50%;
+  position: absolute;
+  margin: 2px;
+  top: -14px;
+  left: -14px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  text-align: center;
+  line-height: 28px;
+  font-size: 19px;
+  transform: scale(1.0);
+}
+
+/* .imagegrid.hover_enabled div.item:not(.active):hover    we do not need the not-active now, because hover_enabled takes care of it */
 .imagegrid.hover_enabled div.item:hover {
-  outline: 6px solid #d1607c;
+  /* outline: 6px solid #d1607c; */
+  box-shadow: 0px 0px 8px 4px #234b88;
 }
 
 .imagegrid:not(.hover_enabled) div.item:not(.active):hover {
-  outline: 4px dashed #e47692;
+  /* outline: 4px dashed #e47692; */
+  box-shadow: 0px 0px 8px 4px  #234b88a0;
 }
 
 .imagegrid div.item.active:hover {
-  outline: 6px solid #a5475f;
+  /* outline: 6px solid #a5475f; */
+  box-shadow: 0px 0px 3px 7px #1c3c6d;
 }
 
 .unselectable {

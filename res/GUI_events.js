@@ -45,7 +45,7 @@ let ctrl_key_commands = {
     e: { command: export_to, args: ["odp"] },
     f: { command: image_info_search_parameter, args: [] },
     w: { command: toggle_start_project, args: ["start", true] },
-    W: { command: toggle_start_project, args: ["re-project"] },
+    q: { command: toggle_start_project, args: ["re-project"] },
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [] },
 }
@@ -61,6 +61,11 @@ document.addEventListener("keydown", function (event) {
     } else if (view == "help") {    // only certain buttons allowed
         if (["Escape", "?", "/", "h", "F1"].includes(event.key)) {
             toggle_help();
+        }
+        return;  // no other special keys allowed
+    } else if (view == "about") {    // only certain buttons allowed
+        if (["Escape"].includes(event.key)) {
+            toggle_about();
         }
         return;  // no other special keys allowed
     } else if (view == "keywords") {
@@ -133,6 +138,11 @@ function event_handlers() {
     els = document.getElementById("modal_help").getElementsByTagName("button");   // the "forEach" method does not work here
     for (let i = 0; i < els.length; i++) {
         els[i].addEventListener('click', toggle_help);
+    }
+
+    els = document.getElementById("modal_about").getElementsByTagName("button");   // the "forEach" method does not work here
+    for (let i = 0; i < els.length; i++) {
+        els[i].addEventListener('click', toggle_about);
     }
 
     els = document.getElementById("modal_error").getElementsByTagName("button");   // the "forEach" method does not work here
@@ -212,6 +222,9 @@ function event_handlers() {
     document.getElementById('nav_help').addEventListener('click', (e) => {
         toggle_help();
     });
+    document.getElementById('nav_about').addEventListener('click', (e) => {
+        toggle_about();
+    });
 
     // load directory button
     document.getElementById('page_start_open_directory_button').addEventListener('click', (e) => {
@@ -227,5 +240,14 @@ function event_handlers() {
     // auto-save every n minutes
     if (window.auto_save_minutes > 0) {
         setInterval(save_all, 1000 * 60 * window.auto_save_minutes);
+    }
+
+    //open links externally by default
+    els = document.querySelectorAll("a.external");
+    for (let i = 0; i < els.length; i++) {
+        els[i].addEventListener('click', (e) => {
+            e.preventDefault();
+            require("electron").shell.openExternal(e.target.href);
+        });
     }
 }

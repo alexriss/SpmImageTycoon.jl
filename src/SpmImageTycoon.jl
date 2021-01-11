@@ -690,9 +690,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             catch e
                 msg = ""
                 if (:msg in fieldnames(typeof(e)))
-                    msg = e.msg
+                    msg = string(e.msg)
                 else
-                    msg = typeof(e).name
+                    msg = string(typeof(e).name)
                 end
                 @js_ w show_error($msg)
             finally
@@ -759,13 +759,13 @@ end
 """Loads images in specific directory"""
 function load_directory(dir_data::String, w::Window)
     # parse images etc
-    filenames_colorbar = save_colorbars(colorscheme_list, dir_data)
     images_parsed = parse_files(dir_data, w)
     if length(images_parsed) == 0
         msg = "There are no SPM files in $dir_data"
         @js_ w page_start_load_error($msg)
         return nothing
     end
+    filenames_colorbar = save_colorbars(colorscheme_list, dir_data)
 
     # call js functions to setup everything
     dir_data_js = add_trailing_slash(dir_data)
@@ -794,9 +794,9 @@ function tycoon(dir_data::String="")::Window
         "title" => "SpmImage Tycoon",
         "icon" => file_logo,
     ))
+    @js w require("electron").remote.getCurrentWindow().setMenuBarVisibility(false)
     @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
     @js w require("electron").remote.getCurrentWindow().maximize()
-
 
     load_config()
     if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
@@ -831,6 +831,13 @@ function tycoon(dir_data::String="")::Window
     # bring window to front
     @js w require("electron").remote.getCurrentWindow().show()
     return w
+end
+
+
+"""Entry point for sysimage/binary created by PackageCompiler.jl"""
+function julia_main()::Cint
+    tycoon()
+    return 0
 end
 
 end

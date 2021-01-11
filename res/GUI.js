@@ -107,13 +107,21 @@ function reset_all() {
     standard_view();
 }
 
-
 function toggle_help() {
     // toggle help modal
     if (document.getElementById("modal_help").classList.contains("is-active")) {
         document.getElementById("modal_help").classList.remove("is-active");
     } else {
         document.getElementById("modal_help").classList.add("is-active");
+    }
+}
+
+function toggle_about() {
+    // toggle help modal
+    if (document.getElementById("modal_about").classList.contains("is-active")) {
+        document.getElementById("modal_about").classList.remove("is-active");
+    } else {
+        document.getElementById("modal_about").classList.add("is-active");
     }
 }
 
@@ -159,7 +167,6 @@ function toggle_start_project(target="project", save=false) {
         }
         // re-populate
         window.last_directories.forEach(last_dir => {
-            console.log(last_dir);
             let el_last_dir = template_last_dir.content.firstElementChild.cloneNode(true);
             el_last_dir.getElementsByClassName("page_start_last_dir_name")[0].innerText = last_dir;
             el_last_dir.classList.add("last_directory");
@@ -327,6 +334,8 @@ function get_view() {
         return "error";
     } else if (document.getElementById("modal_help").classList.contains("is-active")) {
         return "help";
+    } else if (document.getElementById("modal_about").classList.contains("is-active")) {
+        return "about";
     } else if (!document.getElementById("page_start").classList.contains("is-hidden")) {
         if (document.getElementById("page_start_open_directory").classList.contains("is-hidden")) {
             return "start_loading";

@@ -22,6 +22,9 @@
       <a id="nav_help" class="navbar-item">
         Documentation
       </a>
+      <a id="nav_about" class="navbar-item">
+        About
+      </a>
     </div>
     <div class="navbar-end">
       <div class="navbar-item">
@@ -454,7 +457,7 @@
     </header>
     <section class="modal-card-body" style="line-height:160%;">
       <h1 class="title is-4">Grid view and zoom view</h1>
-      <p>The default view is <b class="has-text-weight-bold">grid
+      <p class="mb-3">The default view is <b class="has-text-weight-bold">grid
           view.</b>
 
         Here you can hover the mouse over an image and change its properties using keyboard shortcuts (see below).
@@ -463,24 +466,24 @@
         To select a range of images hold the <span class="tag is-light p-2">shift</span>-key when clicking the mouse.
       </p>
 
-      <p>A <span class="tag is-light p-2">double-click</span> on an image will switch into <b
+      <p class="mb-3">A <span class="tag is-light p-2">double-click</span> on an image will switch into <b
           class="has-text-weight-bold">zoom view</b>. You can move forward
         and backwards through images using the arrows keys
         ( <span class="tag is-light p-2">&lt;</span> and <span class="tag is-light p-2">&gt;</span> ).
         Use the mouse wheel to zoom in and out, <span class="tag is-light p-2">double-click</span> will reset the zoom.
       </p>
 
-      <p>
+      <p class="mb-3">
         Click or drag the histogram or colorbar to change the display range of the image. Alternatively, you can directly specify the numerical values for the display range.
         A <span class="tag is-light p-2">double-click</span> on this area will reset the values to show the full range.
       </p>
 
-      <p>Use <span class="tag is-light p-2">Escape</span>,
+      <p class="mb-3">Use <span class="tag is-light p-2">Escape</span>,
         <span class="tag is-light p-2">z</span>,
         or <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">double-click</span> to get back to
         grid view.</p>
 
-      <h1 class="title mt-5 is-4">Keyboard shortcuts</h1>
+      <h1 class="title mt-6 is-4">Keyboard shortcuts</h1>
       <ul style="line-height:210%">
         <li>
           <span class="tag is-light p-2">c</span> Cycle channel (use <span class="tag is-light p-2">shift</span>-<span
@@ -551,6 +554,29 @@
           <span class="tag is-light p-2">F1</span> Show help
         </li>
       </ul>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button is-success">Ok, groovy!</button>
+    </footer>
+  </div>
+</div>
+
+
+<!-- modal-about -->
+<div id="modal_about" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">About</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body" style="line-height:160%;">
+      <h1 class="title is-4">SpmImage Tycoon</h1>
+      <p class="mb-3">An app to organize scanning probe microscopy (SPM) images. Currently, Nanonis
+        scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images are supported.
+      </p>
+      <p class="mb-3">Developed by Alex Riss. For more information visit the <a class="external" href="https://github.com/alexriss/SpmImageTycoon.jl">project page on github.</a>
+      </p>
     </section>
     <footer class="modal-card-foot">
       <button class="button is-success">Ok, groovy!</button>

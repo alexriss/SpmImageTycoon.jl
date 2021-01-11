@@ -14,7 +14,7 @@ function load_page() {
 function set_params(dir_res, auto_save_minutes) {
     // set base directory for all relative paths (dir_res) and continuous auto-save
     const el = document.createElement('base');
-    el.href = dir_res;
+    el.href = "file:///" + dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);
     window.auto_save_minutes = auto_save_minutes;
 }
@@ -280,10 +280,10 @@ function select_directory() {
         multiSelections: false,
         defaultPath : window.dir_data,
         buttonLabel : "Open folder",
-        filters :[
-         {name: 'Nanonis SPM images', extensions: ['sxm']},
-         {name: 'All Files', extensions: ['*']}
-        ]
+        // filters :[
+        //  {name: 'Nanonis SPM images', extensions: ['sxm']},
+        //  {name: 'All Files', extensions: ['*']}
+        // ]
     }
     let directory = dialog.showOpenDialog(win, options);
     if (directory !== undefined) {
