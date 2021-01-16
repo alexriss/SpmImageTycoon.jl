@@ -16,36 +16,39 @@ using SpmImages
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v12
-    id::String                               # id (will be filename and suffixes for virtual copies)
-    filename_original::String                # original filename (.sxm)
-    created::DateTime                        # file creation date
-    last_modified::DateTime                  # file last modified date
-    recorded::DateTime                       # date recorded
-    filename_display::String                 # generated png image
-    channel_name::String                     # channel name (" bwd" indicates backward direction)
-    channel_unit::String                     # unit for the respective channel
-    scansize::Vector{Float64}                # scan size in physical units
-    scansize_unit::String                    # scan size unit
-    comment::String                          # comment in the file
-    background_correction::String            # type of background correction used
-    colorscheme::String                      # color scheme
-    channel_range::Vector{Float64}           # min/max of current channel
-    channel_range_selected::Vector{Float64}  # selected min/max for current channel
-    filters::Vector{String}                  # array of filters used (not implemented yet)
-    keywords::Vector{String}                 # keywords
-    rating::Int                              # rating (0 to 5 stars)
-    status::Int                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
-    virtual_copy::Int                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
+mutable struct SpmImageGridItem_v121
+    id::String                                 # id (will be filename and suffixes for virtual copies)
+    filename_original::String                  # original filename (.sxm)
+    created::DateTime                          # file creation date
+    last_modified::DateTime                    # file last modified date
+    recorded::DateTime                         # date recorded
+    filename_display::String                   # generated png image
+    filename_display_last_modified::DateTime   # png image last modified
+    channel_name::String                       # channel name (" bwd" indicates backward direction)
+    channel_unit::String                       # unit for the respective channel
+    scansize::Vector{Float64}                  # scan size in physical units
+    scansize_unit::String                      # scan size unit
+    comment::String                            # comment in the file
+    background_correction::String              # type of background correction used
+    colorscheme::String                        # color scheme
+    channel_range::Vector{Float64}             # min/max of current channel
+    channel_range_selected::Vector{Float64}    # selected min/max for current channel
+    filters::Vector{String}                    # array of filters used (not implemented yet)
+    keywords::Vector{String}                   # keywords
+    rating::Int                                # rating (0 to 5 stars)
+    status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
+    virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v12(; id="", filename_original="", created=DateTime(0), last_modified=DateTime(0), recorded=DateTime(0), filename_display="",
+    SpmImageGridItem_v121(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
         channel_name="", channel_unit="", scansize=[], scansize_unit="", comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
-    new(id, filename_original, created, recorded, last_modified, filename_display,
+    new(id, filename_original, created, recorded, last_modified,
+        filename_display, filename_display_last_modified,
         channel_name, channel_unit, scansize, scansize_unit, comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v12
+SpmImageGridItem = SpmImageGridItem_v121
 
 
 include("config.jl")
@@ -250,8 +253,16 @@ end
 
 
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
-The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)"""
-function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="")
+The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)
+if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
+function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="", use_existing::Bool=false)
+    if use_existing
+        f = joinpath(base_dir, griditem.filename_display)
+        if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
+            return nothing  # image exists, nothing to do
+        end
+    end
+
     # create grayscale image
     d, unit, vmin, vmax = get_image_data(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
     griditem.channel_unit = unit
@@ -264,9 +275,11 @@ function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::
     end
     
     filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).png"
-    save(joinpath(base_dir, filename_display), im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
+    f = joinpath(base_dir, filename_display)
+    save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
 
     griditem.filename_display = filename_display
+    griditem.filename_display_last_modified = unix2datetime(mtime(f))
     return nothing
 end
 
@@ -428,11 +441,11 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String, w::Window=nothing; output_info::Int=0)::Dict{String, SpmImageGridItem}
+function parse_files(dir_data::String, w::Window=nothing; output_info::Int=1)::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
 
     # load saved data - if available
-    images_parsed = load_all(dir_data)
+    images_parsed = load_all(dir_data, w)
 
     # get all virtual copies that are saved
     virtual_copies_dict = get_virtual_copies_dict(images_parsed)
@@ -474,7 +487,7 @@ function parse_files(dir_data::String, w::Window=nothing; output_info::Int=0)::D
                 channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=im_spm.header["Comment"]
             )
         end
-        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
 
         # virtual copies
         if haskey(virtual_copies_dict, id)
@@ -517,14 +530,15 @@ function parse_files(dir_data::String, w::Window=nothing; output_info::Int=0)::D
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        println("Parsed $(length(images_parsed)) files in $elapsed_time.")
+        msg = "Parsed $(length(images_parsed)) files in $elapsed_time."
+        log(msg, w)
     end
     return images_parsed
 end
 
 
 """load data from saved file"""
-function load_all(dir_data::String)::Dict{String, SpmImageGridItem}
+function load_all(dir_data::String, w::Window)::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
     images_parsed = Dict{String, SpmImageGridItem}()
     
@@ -543,7 +557,8 @@ function load_all(dir_data::String)::Dict{String, SpmImageGridItem}
         end
 
         if t_save != SpmImageGridItem  # there was a change in the struct specification, lets try to copy field by field
-            print("Old database detected. Converting... ")
+            log("Old database detected. Converting... ", w, new_line=false)
+
             fieldnames_save = fieldnames(t_save)
             fieldnames_common = filter(x -> x in fieldnames_save, fieldnames(SpmImageGridItem))
 
@@ -556,7 +571,7 @@ function load_all(dir_data::String)::Dict{String, SpmImageGridItem}
                 end
             end
 
-            println("ok.")
+            log("ok.", w)
         else
             images_parsed = images_parsed_save
         end
@@ -603,6 +618,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump, full_resolution)
                 images_parsed_sub = get_subset(images_parsed, ids)
                 @js_ w update_images($images_parsed_sub);
+            catch e
+                error(e, w)
             finally
                 unlock(l)
             end
@@ -616,6 +633,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     end
                     images_parsed_sub = get_subset(images_parsed, ids)
                     @js_ w update_images($images_parsed_sub);
+                catch e
+                    error(e, w)
                 finally
                     unlock(l)
                 end
@@ -630,6 +649,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     set_keywords!(ids, dir_data, images_parsed, mode, keywords)
                     images_parsed_sub = get_subset(images_parsed, ids)
                     @js_ w update_images($images_parsed_sub);
+                catch e
+                    error(e, w)
                 finally
                     unlock(l)
                 end
@@ -641,6 +662,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     set_range_selected!(ids, dir_data, images_parsed, range_selected, full_resolution)
                     images_parsed_sub = get_subset(images_parsed, ids)
                     @js_ w update_images($images_parsed_sub);
+                catch e
+                    error(e, w)
                 finally
                     unlock(l)
                 end
@@ -678,6 +701,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     end
                     @js_ w delete_images($ids)
                 end
+            catch e
+                error(e, w)
             finally
                 unlock(l)
             end
@@ -708,6 +733,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             images_parsed = parse_files(dir_data)
             images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
             @js_ w load_images($images_parsed_values, true)
+        catch e
+            error(e, w)
         finally
             unlock(l)
         end
@@ -721,6 +748,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 save_all(dir_data, images_parsed)
             end
             @js_ w saved_all()
+        catch e
+            error(e, w)
         finally
             unlock(l)
         end
@@ -728,6 +757,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
 
     return nothing
 end
+
 
 """sets basic event handlers"""
 function set_event_handlers_basic(w::Window)
@@ -743,6 +773,8 @@ function set_event_handlers_basic(w::Window)
             else
                 load_directory(dir, w)
             end
+        catch e
+            error(e, w)
         finally
             unlock(l)
         end
@@ -750,6 +782,33 @@ function set_event_handlers_basic(w::Window)
 
     handle(w, "debug") do args
         println("debug: " * string(args))
+    end
+
+    return nothing
+end
+
+
+"""shows error"""
+function error(e::Exception, w::Window)
+    msg = sprint(showerror, e)
+    msg_full = sprint(showerror, e, catch_backtrace())
+    
+    @js_ w show_error($msg)
+    @js_ w console.log($msg_full)
+    println(msg_full)
+    return nothing
+end
+
+
+"""logs message to console and stdout"""
+function log(msg::AbstractString, w::Window; new_line::Bool=true)
+    if w !== nothing
+        @js_ w console.log($msg)
+    end
+    if new_line
+        println(msg)
+    else
+        print(msg)
     end
 
     return nothing
@@ -787,7 +846,7 @@ end
 
 
 """Start the main GUI and loads images from dir_data (if specified)"""
-function tycoon(dir_data::String="")::Window
+function tycoon(dir_data::String=""; return_window::Bool=False)::Window
     file_logo = path_asset("logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
@@ -830,7 +889,12 @@ function tycoon(dir_data::String="")::Window
     
     # bring window to front
     @js w require("electron").remote.getCurrentWindow().show()
-    return w
+
+    if return_window
+        return w
+    else
+        return nothing
+    end
 end
 
 
