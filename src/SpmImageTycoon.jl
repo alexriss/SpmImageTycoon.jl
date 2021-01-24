@@ -846,7 +846,7 @@ end
 
 
 """Start the main GUI and loads images from dir_data (if specified)"""
-function tycoon(dir_data::String=""; return_window::Bool=False)::Window
+function tycoon(dir_data::String=""; return_window::Bool=false)::Window
     file_logo = path_asset("logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
