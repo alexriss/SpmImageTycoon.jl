@@ -441,7 +441,7 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String, w::Window=nothing; output_info::Int=1)::Dict{String, SpmImageGridItem}
+function parse_files(dir_data::String, w::Union{Window,nothing}=nothing; output_info::Int=1)::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
 
     # load saved data - if available
@@ -801,7 +801,7 @@ end
 
 
 """logs message to console and stdout"""
-function log(msg::AbstractString, w::Window; new_line::Bool=true)
+function log(msg::AbstractString, w::Union{Window,nothing}; new_line::Bool=true)
     if w !== nothing
         @js_ w console.log($msg)
     end
@@ -846,7 +846,7 @@ end
 
 
 """Start the main GUI and loads images from dir_data (if specified)"""
-function tycoon(dir_data::String=""; return_window::Bool=false)::Window
+function tycoon(dir_data::String=""; return_window::Bool=false)::Union{Window,nothing}
     file_logo = path_asset("logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
