@@ -118,7 +118,7 @@ function get_scalebar_width(image_width::AbstractFloat)::Float64
     scalebar_width = image_width * odp_scalebar_width
 
     # use powers of 2 for scalebar
-    l = log(2, scalebar_width)
+    l = log2(scalebar_width)
     scalebar_width = 2^floor(l)
 
     if scalebar_width >= 8
