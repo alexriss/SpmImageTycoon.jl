@@ -483,6 +483,8 @@ function save_all(exit=false) {
         Blink.msg("save_all", [exit]);
         show_message("saving.")
         open_jobs(1);
+    } else if (exit == true) {
+        Blink.msg("exit", []);
     }
 }
 

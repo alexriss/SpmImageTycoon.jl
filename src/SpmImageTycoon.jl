@@ -56,6 +56,9 @@ include("config.jl")
 include("export.jl")
 
 
+exit_tycoon = false  # if set to true, then keep-alive loop will end
+
+
 """replaces some characters for their UTF-8 and strips non-UTF8 characters"""
 function utf8ify(s::AbstractString)::String
     s = replace(s, "\xb0" => "°")
@@ -758,7 +761,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
 
     handle(w, "save_all") do args
         lock(l)
-        exit = args[1]  # TODO: close process when closing window
+        if args[1] == true
+            global exit_tycoon = true
+        end
         try
             if dir_data != ""
                 save_all(dir_data, images_parsed)
@@ -769,6 +774,10 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         finally
             unlock(l)
         end
+    end
+
+    handle(w, "exit") do args
+        global exit_tycoon = true
     end
 
     return nothing
@@ -809,9 +818,7 @@ function error(e::Exception, w::Window)
     msg = sprint(showerror, e)
     msg_full = sprint(showerror, e, catch_backtrace())
     println(msg)
-    println("1")
     println(msg_full)
-    println("2")
     
     @js_ w show_error($msg)
     @js_ w console.log($msg_full)
@@ -866,7 +873,7 @@ end
 
 
 """Start the main GUI and loads images from dir_data (if specified)"""
-function tycoon(dir_data::String=""; return_window::Bool=false)::Union{Window,Nothing}
+function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool=true)::Union{Window,Nothing}
     file_logo = path_asset("logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
@@ -910,6 +917,12 @@ function tycoon(dir_data::String=""; return_window::Bool=false)::Union{Window,No
     # bring window to front
     @js w require("electron").remote.getCurrentWindow().show()
 
+    if keep_alive
+        while !exit_tycoon
+            yield()
+            sleep(0.05)
+        end
+    end
     if return_window
         return w
     else
