@@ -3,6 +3,7 @@ __precompile__()
 module SpmImageTycoon
 
 using Blink
+using CodecZlib
 using ColorSchemes
 using DataStructures
 using Dates
@@ -53,6 +54,14 @@ SpmImageGridItem = SpmImageGridItem_v121
 
 include("config.jl")
 include("export.jl")
+
+
+"""replaces some characters for their UTF-8 and strips non-UTF8 characters"""
+function utf8ify(s::AbstractString)::String
+    s = replace(s, "\xb0" => "°")
+    # TODO: replace other characters too
+    return filter(isvalid, s)
+end
 
 
 """saves all colorbars as pngs in the cache directory.
@@ -460,12 +469,13 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
 
     num_parsed = 0
     time_start = Dates.now()
-    Threads.@threads for datafile in datafiles
+    @sync for datafile in datafiles
         im_spm = load_image(datafile, output_info=0)
         
         filename_original = basename(datafile)
-        created = unix2datetime(ctime(datafile))
-        last_modified = unix2datetime(mtime(datafile))
+        s = stat(datafile)
+        created = unix2datetime(s.ctime)
+        last_modified = unix2datetime(s.mtime)
         
         id = filename_original
 
@@ -477,17 +487,17 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id].recorded = im_spm.start_time
             images_parsed[id].scansize = im_spm.scansize
             images_parsed[id].scansize_unit = im_spm.scansize_unit
-            images_parsed[id].comment = im_spm.header["Comment"]
-            images_parsed[id].status = 0
+            images_parsed[id].comment = utf8ify(im_spm.header["Comment"])
+            # images_parsed[id].status = 0
         else
             # get the respective image channel (depending on whether the feedback was on or not)
             channel_name = default_channel_name(im_spm, channels_feedback_on, channels_feedback_off)
             images_parsed[id] = SpmImageGridItem(
                 id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
-                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=im_spm.header["Comment"]
+                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=utf8ify(im_spm.header["Comment"])
             )
         end
-        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+        Threads.@spawn create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
 
         # virtual copies
         if haskey(virtual_copies_dict, id)
@@ -499,9 +509,9 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 images_parsed[virtual_copy.id].recorded = im_spm.start_time
                 images_parsed[virtual_copy.id].scansize = im_spm.scansize
                 images_parsed[virtual_copy.id].scansize_unit = im_spm.scansize_unit
-                images_parsed[virtual_copy.id].comment = im_spm.header["Comment"]
-                images_parsed[virtual_copy.id].status = 0
-                create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+                images_parsed[virtual_copy.id].comment = utf8ify(im_spm.header["Comment"])
+                # images_parsed[virtual_copy.id].status = 0
+                Threads.@spawn create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)
             end
         end
 
@@ -530,7 +540,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        msg = "Parsed $(length(images_parsed)) files in $elapsed_time."
+        msg = "Parsed $(length(images_parsed)) $num_parsed files in $elapsed_time."
         log(msg, w)
     end
     return images_parsed
@@ -538,7 +548,7 @@ end
 
 
 """load data from saved file"""
-function load_all(dir_data::String, w::Window)::Dict{String, SpmImageGridItem}
+function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmImageGridItem}
     dir_cache = get_dir_cache(dir_data)
     images_parsed = Dict{String, SpmImageGridItem}()
     
@@ -604,8 +614,10 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             image_header = get_image_header(id, dir_data, images_parsed)
             k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
             v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
+            v = utf8ify.(v)
             image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
-            @js_ w show_info($id, $image_header_json);
+            json_compressed = transcode(GzipCompressor, image_header_json)
+            @js_ w show_info($id, $json_compressed);
             if histogram
                 width, counts = get_histogram(id, dir_data, images_parsed)
                 @js_ w show_histogram($id, $width, $counts)
@@ -617,7 +629,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             try
                 switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump, full_resolution)
                 images_parsed_sub = get_subset(images_parsed, ids)
-                @js_ w update_images($images_parsed_sub);
+                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                @js_ w update_images($json_compressed);
             catch e
                 error(e, w)
             finally
@@ -632,7 +645,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                         images_parsed[id].rating = rating
                     end
                     images_parsed_sub = get_subset(images_parsed, ids)
-                    @js_ w update_images($images_parsed_sub);
+                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    @js_ w update_images($json_compressed);
                 catch e
                     error(e, w)
                 finally
@@ -648,7 +662,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 try
                     set_keywords!(ids, dir_data, images_parsed, mode, keywords)
                     images_parsed_sub = get_subset(images_parsed, ids)
-                    @js_ w update_images($images_parsed_sub);
+                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    @js_ w update_images($json_compressed);
                 catch e
                     error(e, w)
                 finally
@@ -661,7 +676,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 try
                     set_range_selected!(ids, dir_data, images_parsed, range_selected, full_resolution)
                     images_parsed_sub = get_subset(images_parsed, ids)
-                    @js_ w update_images($images_parsed_sub);
+                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    @js_ w update_images($json_compressed);
                 catch e
                     error(e, w)
                 finally
@@ -713,13 +729,12 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 export_odp(ids, dir_data, images_parsed, filename_export)
                 @js_ w exported()
             catch e
-                msg = ""
-                if (:msg in fieldnames(typeof(e)))
+                if (:msg in fieldnames(typeof(e)))  # this is often a file-busy error
                     msg = string(e.msg)
+                    @js_ w show_error($msg)
                 else
-                    msg = string(typeof(e).name)
+                    error(e, w)
                 end
-                @js_ w show_error($msg)
             finally
                 unlock(l)
             end
@@ -732,7 +747,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             save_all(dir_data, images_parsed)
             images_parsed = parse_files(dir_data)
             images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
-            @js_ w load_images($images_parsed_values, true)
+            json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
+            @js_ w load_images($json_compressed, true)
         catch e
             error(e, w)
         finally
@@ -792,10 +808,13 @@ end
 function error(e::Exception, w::Window)
     msg = sprint(showerror, e)
     msg_full = sprint(showerror, e, catch_backtrace())
+    println(msg)
+    println("1")
+    println(msg_full)
+    println("2")
     
     @js_ w show_error($msg)
     @js_ w console.log($msg_full)
-    println(msg_full)
     return nothing
 end
 
@@ -834,7 +853,8 @@ function load_directory(dir_data::String, w::Window)
     @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar)
     
     images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
-    @js_ w load_images($images_parsed_values, true)
+    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
+    @js_ w load_images($json_compressed, true)
 
     set_event_handlers(w, dir_data, images_parsed)
 

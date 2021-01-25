@@ -37,8 +37,11 @@ function show_start() {
     toggle_start_project("start");
 }
 
-function load_images(images_parsed_arr, delete_previous=false) {  // here we use the array "images_parsed_arr", because we have to rpeserve order
+function load_images(gzip_json_images_parsed_arr, delete_previous=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
     // load all images into the page
+
+    let json_images_parsed_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed_arr));
+    let images_parsed_arr = JSON.parse(json_images_parsed_arr.toString("utf-8"));
 
     // delete previous images
     if (delete_previous) {
@@ -72,11 +75,15 @@ function load_images(images_parsed_arr, delete_previous=false) {  // here we use
     }
 }
 
-function update_images(images_parsed) {  // "images_parsed" is a dictionary here
+function update_images(gzip_json_images_parsed) {  // "images_parsed" is a dictionary here
     // updates images
 
     // let t1 = performance.now();
     // console.log("Update info get:" + (t1 - window.t0) + " ms.");
+
+    let json_images_parsed = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed));
+    let images_parsed = JSON.parse(json_images_parsed.toString("utf-8"));
+
 
     for (let key in images_parsed) {
         window.items[key] = images_parsed[key];
@@ -137,9 +144,11 @@ function delete_images(ids) {
     open_jobs(-1);
 }
 
-function show_info(id, info_json) {
+function show_info(id, gzip_info_json) {
     /// shows header data for an image
     if (window.image_info_id != id) return;  // there was some other event already
+
+    let info_json = require("zlib").gunzipSync(new Buffer.from(gzip_info_json));
 
     if (document.getElementById("sidebar_content").classList.contains("is-hidden")) {
         document.getElementById("sidebar_content_none").classList.add("is-hidden");
