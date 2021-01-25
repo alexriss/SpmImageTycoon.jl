@@ -540,7 +540,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        msg = "Parsed $(length(images_parsed)) $num_parsed files in $elapsed_time."
+        msg = "Parsed $(length(images_parsed)) files in $elapsed_time."
         log(msg, w)
     end
     return images_parsed
