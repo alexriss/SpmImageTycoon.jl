@@ -116,7 +116,8 @@
       <div id="imagezoom_container" class="p-3 is-hidden">
         <div id="imagezoom_content">
           <section>
-            <img id="imagezoom_image" />
+            <img id="imagezoom_image" class="fullwidth" />
+            <canvas id="imagezoom_canvas"></canvas>
           </section>
         </div>
         <div id="imagezoom_histogram_table_container" class="columns is-gapless">
@@ -150,6 +151,57 @@
               </tr>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- side bar imagezoomtools  -->
+    <div class="column sidebar is-hidden is-narrow has-background-info-light p-0" id="sidebar_imagezoomtools">
+      <div class="sidebar_content">
+        <button class="sidebar_accordion title is-size-6 mb-0">Line profile</button>
+        <div id="line_profile" class="sidebar_panel is-size-7 pt-2">
+          <table id="table_line_profile" class="table is-fullwidth is-size-7">
+            <tr>
+              <th width="20%">Start</th>
+              <td width="20%" class="pr-1"><input class="input is-small" type="text" id="line_profile_start_x"></td>
+              <td width="20%" class="pr-1"><input class="input is-small" type="text" id="line_profile_start_y"></td>
+              <td width="10%"><span id="line_profile_x_unit"></span></td>
+              <td width="20%"><span id="line_profile_start_value"></span></td>
+              <td width="10%"><span id="line_profile_start_value_unit"></span></td>
+            </tr>
+            <tr>
+              <th>End</th>
+              <td class="pr-1"><input class="input is-small" type="text" id="line_profile_end_x"></td>
+              <td class="pr-1"><input class="input is-small" type="text" id="line_profile_end_y"></td>
+              <td><span id="line_profile_y_unit"></span></td>
+              <td><span id="line_profile_end_value"></span></td>
+              <td><span id="line_profile_end_value_unit"></span></td>
+            </tr>
+            <tr>
+              <th>Width</th>
+              <td class="pr-1"><input class="input is-small" type="text" id="line_profile_width"></td>
+              <td><span id="line_profile_width_unit"></span></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <th>Length</th>
+              <td class="pr-1"><input class="input is-small" type="text" id="line_profile_length"></td>
+              <td><span id="line_profile_length_unit"></span></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <th>Angle</th>
+              <td class="pr-1"><input class="input is-small" type="text" id="line_profile_angle"></td>
+              <td>°</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
         </div>
       </div>
     </div>
@@ -523,6 +575,9 @@
         </li>
         <li>
           <span class="tag is-light p-2">f</span> Toggle side bar with filters
+        </li>
+        <li>
+          <span class="tag is-light p-2">t</span> Toggle side bar with image tools <span class="tag is-info is-light">zoom view only</span>
         </li>
         <li>
           <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">f</span> Parameter search

@@ -11,6 +11,10 @@ window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
 window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
+window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
+window.sidebar_imagezoomtools_active_sections = new Set();  // set of active sections in imagezoomtools
+
+window.line_profile_object = null;  // hold the line profile object
 
 window.histogram_object = null;  // holds the histogram object
 
@@ -300,6 +304,7 @@ function keywords_copy_to_clipboard(event) {
 
 function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
     // toggles sidebar
+
     let sidebars = document.getElementsByClassName("sidebar");
     let sidebar = document.getElementById('sidebar_' + what);
 
@@ -320,6 +325,39 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
         }
     } else {
         sidebar.classList.add("is-hidden");
+    }
+}
+
+function toggle_sidebar_imagezoomtools(restore_previous=false) {
+    // toggles sidebar in imagezoom mode
+    
+    let sidebar = document.getElementById('sidebar_imagezoomtools');
+
+    if (restore_previous && get_view() == "zoom") {
+        if (window.sidebar_imagezoomtools) {
+            if (sidebar.classList.contains("is-hidden")) {
+                sidebar.classList.remove("is-hidden");
+            }
+        } else {
+            if (!sidebar.classList.contains("is-hidden")) {
+                sidebar.classList.add("is-hidden");
+            }
+        }
+    } else if (get_view() == "zoom") {
+        if (sidebar.classList.contains("is-hidden")) {
+            sidebar.classList.remove("is-hidden");
+            window.sidebar_imagezoomtools = true;
+        } else {
+            sidebar.classList.add("is-hidden");
+            window.sidebar_imagezoomtools = false;
+        }
+    } else {
+        if (!sidebar.classList.contains("is-hidden")) {
+            sidebar.classList.add("is-hidden");
+        }
+    }
+    if (window.line_profile_object !== null) {
+        window.line_profile_object.setup();  // will set up or remove event handlers
     }
 }
 
@@ -374,6 +412,7 @@ function toggle_imagezoom(target_view = "") {
         grid.classList.remove("is-hidden");
         footer_num_images_container.classList.remove("is-invisible");
         image_info_quick_timeout_clear();  // if we leave zoom-mode, we imght need to get rid of the quick image info (if mouse is not hovering anything)
+        toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
     } else {
         let el = grid.querySelector('div.item:hover');
         if (el != null) {
@@ -395,6 +434,7 @@ function toggle_imagezoom(target_view = "") {
             }
             window.zoom_last_selected = el.id;
             next_item(0); // sets the img src and displays colorbar etc
+            toggle_sidebar_imagezoomtools(restore_previous=true);
         }
     }
 }
@@ -567,6 +607,11 @@ function next_item(jump) {
             window.histogram_object = new Histogram();
         }
         window.histogram_object.set_range_initial(window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
+
+        if (window.line_profile_object === null) {
+            window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));
+        }
+        window.line_profile_object.setup();
 
         window.image_info_id = el.id;
         window.zoom_last_selected = el.id;

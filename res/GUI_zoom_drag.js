@@ -13,6 +13,11 @@ function zoom_drag_setup(divMain) {
         // when mouse is pressed store the current mouse x,y
         let previousX, previousY
         divSection.addEventListener('mousedown', (event) => {
+            if (window.sidebar_imagezoomtools && window.sidebar_imagezoomtools_active_sections.has("line_profile")) {
+                if (!event.shiftKey && !event.ctrlKey) {  // dragging only with modifier - line profile dragging has priority
+                    return;
+                }
+            }
             previousX = event.pageX
             previousY = event.pageY
         })
@@ -21,6 +26,12 @@ function zoom_drag_setup(divMain) {
         divSection.addEventListener('mousemove', (event) => {
             // only do this when the primary mouse button is pressed (event.buttons = 1)
             if (event.buttons) {
+                if (window.sidebar_imagezoomtools && window.sidebar_imagezoomtools_active_sections.has("line_profile")) {
+                    if (!event.shiftKey && !event.ctrlKey) {  // dragging only with modifier - line profile dragging has priority
+                        return;
+                    }
+                }
+
                 let dragX = 0
                 let dragY = 0
                 // skip the drag when the x position was not changed

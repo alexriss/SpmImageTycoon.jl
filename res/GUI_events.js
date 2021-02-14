@@ -16,6 +16,7 @@ let key_commands = {
     A: { command: toggle_all_active, args: [true] },
     m: { command: toggle_sidebar, args: ["info"] },
     f: { command: toggle_sidebar, args: ["filter"] },
+    t: { command: toggle_sidebar_imagezoomtools, args: [] },
     z: { command: toggle_imagezoom, args: [] },
     0: { command: set_rating, args: [0] },
     1: { command: set_rating, args: [1] },
@@ -173,6 +174,31 @@ function event_handlers() {
         }
     });
 
+    // we need to adjust image css to fit it to the div (with css "object-fit: contain" we can't retrieve the computed image-position and width.)
+    const resizeObserver = new ResizeObserver(entries => {
+        let el = document.getElementById('imagezoom_content');
+        let w = el.clientWidth;
+        if (w == 0) {  // not visible
+            return;
+        }
+        let h = el.clientHeight;
+        let el_img = document.getElementById("imagezoom_image");
+        let w_img = el_img.naturalWidth;
+        let h_img = el_img.naturalHeight;
+
+        if (w_img/h_img >= w/h) {
+            el_img.classList.add("fullwidth");
+            el_img.classList.remove("fullheight");
+        } else {
+            el_img.classList.remove("fullwidth");
+            el_img.classList.add("fullheight");
+        }
+        if (window.line_profile_object !== null) {
+            window.line_profile_object.setup();  // will set up size of canvas
+        }
+    });
+    resizeObserver.observe(document.getElementById('imagezoom_content'));
+
     // filter sidebar
     document.querySelectorAll('#sidebar_filter_table input,select').forEach((el) => {
         el.addEventListener("input", filter_timeout);
@@ -211,6 +237,25 @@ function event_handlers() {
         });
         filter_items();
     });
+
+    // sidebar accordion
+    els = document.getElementsByClassName("sidebar_accordion");
+    for (let i=0; i<els.length; i++) {
+        els[i].addEventListener("click", function() {
+            this.classList.toggle("sidebar_accordion_active");
+            let panel = this.nextElementSibling;
+            if (panel.style.maxHeight) {
+                panel.style.maxHeight = null;
+                window.sidebar_imagezoomtools_active_sections.delete(panel.id);
+            } else {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+                window.sidebar_imagezoomtools_active_sections.add(panel.id);
+            }
+            if (window.line_profile_object !== null) {
+                window.line_profile_object.setup();  // will set up or remove event handlers
+            }
+        });
+    }
 
     // menu
     document.getElementById('nav_home').addEventListener('click', (e) => {
