@@ -13,7 +13,7 @@ function zoom_drag_setup(divMain) {
         // when mouse is pressed store the current mouse x,y
         let previousX, previousY
         divSection.addEventListener('mousedown', (event) => {
-            if (window.sidebar_imagezoomtools && window.sidebar_imagezoomtools_active_sections.has("line_profile")) {
+            if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
                 if (!event.shiftKey && !event.ctrlKey) {  // dragging only with modifier - line profile dragging has priority
                     return;
                 }
@@ -26,7 +26,7 @@ function zoom_drag_setup(divMain) {
         divSection.addEventListener('mousemove', (event) => {
             // only do this when the primary mouse button is pressed (event.buttons = 1)
             if (event.buttons) {
-                if (window.sidebar_imagezoomtools && window.sidebar_imagezoomtools_active_sections.has("line_profile")) {
+                if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
                     if (!event.shiftKey && !event.ctrlKey) {  // dragging only with modifier - line profile dragging has priority
                         return;
                     }
@@ -96,7 +96,7 @@ function zoom_drag_setup(divMain) {
 
     // reset on doubleclick
     divMain.addEventListener('dblclick', (e) => {
-        if (!e.ctrlKey && !e.shiftKey) {
+        if (!e.ctrlKey) {
             zoom_drag_reset(divMain)
         }
     })

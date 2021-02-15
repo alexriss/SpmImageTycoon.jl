@@ -3,6 +3,7 @@ function LineProfile(canvas_element, img_element) {
     this.img = img_element;
     this.ctx = this.canvas.getContext("2d");
     this.first_setup = false;
+    this.first_setup_events = false;
 
     this.Point2 = (x, y) => ({ x, y });  // creates a point
     this.Line = (p1, p2) => ({ p1, p2 });
@@ -36,7 +37,7 @@ function LineProfile(canvas_element, img_element) {
     this.h = this.canvas.height;
     this.cw = this.w / 2;  // center
     this.ch = this.h / 2;
-    this.maxSideLength = 800;  // pixel resolution of canvas
+    this.maxSideLength = 1600;  // pixel resolution of canvas
     this.maxNumberLines = 1;
     this.globalTime;
     this.closestLine;
@@ -49,15 +50,15 @@ function LineProfile(canvas_element, img_element) {
     this.helpCount = 0;
     this.minDist = 20;
     this.lineStyle = {
-        lineWidth: 2,
+        lineWidth: 5,
         strokeStyle: "#1ad1b3",
     }
     this.pointStyle = {
-        lineWidth: 1,
+        lineWidth: 3,
         strokeStyle: "#4090cd",
     }
     this.highlightStyle = {
-        lineWidth: 3,
+        lineWidth: 8,
         strokeStyle: "#ef4568",
     }
     this.font = {
@@ -151,6 +152,16 @@ LineProfile.prototype = {
         };
     },
 
+    // converts points on the canvas to scansize units
+    pointsToNm(point, imgScansize) {
+        return this.Point2(point.x / this.w * imgScansize[0], (this.h - point.y) / this.h * imgScansize[1]);
+    },
+
+    // converts nm units to points on the canvas
+    nmToPoints(pointNm, imgScansize) {
+        return this.Point2(pointNm.x / imgScansize[0] * this.w, this.h - pointNm.y / imgScansize[1] * this.h);
+    },
+
     mouseEvents(e) {
         //this.mouse.x = e.pageX;
         //this.mouse.y = e.pageY;
@@ -171,8 +182,112 @@ LineProfile.prototype = {
             } else {
                 this.mouse.drag = false;
                 this.mouse.dragEnd = true;
+                this.showInfo();
             }
         }
+        if (this.mouse.drag) {
+            this.showInfo();
+        }
+    },
+
+    // handles changes in input fields
+    inputEvents(e) {
+        const id = e.target.id;
+        const el = document.getElementById(id);
+        const elVal = parseFloat(el.value);
+        if (Number.isNaN(elVal)) {
+            this.showInfo();
+            return;
+        }
+        const img = window.items[window.zoom_last_selected];
+        const imgScansize = img.scansize;
+        var p = this.Point2(0, 0);
+
+
+        if (id == "line_profile_start_x") {
+            p.x = elVal;
+            this.points.items[0].x = this.nmToPoints(p, imgScansize).x;
+        } else if (id == "line_profile_start_y") {
+            p.y = elVal;
+            this.points.items[0].y = this.nmToPoints(p, imgScansize).y;
+        } else if (id == "line_profile_end_x") {
+            p.x = elVal;
+            this.points.items[1].x = this.nmToPoints(p, imgScansize).x;
+        } else if (id == "line_profile_end_y") {
+            p.y = elVal;
+            this.points.items[1].y = this.nmToPoints(p, imgScansize).y;
+        } else if (id == "line_profile_length") {
+            var newLength = elVal;
+            if (newLength <= 0) {
+                newLength = 0.0001;
+            }
+            const startNm = this.pointsToNm(this.points.items[0], imgScansize);
+            var endNm = this.pointsToNm(this.points.items[1], imgScansize);
+            const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
+            endNm.x = startNm.x + (endNm.x - startNm.x) / lineLength * newLength;
+            endNm.y = startNm.y + (endNm.y - startNm.y) / lineLength * newLength;
+            this.points.items[1] = this.nmToPoints(endNm, imgScansize);
+        } else if (id == "line_profile_angle") {
+            const startNm = this.pointsToNm(this.points.items[0], imgScansize);
+            var endNm = this.pointsToNm(this.points.items[1], imgScansize);
+            const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
+            endNm.x = startNm.x + Math.cos(elVal / 180 * Math.PI) * lineLength;
+            endNm.y = startNm.y + Math.sin(elVal / 180 * Math.PI) * lineLength;
+            this.points.items[1] = this.nmToPoints(endNm, imgScansize);
+        }
+        this.showInfo();
+    },
+
+    // check if sizes are ok
+    checkSanity() {
+        var elErrSize = document.getElementById("line_profile_error_size");
+        if (this.img.clientWidth != this.canvas.clientWidth || this.img.clientHeight != this.canvas.clientHeight) {
+            elErrSize.classList.remove("is-hidden");
+        } else {
+            elErrSize.classList.add("is-hidden");
+        }
+    },
+
+    // show info in sidebar
+    showInfo() {
+        this.checkSanity();
+        if (this.points.items.length < 2) {
+            return;
+        }
+
+        const img = window.items[window.zoom_last_selected];
+
+        const elStartX = document.getElementById("line_profile_start_x");
+        const elStartY = document.getElementById("line_profile_start_y");
+        const elStartValue = document.getElementById("line_profile_start_value");
+        const elEndX = document.getElementById("line_profile_end_x");
+        const elEndY = document.getElementById("line_profile_end_y");
+        const elEndValue = document.getElementById("line_profile_end_value");
+        const elLength = document.getElementById("line_profile_length");
+        const elWidth = document.getElementById("line_profile_width");
+        const elAngle = document.getElementById("line_profile_angle");
+        const elAngleGlobal = document.getElementById("line_profile_angle_global");
+
+        const imgScansize = img.scansize;
+        const imgAngle = img.angle;
+
+        // in the images 0,0 is lower left corner, for the canvas points 0,0 is upper left corner
+        // we only care about the first two points, i.e. the first line
+        const startNm = this.pointsToNm(this.points.items[0], imgScansize);
+        const endNm = this.pointsToNm(this.points.items[1], imgScansize);
+        const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
+        var lineAngle = Math.atan2((endNm.y - startNm.y), (endNm.x - startNm.x)) * 180 / Math.PI;
+        if (lineAngle < 0) {
+            lineAngle = lineAngle + 360;
+        }
+
+        elStartX.value = startNm.x.toFixed(2);
+        elEndX.value = endNm.x.toFixed(2);
+        elStartY.value = startNm.y.toFixed(2);
+        elEndY.value = endNm.y.toFixed(2);
+        elLength.value = lineLength.toFixed(2);
+        elAngle.value = lineAngle.toFixed(1);
+        elAngleGlobal.innerText = (lineAngle + imgAngle).toFixed(1);
     },
 
     // main update function
@@ -274,7 +389,7 @@ LineProfile.prototype = {
         //     that.canvas.title = "";
         // }
 
-        if (window.sidebar_imagezoomtools && window.sidebar_imagezoomtools_active_sections.has("line_profile")) {
+        if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
             requestAnimationFrame(that.update);
         } else {
             that.unsetup()
@@ -285,14 +400,36 @@ LineProfile.prototype = {
         this.canvas.style.visibility = "hidden";
     },
 
-    setup() {
-        if (window.sidebar_imagezoomtools && window.sidebar_imagezoomtools_active_sections.has("line_profile")) {
+    setup(new_image=false) {
+        if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
             this.canvas.style.left = window.getComputedStyle(this.img).left;
             this.canvas.style.top = window.getComputedStyle(this.img).top;
             this.canvas.style.width = window.getComputedStyle(this.img).width;
             this.canvas.style.height = window.getComputedStyle(this.img).height;
             this.canvas.style.visibility = "visible";
-            if (!this.first_setup) {
+
+            var scanUnit = window.items[window.zoom_last_selected].scansize_unit;
+            document.getElementById("line_profile_start_unit").innerText = scanUnit;
+            document.getElementById("line_profile_end_unit").innerText = scanUnit;
+            document.getElementById("line_profile_width_unit").innerText = scanUnit;
+            document.getElementById("line_profile_length_unit").innerText = scanUnit;
+            document.getElementById("line_profile_start_value_unit").innerText = scanUnit;
+            document.getElementById("line_profile_end_value_unit").innerText = scanUnit;
+
+            var channelUnit = window.items[window.zoom_last_selected].channel_unit;
+            document.getElementById("line_profile_start_value_unit").innerText = channelUnit;
+            document.getElementById("line_profile_end_value_unit").innerText = channelUnit;
+
+            var angle = window.items[window.zoom_last_selected].angle;
+            if (angle != 0) {
+                document.getElementById("line_profile_angle_global").classList.remove("is-hidden");
+                document.getElementById("line_profile_angle_global_unit").classList.remove("is-hidden");
+            } else {
+                document.getElementById("line_profile_angle_global").classList.add("is-hidden");
+                document.getElementById("line_profile_angle_global_unit").classList.add("is-hidden");
+            }
+
+            if (!this.first_setup || new_image) {
                 let w = this.img.width;
                 let h = this.img.height;
                 let maxSideLength = Math.max(this.maxSideLength, Math.max(w, h));
@@ -307,9 +444,19 @@ LineProfile.prototype = {
                 this.h = this.canvas.height;
                 this.cw = this.w / 2;  // center
                 this.ch = this.h / 2;
-                ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
                 this.first_setup = true;
             }
+            if (!this.first_setup_events) {
+                ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+                this.first_setup_events = true;
+                const that = this;
+                document.querySelectorAll("#table_line_profile input").forEach((el) => {
+                    el.addEventListener("change", (e) => {
+                        that.inputEvents(e);
+                    });
+                });
+            }
+            this.showInfo();
             requestAnimationFrame(this.update);
         } else {
             this.unsetup();

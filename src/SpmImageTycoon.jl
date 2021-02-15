@@ -17,7 +17,7 @@ using SpmImages
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v121
+mutable struct SpmImageGridItem_v122
     id::String                                 # id (will be filename and suffixes for virtual copies)
     filename_original::String                  # original filename (.sxm)
     created::DateTime                          # file creation date
@@ -29,6 +29,7 @@ mutable struct SpmImageGridItem_v121
     channel_unit::String                       # unit for the respective channel
     scansize::Vector{Float64}                  # scan size in physical units
     scansize_unit::String                      # scan size unit
+    angle::Float64                             # scan angle
     comment::String                            # comment in the file
     background_correction::String              # type of background correction used
     colorscheme::String                        # color scheme
@@ -40,16 +41,16 @@ mutable struct SpmImageGridItem_v121
     status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
     virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v121(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmImageGridItem_v122(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
          filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
-        channel_name="", channel_unit="", scansize=[], scansize_unit="", comment="", background_correction="none", colorscheme="gray",
+        channel_name="", channel_unit="", scansize=[], scansize_unit="", angle=0, comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, filename_original, created, recorded, last_modified,
         filename_display, filename_display_last_modified,
-        channel_name, channel_unit, scansize, scansize_unit, comment, background_correction, colorscheme,
+        channel_name, channel_unit, scansize, scansize_unit, angle, comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v121
+SpmImageGridItem = SpmImageGridItem_v122
 
 
 include("config.jl")
@@ -490,6 +491,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id].recorded = im_spm.start_time
             images_parsed[id].scansize = im_spm.scansize
             images_parsed[id].scansize_unit = im_spm.scansize_unit
+            images_parsed[id].angle = im_spm.angle
             images_parsed[id].comment = utf8ify(im_spm.header["Comment"])
             # images_parsed[id].status = 0
         else
@@ -497,7 +499,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             channel_name = default_channel_name(im_spm, channels_feedback_on, channels_feedback_off)
             images_parsed[id] = SpmImageGridItem(
                 id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
-                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, comment=utf8ify(im_spm.header["Comment"])
+                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, angle=im_spm.angle,
+                comment=utf8ify(im_spm.header["Comment"])
             )
         end
         Threads.@spawn create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
@@ -512,6 +515,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 images_parsed[virtual_copy.id].recorded = im_spm.start_time
                 images_parsed[virtual_copy.id].scansize = im_spm.scansize
                 images_parsed[virtual_copy.id].scansize_unit = im_spm.scansize_unit
+                images_parsed[virtual_copy.id].angle = im_spm.angle
                 images_parsed[virtual_copy.id].comment = utf8ify(im_spm.header["Comment"])
                 # images_parsed[virtual_copy.id].status = 0
                 Threads.@spawn create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)

@@ -169,7 +169,7 @@ function event_handlers() {
 
     // imagezoom
     document.getElementById('imagezoom_container').addEventListener('dblclick', (e) => {
-        if (e.ctrlKey || e.shiftKey) {
+        if (e.ctrlKey) {
             toggle_imagezoom("grid");
         }
     });
@@ -244,13 +244,7 @@ function event_handlers() {
         els[i].addEventListener("click", function() {
             this.classList.toggle("sidebar_accordion_active");
             let panel = this.nextElementSibling;
-            if (panel.style.maxHeight) {
-                panel.style.maxHeight = null;
-                window.sidebar_imagezoomtools_active_sections.delete(panel.id);
-            } else {
-                panel.style.maxHeight = panel.scrollHeight + "px";
-                window.sidebar_imagezoomtools_active_sections.add(panel.id);
-            }
+            panel.classList.toggle("is-hidden");
             if (window.line_profile_object !== null) {
                 window.line_profile_object.setup();  // will set up or remove event handlers
             }

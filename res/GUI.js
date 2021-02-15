@@ -12,7 +12,6 @@ window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
-window.sidebar_imagezoomtools_active_sections = new Set();  // set of active sections in imagezoomtools
 
 window.line_profile_object = null;  // hold the line profile object
 
@@ -611,7 +610,7 @@ function next_item(jump) {
         if (window.line_profile_object === null) {
             window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));
         }
-        window.line_profile_object.setup();
+        window.line_profile_object.setup(new_image=true);
 
         window.image_info_id = el.id;
         window.zoom_last_selected = el.id;

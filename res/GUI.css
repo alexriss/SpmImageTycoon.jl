@@ -516,9 +516,6 @@ body {
 .sidebar_panel {
   padding: 0 18px;
   background-color: #eef6fc;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.05s ease-out;
 }
 
 .sidebar_accordion:after {
@@ -545,5 +542,18 @@ body {
 #table_line_profile input {
   text-align: right;
   height: 1.6rem; 
-  width: 3.75rem;
+  /* width: 3.75rem; */
+  padding: 3px;
+}
+
+#table_line_profile td {
+  padding-right: 1px;
+  padding-left: 1px;
+}
+
+/* remove up and down arrows */
+#table_line_profile input::-webkit-outer-spin-button,
+#table_line_profile input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
