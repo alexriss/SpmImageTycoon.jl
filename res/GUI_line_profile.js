@@ -283,10 +283,15 @@ LineProfile.prototype = {
         const elLength = document.getElementById("line_profile_length");
         const elWidth = document.getElementById("line_profile_width");
         const elAngle = document.getElementById("line_profile_angle");
-        const elAngleGlobal = document.getElementById("line_profile_angle_global");
+        const elAngleGlobal = document.getElementById("line_profile_angle_global_value");
 
         const imgScansize = img.scansize;
         const imgAngle = img.angle;
+
+        // we don't want the points to coincide
+        if (this.points.items[0].x == this.points.items[1].x && this.points.items[0].y == this.points.items[1].y) {
+            this.points.items[1].x = this.points.items[1].x + 1e-3;
+        }
 
         // in the images 0,0 is lower left corner, for the canvas points 0,0 is upper left corner
         // we only care about the first two points, i.e. the first line
