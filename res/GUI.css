@@ -524,7 +524,7 @@ body {
   color: #a0a0a0;
   float: right;
   margin-left: 5px;
-  margin-top: 2px;
+  padding-top: 2px;
 }
 
 .sidebar_accordion_active:after {

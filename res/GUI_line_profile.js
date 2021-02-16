@@ -32,12 +32,14 @@ function LineProfile(canvas_element, img_element) {
 
     this.mouse = { x: 0, y: 0, button: false, drag: false, dragStart: false, dragEnd: false, dragStartX: 0, dragStartY: 0 }
 
+    this.lineProfileWidth = 0;  // width for line profile (in nm units)
+
     // short cut vars
     this.w = this.canvas.width;
     this.h = this.canvas.height;
     this.cw = this.w / 2;  // center
     this.ch = this.h / 2;
-    this.maxSideLength = 1600;  // pixel resolution of canvas
+    this.maxSideLength = 2048;  // pixel resolution of canvas
     this.maxNumberLines = 1;
     this.globalTime;
     this.closestLine;
@@ -49,16 +51,22 @@ function LineProfile(canvas_element, img_element) {
     this.toolTip;
     this.helpCount = 0;
     this.minDist = 20;
+    this.minLineWidth = 16;  // minimum line width
+    this.highlightExtraLineWidth = 4;  // add to line width for highlighted line
     this.lineStyle = {
-        lineWidth: 5,
+        lineWidth: this.minLineWidth,
         strokeStyle: "#1ad1b3",
     }
     this.pointStyle = {
-        lineWidth: 3,
+        lineWidth: 16,
         strokeStyle: "#4090cd",
     }
-    this.highlightStyle = {
-        lineWidth: 8,
+    this.highlightLineStyle = {
+        lineWidth: this.minLineWidth + this.highlightExtraLineWidth,
+        strokeStyle: "#ef4568",
+    }
+    this.highlightPointStyle = {
+        lineWidth: 16,
         strokeStyle: "#ef4568",
     }
     this.font = {
@@ -192,6 +200,9 @@ LineProfile.prototype = {
 
     // handles changes in input fields
     inputEvents(e) {
+        if (this.points.items.length < 2) {
+            return;
+        }
         const id = e.target.id;
         const el = document.getElementById(id);
         const elVal = parseFloat(el.value);
@@ -234,6 +245,12 @@ LineProfile.prototype = {
             endNm.x = startNm.x + Math.cos(elVal / 180 * Math.PI) * lineLength;
             endNm.y = startNm.y + Math.sin(elVal / 180 * Math.PI) * lineLength;
             this.points.items[1] = this.nmToPoints(endNm, imgScansize);
+        } else if (id == "line_profile_width") {
+            if (elVal > 0) {
+                this.lineProfileWidth = elVal;
+            } else {
+                this.lineProfileWidth = 0;
+            }
         }
         this.showInfo();
     },
@@ -277,6 +294,16 @@ LineProfile.prototype = {
         const endNm = this.pointsToNm(this.points.items[1], imgScansize);
         const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
         var lineAngle = Math.atan2((endNm.y - startNm.y), (endNm.x - startNm.x)) * 180 / Math.PI;
+        
+        var lwAnisotrop = {x: this.lineProfileWidth * Math.sin(lineAngle), y: this.lineProfileWidth * Math.cos(lineAngle)};  // width is normal to the line
+        lwAnisotrop = {x: lwAnisotrop.x / imgScansize[0] * this.w, y: lwAnisotrop.y / imgScansize[1] * this.h }  // ocnvert to canvas units
+        var lw = Math.sqrt(lwAnisotrop.x**2 + lwAnisotrop.y**2);
+        if (lw < this.minLineWidth) {
+            lw = this.minLineWidth;
+        }
+        this.lineStyle.lineWidth = lw;
+        this.highlightLineStyle.lineWidth = lw + this.highlightExtraLineWidth;
+        
         if (lineAngle < 0) {
             lineAngle = lineAngle + 360;
         }
@@ -288,6 +315,13 @@ LineProfile.prototype = {
         elLength.value = lineLength.toFixed(2);
         elAngle.value = lineAngle.toFixed(1);
         elAngleGlobal.innerText = (lineAngle + imgAngle).toFixed(1);
+        if (this.lineProfileWidth == 0) {
+            elWidth.value = "0";
+        } else {
+            elWidth.value = this.lineProfileWidth.toFixed(2);
+        }
+
+        // adjust line thickness to lineProfileWidth
     },
 
     // main update function
@@ -370,10 +404,16 @@ LineProfile.prototype = {
         that.ctx.stroke();
 
         // draw highlighted point or line
-        that.setStyle(that.highlightStyle);
-        that.ctx.beginPath();
-        if (that.closestLine) { that.drawLine(that.closestLine) }
-        if (that.closestPoint) { that.drawPoint(that.closestPoint) }
+        if (that.closestLine) {
+            that.setStyle(that.highlightLineStyle);
+            that.ctx.beginPath();
+            that.drawLine(that.closestLine);
+        }
+        if (that.closestPoint) {
+            that.setStyle(that.highlightPointStyle);
+            that.ctx.beginPath();
+            that.drawPoint(that.closestPoint)
+        }
 
         that.ctx.stroke();
 
@@ -430,8 +470,8 @@ LineProfile.prototype = {
             }
 
             if (!this.first_setup || new_image) {
-                let w = this.img.width;
-                let h = this.img.height;
+                let w = this.img.naturalWidth;
+                let h = this.img.naturalHeight;
                 let maxSideLength = Math.max(this.maxSideLength, Math.max(w, h));
                 if (w >= h) {
                     this.canvas.width = maxSideLength;
@@ -446,15 +486,25 @@ LineProfile.prototype = {
                 this.ch = this.h / 2;
                 this.first_setup = true;
             }
+            
+            // there should always be a line
+            while (this.points.items.length < 2) {
+                const imgScansize = window.items[window.zoom_last_selected].scansize;
+                this.points.add(this.nmToPoints(this.Point2(0,0), imgScansize));
+            }
+            if (this.lines.items.length < 1) {
+                this.lines.add(this.Line(0,1));
+            }
+
             if (!this.first_setup_events) {
                 ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
-                this.first_setup_events = true;
                 const that = this;
                 document.querySelectorAll("#table_line_profile input").forEach((el) => {
                     el.addEventListener("change", (e) => {
                         that.inputEvents(e);
                     });
                 });
+                this.first_setup_events = true;
             }
             this.showInfo();
             requestAnimationFrame(this.update);
