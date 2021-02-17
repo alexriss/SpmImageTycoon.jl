@@ -229,6 +229,17 @@ function show_histogram(id, width, counts) {
     open_jobs(-1);
 }
 
+function show_line_profile(id, distances, values, start_point_value, end_point_value) {
+    if (get_view() == "zoom" && window.zoom_last_selected == id) {
+        if (window.line_profile_object != null) {
+            window.window.line_profile_object.showLineValues(start_point_value, end_point_value);
+            window.window.line_profile_object.plotLineProfile(distances, values);
+        }
+    }
+    console.log("plot");
+    open_jobs(-1);
+}
+
 function saved_all() {
     // current state has been saved to disk
     open_jobs(-1);
@@ -428,6 +439,15 @@ function set_keywords() {
         Blink.msg("grid_item", ["set_keywords", ids, window.keywords_mode, window.keywords_input.value.map(a => a.value)]);
         open_jobs(1);  // julia will then set the radiobox
     }
+}
+
+function get_line_profile(id, start_point, end_point, width) {
+    // request line profile for a certain image
+    if (get_view() != "zoom" || id == "") {
+        return;
+    }
+    Blink.msg("grid_item", ["get_line_profile", [id], [start_point.x, start_point.y], [end_point.x, end_point.y], width]);
+    open_jobs(1);
 }
 
 function re_parse_images() {

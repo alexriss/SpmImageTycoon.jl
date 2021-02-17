@@ -55,7 +55,6 @@ Histogram.prototype = {
             range_selected = this.limit_range_selected(range_selected);  // check again
         }
 
-
         return range_selected;
     },
 

@@ -600,6 +600,9 @@ function next_item(jump) {
         el = elnext;
     }
     if (el.id in window.items && !out_of_range) {
+        window.image_info_id = el.id;
+        window.zoom_last_selected = el.id;
+
         document.getElementById('imagezoom_image').src = file_url(el.id)
         document.getElementById('imagezoom_colorbar').src = file_url_colorbar(el.id);
         if (window.histogram_object === null) {
@@ -612,8 +615,6 @@ function next_item(jump) {
         }
         window.line_profile_object.setup(new_image=true);
 
-        window.image_info_id = el.id;
-        window.zoom_last_selected = el.id;
         image_info_timeout(null, el.id, histogram=true, timeout_ms=30);
     }
 }

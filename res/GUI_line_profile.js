@@ -5,6 +5,12 @@ function LineProfile(canvas_element, img_element) {
     this.first_setup = false;
     this.first_setup_events = false;
 
+    this.timeoutLineProfile = null; // timeout for calling julia
+
+    this.imgScansize = [0,0]  // needed for conversions etc
+    this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f, ...)
+    this.unit_exponent = 0;  // exonent for the unit
+
     this.Point2 = (x, y) => ({ x, y });  // creates a point
     this.Line = (p1, p2) => ({ p1, p2 });
     this.setStyle = (style) => this.eachOf(Object.keys(style), key => { this.ctx[key] = style[key] });
@@ -58,7 +64,7 @@ function LineProfile(canvas_element, img_element) {
         strokeStyle: "#1ad1b3",
     }
     this.pointStyle = {
-        lineWidth: 16,
+        lineWidth: 20,
         strokeStyle: "#4090cd",
     }
     this.highlightLineStyle = {
@@ -160,14 +166,19 @@ LineProfile.prototype = {
         };
     },
 
+    // formats value (using the right exponent)
+    formatValue(val) {
+        return (val / 10**this.unit_exponent).toFixed(2);
+    },
+
     // converts points on the canvas to scansize units
-    pointsToNm(point, imgScansize) {
-        return this.Point2(point.x / this.w * imgScansize[0], (this.h - point.y) / this.h * imgScansize[1]);
+    pointsToNm(point) {
+        return this.Point2(point.x / this.w * this.imgScansize[0], (this.h - point.y) / this.h * this.imgScansize[1]);
     },
 
     // converts nm units to points on the canvas
-    nmToPoints(pointNm, imgScansize) {
-        return this.Point2(pointNm.x / imgScansize[0] * this.w, this.h - pointNm.y / imgScansize[1] * this.h);
+    nmToPoints(pointNm) {
+        return this.Point2(pointNm.x / this.imgScansize[0] * this.w, this.h - pointNm.y / this.imgScansize[1] * this.h);
     },
 
     mouseEvents(e) {
@@ -211,40 +222,39 @@ LineProfile.prototype = {
             return;
         }
         const img = window.items[window.zoom_last_selected];
-        const imgScansize = img.scansize;
         var p = this.Point2(0, 0);
 
 
         if (id == "line_profile_start_x") {
             p.x = elVal;
-            this.points.items[0].x = this.nmToPoints(p, imgScansize).x;
+            this.points.items[0].x = this.nmToPoints(p).x;
         } else if (id == "line_profile_start_y") {
             p.y = elVal;
-            this.points.items[0].y = this.nmToPoints(p, imgScansize).y;
+            this.points.items[0].y = this.nmToPoints(p).y;
         } else if (id == "line_profile_end_x") {
             p.x = elVal;
-            this.points.items[1].x = this.nmToPoints(p, imgScansize).x;
+            this.points.items[1].x = this.nmToPoints(p).x;
         } else if (id == "line_profile_end_y") {
             p.y = elVal;
-            this.points.items[1].y = this.nmToPoints(p, imgScansize).y;
+            this.points.items[1].y = this.nmToPoints(p).y;
         } else if (id == "line_profile_length") {
             var newLength = elVal;
             if (newLength <= 0) {
                 newLength = 0.0001;
             }
-            const startNm = this.pointsToNm(this.points.items[0], imgScansize);
-            var endNm = this.pointsToNm(this.points.items[1], imgScansize);
+            const startNm = this.pointsToNm(this.points.items[0]);
+            var endNm = this.pointsToNm(this.points.items[1]);
             const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
             endNm.x = startNm.x + (endNm.x - startNm.x) / lineLength * newLength;
             endNm.y = startNm.y + (endNm.y - startNm.y) / lineLength * newLength;
-            this.points.items[1] = this.nmToPoints(endNm, imgScansize);
+            this.points.items[1] = this.nmToPoints(endNm);
         } else if (id == "line_profile_angle") {
-            const startNm = this.pointsToNm(this.points.items[0], imgScansize);
-            var endNm = this.pointsToNm(this.points.items[1], imgScansize);
+            const startNm = this.pointsToNm(this.points.items[0]);
+            var endNm = this.pointsToNm(this.points.items[1]);
             const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
             endNm.x = startNm.x + Math.cos(elVal / 180 * Math.PI) * lineLength;
             endNm.y = startNm.y + Math.sin(elVal / 180 * Math.PI) * lineLength;
-            this.points.items[1] = this.nmToPoints(endNm, imgScansize);
+            this.points.items[1] = this.nmToPoints(endNm);
         } else if (id == "line_profile_width") {
             if (elVal > 0) {
                 this.lineProfileWidth = elVal;
@@ -276,16 +286,15 @@ LineProfile.prototype = {
 
         const elStartX = document.getElementById("line_profile_start_x");
         const elStartY = document.getElementById("line_profile_start_y");
-        const elStartValue = document.getElementById("line_profile_start_value");
         const elEndX = document.getElementById("line_profile_end_x");
         const elEndY = document.getElementById("line_profile_end_y");
+        const elStartValue = document.getElementById("line_profile_start_value");
         const elEndValue = document.getElementById("line_profile_end_value");
         const elLength = document.getElementById("line_profile_length");
         const elWidth = document.getElementById("line_profile_width");
         const elAngle = document.getElementById("line_profile_angle");
         const elAngleGlobal = document.getElementById("line_profile_angle_global_value");
 
-        const imgScansize = img.scansize;
         const imgAngle = img.angle;
 
         // we don't want the points to coincide
@@ -295,13 +304,13 @@ LineProfile.prototype = {
 
         // in the images 0,0 is lower left corner, for the canvas points 0,0 is upper left corner
         // we only care about the first two points, i.e. the first line
-        const startNm = this.pointsToNm(this.points.items[0], imgScansize);
-        const endNm = this.pointsToNm(this.points.items[1], imgScansize);
+        const startNm = this.pointsToNm(this.points.items[0]);
+        const endNm = this.pointsToNm(this.points.items[1]);
         const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
         var lineAngle = Math.atan2((endNm.y - startNm.y), (endNm.x - startNm.x)) * 180 / Math.PI;
         
         var lwAnisotrop = {x: this.lineProfileWidth * Math.sin(lineAngle), y: this.lineProfileWidth * Math.cos(lineAngle)};  // width is normal to the line
-        lwAnisotrop = {x: lwAnisotrop.x / imgScansize[0] * this.w, y: lwAnisotrop.y / imgScansize[1] * this.h }  // ocnvert to canvas units
+        lwAnisotrop = {x: lwAnisotrop.x / this.imgScansize[0] * this.w, y: lwAnisotrop.y / this.imgScansize[1] * this.h }  // ocnvert to canvas units
         var lw = Math.sqrt(lwAnisotrop.x**2 + lwAnisotrop.y**2);
         if (lw < this.minLineWidth) {
             lw = this.minLineWidth;
@@ -326,7 +335,54 @@ LineProfile.prototype = {
             elWidth.value = this.lineProfileWidth.toFixed(2);
         }
 
-        // adjust line thickness to lineProfileWidth
+        // values are now out of date
+        elStartValue.classList.add("out_of_date");
+        elEndValue.classList.add("out_of_date");
+
+        this.getLineProfileTimeout();
+    },
+
+    // call julia
+    getLineProfileTimeout(timeout_ms=20) {
+        // clear old timeout
+        if (this.timeoutLineProfile != null && num_open_jobs > 0) {  // only clear if some jobs are running
+            clearTimeout(this.timeoutLineProfile);
+        }
+
+        if (this.points.items.length < 2) {
+            return;
+        }
+
+        that = this;
+        this.timeoutLineProfile = window.setTimeout(function() {
+            const start_point = that.pointsToNm(that.points.items[0])
+            const end_point = that.pointsToNm(that.points.items[1])
+            get_line_profile(window.zoom_last_selected, start_point, end_point, that.lineProfileWidth);  // call Julia
+        }, timeout_ms);
+    },
+
+    showLineValues(startValue, endValue) {
+        const elStartValue = document.getElementById("line_profile_start_value");
+        const elEndValue = document.getElementById("line_profile_end_value");
+
+        if (startValue === null) {
+            elStartValue.innerText = "";
+        } else {
+            elStartValue.innerText = this.formatValue(startValue);
+        }
+        if (endValue === null) {
+            elEndValue.innerText = "";
+        } else {
+            elEndValue.innerText = this.formatValue(endValue);
+        }
+
+        elStartValue.classList.remove("out_of_date");
+        elEndValue.classList.remove("out_of_date");
+    },
+
+    // plot the line profile
+    plotLineProfile(distances, values) {
+        console.log(values);
     },
 
     // main update function
@@ -453,6 +509,8 @@ LineProfile.prototype = {
             this.canvas.style.height = window.getComputedStyle(this.img).height;
             this.canvas.style.visibility = "visible";
 
+            this.imgScansize = window.items[window.zoom_last_selected].scansize; // we need this for all vonversions etc
+
             var scanUnit = window.items[window.zoom_last_selected].scansize_unit;
             document.getElementById("line_profile_start_unit").innerText = scanUnit;
             document.getElementById("line_profile_end_unit").innerText = scanUnit;
@@ -460,6 +518,13 @@ LineProfile.prototype = {
             document.getElementById("line_profile_length_unit").innerText = scanUnit;
             document.getElementById("line_profile_start_value_unit").innerText = scanUnit;
             document.getElementById("line_profile_end_value_unit").innerText = scanUnit;
+
+            if (window.histogram_object !== null) {  // this object should exist and we can just copy the prefix from there
+                this.unit_prefix = window.histogram_object.unit_prefix;
+                this.unit_exponent = window.histogram_object.unit_exponent;
+            }
+            document.getElementById("line_profile_start_value_unit_prefix").innerText = this.unit_prefix;
+            document.getElementById("line_profile_end_value_unit_prefix").innerText = this.unit_prefix;
 
             var channelUnit = window.items[window.zoom_last_selected].channel_unit;
             document.getElementById("line_profile_start_value_unit").innerText = channelUnit;
@@ -494,8 +559,7 @@ LineProfile.prototype = {
             
             // there should always be a line
             while (this.points.items.length < 2) {
-                const imgScansize = window.items[window.zoom_last_selected].scansize;
-                this.points.add(this.nmToPoints(this.Point2(0,0), imgScansize));
+                this.points.add(this.nmToPoints(this.Point2(0,0)));
             }
             if (this.lines.items.length < 1) {
                 this.lines.add(this.Line(0,1));

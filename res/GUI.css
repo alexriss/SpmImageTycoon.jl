@@ -514,7 +514,7 @@ body {
 }
 
 .sidebar_panel {
-  padding: 0 18px;
+  padding: 0 6px;
   background-color: #eef6fc;
 }
 
@@ -556,4 +556,8 @@ body {
 #table_line_profile input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+#table_line_profile .out_of_date {
+  color: #909090;
 }

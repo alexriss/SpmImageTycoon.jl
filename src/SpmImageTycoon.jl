@@ -338,6 +338,17 @@ function set_range_selected!(ids::Vector{String}, dir_data::String, images_parse
 end
 
 
+"""calcuates a line profile"""
+function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
+    filename_original = images_parsed[id].filename_original
+    im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
+    bg = background_correction_list[images_parsed[id].background_correction]
+    coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, images_parsed[id].channel_name, start_point, end_point, width, background=bg)
+
+    return coords, distances, values, start_point_value, end_point_value
+end
+
+
 """Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
 for the images specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
@@ -690,6 +701,21 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 finally
                     unlock(l)
                 end
+            end
+        elseif what == "get_line_profile"
+            lock(l)  # might not be necessary here, as it is just a read operation - but images_parsed might change, so let's keep it
+            id = ids[1]
+            start_point = float.(args[3])
+            end_point = float.(args[4])
+            width = float(args[5])
+            try
+                # start_point_value and end_point_value is just the point (width does not affect it)
+                coords, distances, values, start_point_value, end_point_value = get_line_profile(id, dir_data, images_parsed, start_point, end_point, width)
+                @js_ w show_line_profile($id, $distances, $values, $start_point_value, $end_point_value)
+            catch e
+                error(e, w)
+            finally
+                unlock(l)
             end
         elseif what == "virtual_copy"
             lock(l)
