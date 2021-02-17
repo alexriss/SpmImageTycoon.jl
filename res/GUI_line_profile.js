@@ -307,9 +307,16 @@ LineProfile.prototype = {
         // we only care about the first two points, i.e. the first line
         const startNm = this.pointsToNm(this.points.items[0]);
         const endNm = this.pointsToNm(this.points.items[1]);
+        if (!isFinite(startNm.x) || !isFinite(startNm.y) || !isFinite(endNm.x) || !isFinite(endNm.y)) {
+            // something wrong, so at least mark out of date
+            elStartValue.classList.add("out_of_date");
+            elEndValue.classList.add("out_of_date");
+            return;
+        }
+        
         const lineLength = Math.sqrt((endNm.x - startNm.x)**2 + (endNm.y - startNm.y)**2);
         var lineAngle = Math.atan2((endNm.y - startNm.y), (endNm.x - startNm.x)) * 180 / Math.PI;
-        
+
         var lwAnisotrop = {x: this.lineProfileWidth * Math.sin(lineAngle), y: this.lineProfileWidth * Math.cos(lineAngle)};  // width is normal to the line
         lwAnisotrop = {x: lwAnisotrop.x / this.imgScansize[0] * this.w, y: lwAnisotrop.y / this.imgScansize[1] * this.h }  // ocnvert to canvas units
         var lw = Math.sqrt(lwAnisotrop.x**2 + lwAnisotrop.y**2);

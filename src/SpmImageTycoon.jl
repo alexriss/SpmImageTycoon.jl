@@ -697,7 +697,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
                     @js_ w update_images($json_compressed);
                 catch e
-                    error(e, w)
+                    error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
                 finally
                     unlock(l)
                 end
@@ -705,15 +705,15 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         elseif what == "get_line_profile"
             lock(l)  # might not be necessary here, as it is just a read operation - but images_parsed might change, so let's keep it
             id = ids[1]
-            start_point = float.(args[3])
-            end_point = float.(args[4])
-            width = float(args[5])
             try
+                start_point = float.(args[3])
+                end_point = float.(args[4])
+                width = float(args[5])
                 # start_point_value and end_point_value is just the point (width does not affect it)
                 coords, distances, values, start_point_value, end_point_value = get_line_profile(id, dir_data, images_parsed, start_point, end_point, width)
                 @js_ w show_line_profile($id, $distances, $values, $start_point_value, $end_point_value)
             catch e
-                error(e, w)
+                error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
             finally
                 unlock(l)
             end
@@ -844,14 +844,16 @@ end
 
 
 """shows error"""
-function error(e::Exception, w::Window)
+function error(e::Exception, w::Window, show::Bool=true)
     msg = sprint(showerror, e)
     msg_full = sprint(showerror, e, catch_backtrace())
     println(msg)
     println(msg_full)
     
     @js_ w show_error($msg)
-    @js_ w console.log($msg_full)
+    if show
+        @js_ w console.log($msg_full)
+    end
     return nothing
 end
 
