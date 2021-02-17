@@ -30,7 +30,7 @@ function Histogram() {
     this.texts_range_unit = document.querySelectorAll('#imagezoom_table_range .range_unit_unit');
     this.texts_range_unit_prefix = document.querySelectorAll('#imagezoom_table_range .range_unit_prefix');
 
-    this.unit_prefixes = ["E", "P", "T", "G", "M", "k", "", "m", "µ", "n", "p", "f", "a"];
+    this.unit_prefixes = ["E", "P", "T", "G", "M", "k", "", "m", "u", "n", "p", "f", "a"];
     this.unit_exponents = [18, 15, 12, 9, 6, 3, 0, -3, -6, -9, -12, -15, -18];
    
 

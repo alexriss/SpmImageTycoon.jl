@@ -236,7 +236,6 @@ function show_line_profile(id, distances, values, start_point_value, end_point_v
             window.window.line_profile_object.plotLineProfile(distances, values);
         }
     }
-    console.log("plot");
     open_jobs(-1);
 }
 

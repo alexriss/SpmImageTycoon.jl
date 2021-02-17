@@ -5,6 +5,7 @@ function LineProfile(canvas_element, img_element) {
     this.first_setup = false;
     this.first_setup_events = false;
 
+    this.plot_object = null;  // holds the plot object
     this.timeoutLineProfile = null; // timeout for calling julia
 
     this.imgScansize = [0,0]  // needed for conversions etc
@@ -167,8 +168,8 @@ LineProfile.prototype = {
     },
 
     // formats value (using the right exponent)
-    formatValue(val) {
-        return (val / 10**this.unit_exponent).toFixed(2);
+    formatValue(val, decimals=2) {
+        return (val / 10**this.unit_exponent).toFixed(decimals);
     },
 
     // converts points on the canvas to scansize units
@@ -382,7 +383,14 @@ LineProfile.prototype = {
 
     // plot the line profile
     plotLineProfile(distances, values) {
-        console.log(values);
+        if (this.plot_object !== null) {
+            this.plot_object.setData([distances, values], true);
+            this.plot_object.setScale("x", {min: distances[0], max: distances[distances.length -1]});  // can't get this done automatically
+            // var valuesMin = Math.min(...values);
+            // var valuesMax = Math.max(...values);
+            // this.plot_object.setScale("y", {min: valuesMin, max: valuesMax});  // for whatever reason we need this if the values are very low
+            // this.plot_object.redraw();  // setscale above already redraws
+        }
     },
 
     // main update function
@@ -559,6 +567,67 @@ LineProfile.prototype = {
                 this.h = this.canvas.height;
                 this.cw = this.w / 2;  // center
                 this.ch = this.h / 2;
+
+                const ySeries = {
+                    show: true,
+                    spanGaps: false,
+                    // in-legend display
+                    label: window.items[window.zoom_last_selected].channel_name + " [" + this.unit_prefix +  channelUnit + "]",
+                    value: (self, rawValue) => this.formatValue(rawValue),
+                    stroke: "#3676d7",
+                    width: 1,
+                }
+
+                if (this.plot_object === null) {
+                    let data = [[],[],];
+                    var opts = {
+                        title: "",
+                        id: "line_profile_chart",
+                        width: 336,
+                        height: 300,
+                        scales: {
+                            "x": {
+                                time: false,
+                                auto: true,
+                                range: (u, dataMin, dataMax) => {
+                                    return [dataMin, dataMax];
+                                }
+                            },
+                            "y": {
+                                auto: true,
+                                range: (u, dataMin, dataMax) => {
+                                    return [dataMin, dataMax];
+                                }                                
+                            }
+                        },
+                        series: [
+                            {
+                                label: "d [nm]",
+                                value: (self, rawValue) => rawValue.toFixed(2),
+                            },
+                            ySeries
+                        ],
+                        axes: [
+                            {
+                                values: (self, ticks) => ticks.map(rawValue => rawValue.toFixed(1)),
+                            },
+                            {
+                                values: (self, ticks) => ticks.map(rawValue => this.formatValue(rawValue, 1)),
+                            }
+                        ],
+                        cursor: {
+                            drag: { x: true, y: true, uni: Infinity }
+                        }
+                    };
+                    this.plot_object = new uPlot(opts, data, document.getElementById("line_profile_plot_container"));
+                } else {
+                    // delete old and create new (can't figure out how to rename)
+                    while (this.plot_object.series.length > 1) {
+                        this.plot_object.delSeries(this.plot_object.series.length - 1);
+                    }
+                    this.plot_object.addSeries(ySeries, 1);
+                }
+
                 this.first_setup = true;
             }
             

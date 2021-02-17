@@ -494,6 +494,10 @@ body {
 
 /* sidebar imagezoomtools */
 
+#sidebar_imagezoomtools {
+  width: 350px;  /* we have to give a fixed with, because the plot is done on canvas with fixed witdth */
+}
+
 .sidebar_accordion {
   background-color: #eef6fc;
   /* color: #363636;
@@ -560,4 +564,17 @@ body {
 
 #table_line_profile .out_of_date {
   color: #909090;
+}
+
+/* uplot */
+#line_profile_plot_container .u-series {
+  padding: 2px;
+}
+
+#line_profile_plot_container table td, #line_profile_plot_container table th {
+  vertical-align: text-bottom;
+}
+
+#line_profile_plot_container div.u-marker {
+  display: none;  /* not needed for just one series */
 }
