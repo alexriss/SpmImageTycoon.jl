@@ -8,6 +8,8 @@ window.items = {};  // dictionary with ids as keys and a dictionary of filenames
 window.last_directories = [];  // array of last directories used (set by julia)
 window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
 
+window.space_pressed = false;  // true if user is holding space down (for dragging etc)
+
 window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom

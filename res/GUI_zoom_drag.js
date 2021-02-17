@@ -14,7 +14,7 @@ function zoom_drag_setup(divMain) {
         let previousX, previousY
         divSection.addEventListener('mousedown', (event) => {
             if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
-                if (!event.shiftKey && !event.ctrlKey) {  // dragging only with modifier - line profile dragging has priority
+                if (!event.shiftKey && !event.ctrlKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
                     return;
                 }
             }
@@ -27,7 +27,7 @@ function zoom_drag_setup(divMain) {
             // only do this when the primary mouse button is pressed (event.buttons = 1)
             if (event.buttons) {
                 if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
-                    if (!event.shiftKey && !event.ctrlKey) {  // dragging only with modifier - line profile dragging has priority
+                    if (!event.shiftKey && !event.ctrlKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
                         return;
                     }
                 }
@@ -96,6 +96,11 @@ function zoom_drag_setup(divMain) {
 
     // reset on doubleclick
     divMain.addEventListener('dblclick', (e) => {
+        if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
+            if (!e.shiftKey && !e.ctrlKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
+                return;
+            }
+        }
         if (!e.ctrlKey) {
             zoom_drag_reset(divMain)
         }

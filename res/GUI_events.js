@@ -98,6 +98,14 @@ document.addEventListener("keydown", function (event) {
         key_commands[event.key].command(...key_commands[event.key].args);
         event.preventDefault();
         event.stopPropagation();
+    } else if (event.key == " ") {
+        window.space_pressed = true;  // we track this for zooming
+    }
+});
+
+document.addEventListener("keyup", function (event) {
+    if (event.key == " ") {
+        window.space_pressed = false;
     }
 });
 

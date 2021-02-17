@@ -184,7 +184,7 @@ LineProfile.prototype = {
     mouseEvents(e) {
         //this.mouse.x = e.pageX;
         //this.mouse.y = e.pageY;
-        if (e.shiftKey || e.ctrlKey) {
+        if (e.shiftKey || e.ctrlKey || window.space_pressed) {
             return;  // modifier keys will be used for dragging
         }
         var mousepos = this.getMousePos(this.canvas, e)
@@ -388,7 +388,12 @@ LineProfile.prototype = {
     // main update function
     update(timer) {
         that = window.line_profile_object;  // requestAnimationFrame sends a different "this"
-        that.cursor = "crosshair";
+        if (window.space_pressed) {
+            that.cursor = "grab";
+        }
+        else {
+            that.cursor = "crosshair";
+        }
         that.toolTip = that.helpCount < 2 ? "Click drag to create a line" : "";
         that.globalTime = timer;
         that.ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
