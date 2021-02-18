@@ -745,3 +745,9 @@ function update_image(id) {
     }
     document.getElementById(id).firstElementChild.firstElementChild.src = file_url(id);
 }
+
+function escape_handler() {
+    // handles pressing of Escape
+    send_cancel(); // to julia (only has an effect when images are parsed, but doesnt hurt otherwise)
+    toggle_imagezoom("grid");  // from imagezoom (only when in imagezoom mode, but doesnt hurt otherwise)
+}

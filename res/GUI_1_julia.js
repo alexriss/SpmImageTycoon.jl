@@ -143,6 +143,12 @@ function delete_images(ids) {
     open_jobs(-1);
 }
 
+function re_parse_images_cancelled() {
+    // just show a cancel message - nothing else to do
+    show_message("reloading cancelled.")
+    open_jobs(-1);
+}
+
 function show_info(id, gzip_info_json) {
     /// shows header data for an image
     if (window.image_info_id != id) return;  // there was some other event already
@@ -504,6 +510,12 @@ function save_all(exit=false) {
     } else if (exit == true) {
         Blink.msg("exit", []);
     }
+}
+
+function send_cancel() {
+    // sends cancel signal (which will be listened to during parsing and reparsing of images)
+    console.log("cancel");
+    Blink.msg("cancel", []);
 }
 
 function load_directory(directory) {

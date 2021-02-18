@@ -31,7 +31,7 @@ let key_commands = {
     F1: { command: toggle_help, args: [] },
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
-    Escape: { command: toggle_imagezoom, args: ["grid"] },
+    Escape: { command: escape_handler, args: [] },
 }
 
 // with shift-modifier (some of the normal ones also work with the shift key)
@@ -289,7 +289,7 @@ function event_handlers() {
         setInterval(save_all, 1000 * 60 * window.auto_save_minutes);
     }
 
-    //open links externally by default
+    // open links externally by default
     els = document.querySelectorAll("a.external");
     for (let i = 0; i < els.length; i++) {
         els[i].addEventListener('click', (e) => {

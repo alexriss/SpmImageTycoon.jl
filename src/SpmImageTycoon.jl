@@ -58,6 +58,7 @@ include("export.jl")
 
 
 exit_tycoon = false  # if set to true, then keep-alive loop will end
+cancel_sent = false  # user can cancel load-directory operation
 
 
 """replaces some characters for their UTF-8 and strips non-UTF8 characters"""
@@ -541,6 +542,10 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 @js_ w page_start_load_progress($progress)
             end
         end
+
+        if cancel_sent
+            break
+        end
     end
 
     # delete virtual copies that arent associated with anything anymore
@@ -777,11 +782,17 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
     handle(w, "re_parse_images") do args
         lock(l)
         try
+            global cancel_sent = false  # user might send cancel during the next steps
             save_all(dir_data, images_parsed)
             images_parsed = parse_files(dir_data)
-            images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
-            json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
-            @js_ w load_images($json_compressed, true)
+            if cancel_sent
+                @js_ w console.log()
+                global cancel_sent = false
+            else
+                images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
+                @js_ w load_images($json_compressed, true)
+            end
         catch e
             error(e, w)
         finally
@@ -835,6 +846,10 @@ function set_event_handlers_basic(w::Window)
         end
     end
 
+    handle(w, "cancel") do args
+        global cancel_sent = true
+    end
+
     handle(w, "debug") do args
         println("debug: " * string(args))
     end
@@ -876,8 +891,14 @@ end
 """Loads images in specific directory"""
 function load_directory(dir_data::String, w::Window)
     # parse images etc
+    global cancel_sent = false  # user might send cancel during the next step
     images_parsed = parse_files(dir_data, w)
-    if length(images_parsed) == 0
+    if cancel_sent
+        msg = "Cancelled loading $dir_data"
+        @js_ w page_start_load_error($msg)
+        global cancel_sent = false
+        return nothing
+    elseif length(images_parsed) == 0
         msg = "There are no SPM files in $dir_data"
         @js_ w page_start_load_error($msg)
         return nothing
