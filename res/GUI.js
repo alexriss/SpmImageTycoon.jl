@@ -154,7 +154,7 @@ function toggle_start_project(target="project", save=false) {
         }
     }
     if (save) {
-        save_all(); // the funciton does not save, though, if get_view() == "start" (that's ok here)
+        save_all(); // the function does not save, though, if get_view() == "start" (that's ok here)
     }
 
     if (target == "project") {
@@ -331,7 +331,6 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
 
 function toggle_sidebar_imagezoomtools(restore_previous=false) {
     // toggles sidebar in imagezoom mode
-    
     let sidebar = document.getElementById('sidebar_imagezoomtools');
 
     if (restore_previous && get_view() == "zoom") {
@@ -357,7 +356,7 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
             sidebar.classList.add("is-hidden");
         }
     }
-    if (window.line_profile_object !== null) {
+    if (!sidebar.classList.contains("is-hidden") && window.line_profile_object !== null) {
         window.line_profile_object.setup();  // will set up or remove event handlers
     }
 }
@@ -412,7 +411,7 @@ function toggle_imagezoom(target_view = "") {
         zoom.classList.add("is-hidden");
         grid.classList.remove("is-hidden");
         footer_num_images_container.classList.remove("is-invisible");
-        image_info_quick_timeout_clear();  // if we leave zoom-mode, we imght need to get rid of the quick image info (if mouse is not hovering anything)
+        image_info_quick_timeout_clear();  // if we leave zoom-mode, we might need to get rid of the quick image info (if mouse is not hovering anything)
         toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
     } else {
         let el = grid.querySelector('div.item:hover');

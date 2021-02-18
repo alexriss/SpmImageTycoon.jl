@@ -39,7 +39,6 @@ function show_start() {
 
 function load_images(gzip_json_images_parsed_arr, delete_previous=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
     // load all images into the page
-
     let json_images_parsed_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed_arr));
     let images_parsed_arr = JSON.parse(json_images_parsed_arr.toString("utf-8"));
 
