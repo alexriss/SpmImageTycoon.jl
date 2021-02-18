@@ -58,8 +58,9 @@ function LineProfile(canvas_element, img_element) {
     this.toolTip;
     this.helpCount = 0;
     this.minDist = 20;
-    this.minLineWidth = 16;  // minimum line width
-    this.highlightExtraLineWidth = 4;  // add to line width for highlighted line
+    this.minLineWidth = 16;  // minimum line width (in px)
+    this.lineWidth = this.minLineWidth;  // current line width (in px)
+    this.highlightExtraLineWidth = 4;  // add to line width for highlighted line (in px)
     this.lineStyle = {
         lineWidth: this.minLineWidth,
         strokeStyle: "#1ad1b3",
@@ -323,6 +324,7 @@ LineProfile.prototype = {
         if (lw < this.minLineWidth) {
             lw = this.minLineWidth;
         }
+        this.lineWidth = lw;  // save for distance measurements
         this.lineStyle.lineWidth = lw;
         this.highlightLineStyle.lineWidth = lw + this.highlightExtraLineWidth;
         
@@ -422,9 +424,9 @@ LineProfile.prototype = {
         that.ctx.clearRect(0, 0, that.w, that.h);
         if (that.mouse.drag === false) {
             that.closestLine = undefined;
-            that.closestPoint = that.points.getClosest(that.mouse, that.minDist);
+            that.closestPoint = that.points.getClosest(that.mouse, that.minDist + that.lineWidth / 2);
             if (that.closestPoint === undefined) {
-                that.closestLine = that.lines.getClosest(that.mouse, that.minDist);
+                that.closestLine = that.lines.getClosest(that.mouse, that.minDist + that.lineWidth / 2);
             }
             if (that.closestPoint || that.closestLine) {
                 // that.toolTip = "Click drag to move " + (that.closestPoint ? "point" : "line");
