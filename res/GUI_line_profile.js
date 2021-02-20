@@ -365,9 +365,11 @@ LineProfile.prototype = {
 
         that = this;
         this.timeoutLineProfile = window.setTimeout(function() {
-            const start_point = that.pointsToNm(that.points.items[0])
-            const end_point = that.pointsToNm(that.points.items[1])
-            get_line_profile(window.zoom_last_selected, start_point, end_point, that.lineProfileWidth);  // call Julia
+            const startNm = that.pointsToNm(that.points.items[0])
+            const endNm = that.pointsToNm(that.points.items[1])
+            if (isFinite(startNm.x) && isFinite(startNm.y) && isFinite(endNm.x) && isFinite(endNm.y)) {
+                get_line_profile(window.zoom_last_selected, startNm, endNm, that.lineProfileWidth);  // call Julia
+            }
         }, timeout_ms);
     },
 
