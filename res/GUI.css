@@ -436,7 +436,12 @@ body {
   padding-bottom:5rem;
 }
 
-/* keywords autosuggestions  dropdown */
+/* modal error */
+#modal_error .message { 
+  word-break: break-word;
+}
+
+/* keywords autosuggestions dropdown */
 
 .tags-look .tagify__dropdown__item{
   display: inline-block;

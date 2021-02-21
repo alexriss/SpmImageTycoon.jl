@@ -38,7 +38,7 @@ mutable struct SpmImageGridItem_v122
     filters::Vector{String}                    # array of filters used (not implemented yet)
     keywords::Vector{String}                   # keywords
     rating::Int                                # rating (0 to 5 stars)
-    status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not implemented yet)
+    status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fullyimplemented yet)
     virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
     SpmImageGridItem_v122(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
@@ -505,7 +505,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id].scansize_unit = im_spm.scansize_unit
             images_parsed[id].angle = im_spm.angle
             images_parsed[id].comment = utf8ify(im_spm.header["Comment"])
-            # images_parsed[id].status = 0
+            images_parsed[id].status = 0
         else
             # get the respective image channel (depending on whether the feedback was on or not)
             channel_name = default_channel_name(im_spm, channels_feedback_on, channels_feedback_off)
@@ -529,7 +529,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 images_parsed[virtual_copy.id].scansize_unit = im_spm.scansize_unit
                 images_parsed[virtual_copy.id].angle = im_spm.angle
                 images_parsed[virtual_copy.id].comment = utf8ify(im_spm.header["Comment"])
-                # images_parsed[virtual_copy.id].status = 0
+                images_parsed[virtual_copy.id].status = 0
                 Threads.@spawn create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)
             end
         end
@@ -545,19 +545,6 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
 
         if cancel_sent
             break
-        end
-    end
-
-    # delete virtual copies that arent associated with anything anymore
-    for (id_original, virtual_copies) in virtual_copies_dict
-        for virtual_copy in virtual_copies
-            if haskey(images_parsed, id_original)
-                if images_parsed[virtual_copy.filename_original].status < 0
-                    delete!(images_parsed, virtual_copy.id)
-                end
-            else  # this should never happen, though
-                delete!(images_parsed, virtual_copy.id)
-            end
         end
     end
 
@@ -634,16 +621,20 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             id = ids[1]
             histogram = args[3]
             # get header data
-            image_header = get_image_header(id, dir_data, images_parsed)
-            k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
-            v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
-            v = utf8ify.(v)
-            image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
-            json_compressed = transcode(GzipCompressor, image_header_json)
-            @js_ w show_info($id, $json_compressed);
-            if histogram
-                width, counts = get_histogram(id, dir_data, images_parsed)
-                @js_ w show_histogram($id, $width, $counts)
+            try
+                image_header = get_image_header(id, dir_data, images_parsed)
+                k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
+                v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
+                v = utf8ify.(v)
+                image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
+                json_compressed = transcode(GzipCompressor, image_header_json)
+                @js_ w show_info($id, $json_compressed);
+                if histogram
+                    width, counts = get_histogram(id, dir_data, images_parsed)
+                    @js_ w show_histogram($id, $width, $counts)
+                end
+            catch e
+                error(e, w)
             end
         elseif what[1:5] == "next_"
             lock(l)
@@ -789,7 +780,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 @js_ w console.log()
                 global cancel_sent = false
             else
-                images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+                # only send the images with status >=0 (deleted ones are not sent, but still saved)
+                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, values(images_parsed))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
                 json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
                 @js_ w load_images($json_compressed, true)
             end
@@ -912,7 +904,8 @@ function load_directory(dir_data::String, w::Window)
     dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
     @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar)
     
-    images_parsed_values = NaturalSort.sort!(collect(values(images_parsed)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+    # only send the images with status >=0 (deleted ones are not sent, but still saved)
+    images_parsed_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(images_parsed))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
     json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
     @js_ w load_images($json_compressed, true)
 
