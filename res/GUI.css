@@ -169,7 +169,7 @@ body {
   -ms-user-select: none;
   max-height: 100%;
   max-width: 100%;
-  /* object-fit: contain; */
+  /* object-fit: contain; */  /* this does not play so well with the alignment of canvas, so we use the fillwidth/fullheight method */
   /* height: 100%; */
 }
 
