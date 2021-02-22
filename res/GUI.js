@@ -751,3 +751,18 @@ function escape_handler() {
     send_cancel(); // to julia (only has an effect when images are parsed, but doesnt hurt otherwise)
     toggle_imagezoom("grid");  // from imagezoom (only when in imagezoom mode, but doesnt hurt otherwise)
 }
+
+function open_in_explorer(what="") {
+    // opens and selects file in system explorer
+    const ids = get_active_element_ids(only_current=true);
+    if (ids.length > 0) {
+        const item = window.items[ids[0]];
+        if (what == "image") {
+            file_path = window.dir_cache + item.filename_display;  // generated image
+        } else {
+            file_path = window.dir_data + item.filename_original;  // original file
+        }
+        const {shell} = require('electron');
+        shell.showItemInFolder(file_path);
+    }
+}

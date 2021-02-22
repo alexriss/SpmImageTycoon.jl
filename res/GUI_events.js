@@ -36,7 +36,12 @@ let key_commands = {
 
 // with shift-modifier (some of the normal ones also work with the shift key)
 let shift_key_commands = {
+    E: { command: open_in_explorer, args: [] },
     Delete: { command: virtual_copy, args: ["delete"] },
+}
+
+let alt_key_commands = {
+    e: { command: open_in_explorer, args: ["image"] },
 }
 
 // with ctrl-modifier
@@ -94,6 +99,8 @@ document.addEventListener("keydown", function (event) {
         }
     } else if (event.shiftKey && event.key in shift_key_commands) {  // this will not block the non-modifier commands (some of those can only be typed with the shift key)
         shift_key_commands[event.key].command(...shift_key_commands[event.key].args);
+    } else if (event.altKey && event.key in alt_key_commands) {  // this will not block the non-modifier commands (some of those can only be typed with the shift key)
+        alt_key_commands[event.key].command(...alt_key_commands[event.key].args);
     } else if (event.key in key_commands) {
         key_commands[event.key].command(...key_commands[event.key].args);
         event.preventDefault();
