@@ -191,26 +191,7 @@ function event_handlers() {
 
     // we need to adjust image css to fit it to the div (with css "object-fit: contain" we can't retrieve the computed image-position and width.)
     const resizeObserver = new ResizeObserver(entries => {
-        let el = document.getElementById('imagezoom_content');
-        let w = el.clientWidth;
-        if (w == 0) {  // not visible
-            return;
-        }
-        let h = el.clientHeight;
-        let el_img = document.getElementById("imagezoom_image");
-        let w_img = el_img.naturalWidth;
-        let h_img = el_img.naturalHeight;
-
-        if (w_img/h_img >= w/h) {
-            el_img.classList.add("fullwidth");
-            el_img.classList.remove("fullheight");
-        } else {
-            el_img.classList.remove("fullwidth");
-            el_img.classList.add("fullheight");
-        }
-        if (window.line_profile_object !== null) {
-            window.line_profile_object.setup();  // will set up size of canvas
-        }
+        imagezoom_size_adjust();
     });
     resizeObserver.observe(document.getElementById('imagezoom_content'));
 

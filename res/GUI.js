@@ -439,6 +439,30 @@ function toggle_imagezoom(target_view = "") {
     }
 }
 
+function imagezoom_size_adjust() {
+    // adjusts size of imagezoom
+    let el = document.getElementById('imagezoom_content');
+    let w = el.clientWidth;
+    if (w == 0) {  // not visible
+        return;
+    }
+    let h = el.clientHeight;
+    let el_img = document.getElementById("imagezoom_image");
+    let w_img = el_img.naturalWidth;
+    let h_img = el_img.naturalHeight;
+
+    if (w_img/h_img >= w/h) {
+        el_img.classList.add("fullwidth");
+        el_img.classList.remove("fullheight");
+    } else {
+        el_img.classList.remove("fullwidth");
+        el_img.classList.add("fullheight");
+    }
+    if (window.line_profile_object !== null) {
+        window.line_profile_object.setup();  // will set up size of canvas
+    }
+}
+
 function show_message(msg = "") {
     // shows message in the footer
     if (window.timeout != null) {
@@ -615,6 +639,7 @@ function next_item(jump) {
             window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));
         }
         window.line_profile_object.setup(new_image=true);
+        imagezoom_size_adjust();
 
         image_info_timeout(null, el.id, histogram=true, timeout_ms=30);
     }
