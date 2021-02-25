@@ -494,13 +494,13 @@ function clear_all_active() {
     check_hover_enabled();
 }
 
-function toggle_all_active(ignored_filtered=false) {
+function toggle_all_active(ignore_filter_status=false) {
     // toggles between select-all and select-none
     if (get_view() != "grid") {
         return;
     }
 
-    if (ignored_filtered) {
+    if (ignore_filter_status) {
         const els = document.querySelectorAll('#imagegrid .item:not(.active)');
         if (els.length == 0) {
             clear_all_active();

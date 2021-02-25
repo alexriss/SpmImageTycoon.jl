@@ -14,6 +14,7 @@ let key_commands = {
     "&": { command: virtual_copy, args: ["create"] },
     a: { command: toggle_all_active, args: [] },
     A: { command: toggle_all_active, args: [true] },
+    n: { command: clear_all_active, args: []},
     m: { command: toggle_sidebar, args: ["info"] },
     f: { command: toggle_sidebar, args: ["filter"] },
     t: { command: toggle_sidebar_imagezoomtools, args: [] },
