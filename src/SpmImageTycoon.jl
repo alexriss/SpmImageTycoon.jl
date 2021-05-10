@@ -91,7 +91,12 @@ If range_selected is given, this range is normalized to lie between 0 and 1.
 Returns the minimum and maximum value of the original array."""
 function normalize01!(d::AbstractArray; range_selected::Array{<:Number}=Float64[])::Tuple{Number,Number}
     d_ = filter(!isnan, d)
-    vmin_original, vmax_original = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
+    if length(d_) > 0
+        vmin_original, vmax_original = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
+    else
+        vmin_original = 0
+        vmax_original = 0
+    end
     if vmin_original == vmax_original
         d .= 0
     else
