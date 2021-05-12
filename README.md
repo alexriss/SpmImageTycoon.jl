@@ -10,6 +10,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 
 [Features](#features)  
 [Technical comments](#technical-comments)  
+[Demo](#demo)  
 [Dependencies](#dependencies)  
 [Third party libraries](#third-party-libraries-included)  
 [Related projects](#related-projects)  
@@ -27,6 +28,10 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 - Line profiles *(experimental and not yet fully tested)*
 - Export to [OpenDocument presentation](https://en.wikipedia.org/wiki/OpenDocument)
   (compatible with [LibreOffice](https://www.libreoffice.org/), [OpenOffice](https://www.openoffice.org/), [PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint), etc.)
+  
+## Demo
+
+[![](http://img.youtube.com/vi/x_KSCst92Lo/0.jpg)](http://www.youtube.com/watch?v=x_KSCst92Lo "Video on YouTube")
 
 ## Technical comments
 
