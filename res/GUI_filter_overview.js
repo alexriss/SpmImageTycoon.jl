@@ -44,3 +44,35 @@ function filter_overview_display_coordinates(e) {
     document.getElementById("filter_overview_position_x").innerText = xy_nm[0].toFixed(1);
     document.getElementById("filter_overview_position_y").innerText = xy_nm[1].toFixed(1);
 }
+
+
+function filter_overview_setup() {
+    // Initialize selectionjs
+    window.filter_overview_selection_object = new SelectionArea({
+        selectables: ['#filter_overview > .filter_overview_item'],
+        boundaries: ['#filter_overview'],
+        overlap: 'keep',
+        class: "filter_overview_selection_area",
+        startThreshold: 1,
+        allowTouch: false,
+    }).on('start', ({store, event}) => {
+        if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {  // Remove class if the user isn't pressing the control key or ⌘ key
+            // Unselect all elements
+            for (const el of store.stored) {
+                el.classList.remove('selected');
+            }
+            // Clear previous selection
+            window.filter_overview_selection_object.clearSelection();
+        }
+    }).on('move', ({store: {changed: {added, removed}}}) => {
+        for (const el of added) {
+            el.classList.add('selected');
+        }
+        for (const el of removed) {
+            el.classList.remove('selected');
+        }
+    }).on('stop', () => {
+        window.filter_overview_selection_object.keepSelection();
+        filter_items();
+    });
+}

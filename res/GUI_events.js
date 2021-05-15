@@ -255,6 +255,12 @@ function event_handlers() {
         Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
             el.click();
         });
+        // also clear overview selection
+        Array.from(document.getElementById('filter_overview').getElementsByClassName('selected')).forEach(el => {
+            el.classList.remove('selected');
+        });
+        window.filter_overview_selection_object.clearSelection();
+
         filter_items();
     });
 

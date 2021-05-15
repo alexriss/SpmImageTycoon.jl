@@ -68,6 +68,12 @@ function filter_items(ids=[], random_id=-1) {
     }
 
     const filter_selected = document.getElementById('filter_selected').checked;
+    let filter_selected_overview = false;
+    if (window.filter_overview_selection_object !== null) {  // this might not exist yet (when images are initially loaded)
+        if (window.filter_overview_selection_object.getSelection().length > 0) {
+            filter_selected_overview = true;
+        }
+    }
 
     const filters_textfield = {};  // will be populated only with the ones that are non-empty
     const textfields = ["filename_original", "comment", "channel_name"];
@@ -104,6 +110,11 @@ function filter_items(ids=[], random_id=-1) {
 
         if (filter_selected) {  // we do this first because it might limit the number of items a lot
             if (filter_items__selected(id)) {
+                continue;
+            }
+        }
+        if (filter_selected_overview) {
+            if (filter_items__selected_overview(id)) {
                 continue;
             }
         }
@@ -145,6 +156,17 @@ function filter_items__selected(id) {
     // filters by whether the item is selected or not
     let el = document.getElementById(id)
     if (el.classList.contains('active')) {
+        return false;
+    } else {
+        filter_showhide(id, false);
+        return true;
+    }
+}
+
+function filter_items__selected_overview(id) {
+    // filters by whether the item is selected or not
+    let el = document.getElementById("filter_overview_item_" + id)
+    if (el.classList.contains('selected')) {
         return false;
     } else {
         filter_showhide(id, false);
