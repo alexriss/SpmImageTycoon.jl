@@ -560,6 +560,10 @@ body {
   border-radius: 0.15em;
 }
 
+#filter_overview_reset_zoom {
+  opacity: 0.5;
+}
+
 
 /* sidebar imagezoomtools */
 

@@ -223,6 +223,12 @@ function zoom_drag_filter_overview_setup(divMain) {
     
             divMain.scrollTop = newScroll.y
             divMain.scrollLeft = newScroll.x
+            filter_overview_display_coordinates(e)
+            if (window.scale_filter_overview == 1) {
+                document.getElementById("filter_overview_reset_zoom").classList.add("is-hidden");
+            } else {
+                document.getElementById("filter_overview_reset_zoom").classList.remove("is-hidden");
+            }
         }
     })
 
@@ -235,6 +241,7 @@ function zoom_drag_filter_overview_setup(divMain) {
         }
         if (!e.ctrlKey) {
             zoom_drag_filter_overview_reset(divMain)
+            filter_overview_display_coordinates(e)
         }
     })
 }
@@ -244,8 +251,10 @@ function zoom_drag_filter_overview_reset(divMain) {
     for (const divSection of divMain.getElementsByTagName('section')) {
         divSection.style.width = "100%";
         divSection.style.height = "100%";
-}
+    }
 
     divMain.scrollTop = 0
     divMain.scrollLeft = 0
+
+    document.getElementById("filter_overview_reset_zoom").classList.add("is-hidden");
 }
