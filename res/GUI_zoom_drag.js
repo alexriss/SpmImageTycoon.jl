@@ -66,9 +66,11 @@ function zoom_drag_setup(divMain) {
             }
             delta = Math.max(-1, Math.min(1, delta)) // cap the delta to [-1,1] for cross browser consistency
             offset = { x: divMain.scrollLeft, y: divMain.scrollTop };
+
+            const rect = divMain.getBoundingClientRect();
             image_loc = {
-                x: e.pageX + offset.x,
-                y: e.pageY + offset.y
+                x: e.clientX - rect.left + offset.x,
+                y: e.clientY - rect.top + offset.y
             }
 
             zoom_point = { x: image_loc.x / window.scale, y: image_loc.y / window.scale }
@@ -86,8 +88,8 @@ function zoom_drag_setup(divMain) {
             zoom_point_new = { x: zoom_point.x * window.scale, y: zoom_point.y * window.scale }
 
             newScroll = {
-                x: zoom_point_new.x - e.pageX,
-                y: zoom_point_new.y - e.pageY
+                x: zoom_point_new.x - (e.clientX - rect.left),
+                y: zoom_point_new.y - (e.clientY - rect.top)
             }
 
             divSection.style.transform = `scale(${window.scale}, ${window.scale})`
@@ -191,7 +193,6 @@ function zoom_drag_filter_overview_setup(divMain) {
             offset = { x: divMain.scrollLeft, y: divMain.scrollTop };
 
             const rect = divMain.getBoundingClientRect();
-
             image_loc = {
                 x: e.clientX - rect.left + offset.x,
                 y: e.clientY - rect.top + offset.y
@@ -219,10 +220,6 @@ function zoom_drag_filter_overview_setup(divMain) {
             // divSection.style.transform = `scale(${window.scale_filter_overview}, ${window.scale_filter_overview})`
             divSection.style.width = `${100*window.scale_filter_overview}%`;
             divSection.style.height = `${100*window.scale_filter_overview}%`;
-            //divSection.style.left = `${(window.scale_filter_overview-1)*50}%`;
-            //divSection.style.top = `${(window.scale_filter_overview-1)*50}%`;
-            //divSection.style.right = `${-(window.scale_filter_overview-1)*100}%`;
-            //divSection.style.bottom = `${-(window.scale_filter_overview-1)*100}%`;
     
             divMain.scrollTop = newScroll.y
             divMain.scrollLeft = newScroll.x
@@ -245,13 +242,8 @@ function zoom_drag_filter_overview_setup(divMain) {
 function zoom_drag_filter_overview_reset(divMain) {
     window.scale_filter_overview = 1
     for (const divSection of divMain.getElementsByTagName('section')) {
-        // divSection.style.transform = "scale(1, 1)"
         divSection.style.width = "100%";
         divSection.style.height = "100%";
-        //divSection.style.left = "0";
-        //divSection.style.top = "0";
-        //divSection.style.right = "0";
-        //divSection.style.bottom = "0";
 }
 
     divMain.scrollTop = 0
