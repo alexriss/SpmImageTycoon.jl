@@ -22,6 +22,7 @@ window.line_profile_object = null;  // hold the line profile object
 window.histogram_object = null;  // holds the histogram object
 
 window.filter_overview_selection_object = null;  // holds the selection object for overview filter
+window.filter_overview_selecting = false;  // user is currently making a selection
 
 window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
@@ -335,6 +336,7 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
     if (what == "filter") {
         if (!sidebar.classList.contains("is-hidden") && window.filter_overview_selection_object === null) {
             filter_overview_setup();  // will set up the selection library
+            zoom_drag_filter_overview_setup(document.getElementById("filter_overview_container")); // set up zoom and drag for filter overview
         }
     }
 }

@@ -55,12 +55,21 @@ function filter_overview_setup() {
         class: "filter_overview_selection_area",
         startThreshold: 1,
         allowTouch: false,
+    }).on('beforestart', ({store, event}) => {
+        if (event.altKey || window.space_pressed) {
+            return false;
+        }
     }).on('start', ({store, event}) => {
         if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {  // Remove class if the user isn't pressing the control key or ⌘ key
+            window.filter_overview_selecting = true;
             // Unselect all elements
-            for (const el of store.stored) {
+            //for (const el of store.stored) {
+            //    el.classList.remove('selected');
+            //}
+            Array.from(document.getElementById('filter_overview').getElementsByClassName('selected')).forEach(el => {
                 el.classList.remove('selected');
-            }
+            });
+    
             // Clear previous selection
             window.filter_overview_selection_object.clearSelection();
         }
@@ -73,6 +82,7 @@ function filter_overview_setup() {
         }
     }).on('stop', () => {
         window.filter_overview_selection_object.keepSelection();
+        window.filter_overview_selecting = false;
         filter_items();
     });
 }

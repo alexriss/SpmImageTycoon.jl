@@ -1,5 +1,5 @@
 <!-- navigation bar -->
-<nav class="navbar is-fixed-top is-link" role="navigation" aria-label="main navigation">
+<nav class="navbar is-fixed-top is-link unselectable" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
     <div>
       <div class="is-pulled-left">
@@ -461,7 +461,7 @@
           </tr>
         </table>
 
-        <div id="image_info_title" class="columns is-mobile title is-size-6 mb-0 pb-0">
+        <div id="image_info_title" class="columns is-mobile title is-size-6 mb-0 pb-0 unselectable">
           <div class="column abbreviate m-0 pb-1">
             <span>Overview</span>
           </div>
@@ -473,10 +473,10 @@
             </span>
           </div>
         </div>
-        <div id="filter_overview_container">
-          <section id="filter_overview">
+        <div id="filter_overview_container" class="unselectable">
+          <section id="filter_overview" class="unselectable">
             <template id="filter_overview_item_template">
-              <div class="filter_overview_item">
+              <div class="filter_overview_item unselectable">
               </div>
             </template>
           </section>

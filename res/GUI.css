@@ -153,7 +153,6 @@ body {
 }
 
 #imagezoom_content section { 
-  display: relative;
   width: 100%;
   height: 100%;
   display: flex; /* add */
@@ -507,12 +506,23 @@ body {
 
 #filter_overview_container {
   border: 1px solid #c0c0c0;
+  overflow: hidden;
+  width: 100%;
+  height: 0;
+  padding-bottom:100%;
+  position: relative;
 }
 
 #filter_overview {
-  width: 100%;
-  padding-top: 100%;
-  position: relative;
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  /*right:0;
+  bottom:0;*/
+  justify-content: center; /* add to align horizontal */
+  align-items: center; /* add to align vertical */
 }
 
 #filter_overview_position {
