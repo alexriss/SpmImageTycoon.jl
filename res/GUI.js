@@ -4,6 +4,8 @@ window.dir_data = "";  // directory with all data
 window.dir_colorbars = "";  // colorbars are saved here, set by julia
 window.filenames_colorbar = {};  // dictionary specifying the filenames for the colorbars, set by julia
 window.items = {};  // dictionary with ids as keys and a dictionary of filenames as values
+window.bottomleft = [];  // bottom left of overall scan range
+window.topright = [];   // top right of overall scan range
 
 window.last_directories = [];  // array of last directories used (set by julia)
 window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
@@ -693,6 +695,14 @@ function image_info_quick(id="") {
     }
     if (id != "") {
         document.getElementById('image_info_footer').innerText = window.items[id]["filename_original"] + ': ' + window.items[id]["channel_name"];
+
+        // hover in filter overview (highlight will be disabled in image_info_quick_timeout_clear)
+        const highlighted = document.getElementById("filter_overview").getElementsByClassName("highlight");
+        for (let i=0; i<highlighted.length; i++) {
+            highlighted[i].classList.remove('highlight');
+        }
+
+        document.getElementById("filter_overview_item_" + id).classList.add("highlight");
     }
 }
 
@@ -731,6 +741,10 @@ function image_info_quick_timeout_clear() {
     window.setTimeout(function () {
         if (document.getElementById('imagegrid').querySelector('div.item:hover') == null) {
             document.getElementById('image_info_footer').innerText = "";
+            const highlighted = document.getElementById("filter_overview").getElementsByClassName("highlight");
+            for (let i=0; i<highlighted.length; i++) {
+                highlighted[i].classList.remove('highlight');
+            }    
         }
     }, 350);
 }
@@ -761,6 +775,38 @@ function add_image(id, id_after=null) {
     el.addEventListener('dblclick', toggle_imagezoom_mouse);  // only without a modifier
     el.addEventListener('mouseenter', image_info_timeout);
     el.addEventListener('mouseleave', image_info_quick_timeout_clear);
+
+    // add to overview as well
+    add_image_overview(id);
+}
+
+function add_image_overview(id) {
+    // adds image to overview in filter sidebar
+    const overview = document.getElementById("filter_overview");
+    const t = document.getElementById('filter_overview_item_template');
+    const el = t.content.firstElementChild.cloneNode(true)
+    el.id = "filter_overview_item_" + id;
+
+    // set position
+    const wh_nm = [
+        window.items[id].scansize[0],
+        window.items[id].scansize[1]
+    ];
+    const wh_rel = filter_overview_nm_to_rel(wh_nm, coords=false);  // defined in GUI_filter_overview.js
+    const topleft_nm = [
+        window.items[id].center[0] - wh_nm[0] / 2,
+        window.items[id].center[1] + wh_nm[1] / 2  // y in nm goes from bottom to top
+    ];
+    const topleft_rel = filter_overview_nm_to_rel(topleft_nm);
+    el.style.left = "" + topleft_rel[0]*100 + "%";
+    el.style.top = "" + topleft_rel[1]*100 + "%";
+    el.style.width = "" + wh_rel[0]*100 + "%";
+    el.style.height = "" + wh_rel[1]*100 + "%";
+    const angle = window.items[id].angle;
+    if (angle != 0) {
+        el.style.transform = "rotate("+ angle +"deg)";
+    }
+    overview.appendChild(el);
 }
 
 function update_image(id) {

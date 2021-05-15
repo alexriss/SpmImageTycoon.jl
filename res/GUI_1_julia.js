@@ -37,7 +37,7 @@ function show_start() {
     toggle_start_project("start");
 }
 
-function load_images(gzip_json_images_parsed_arr, delete_previous=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
+function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_previous=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
     // load all images into the page
     let json_images_parsed_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed_arr));
     let images_parsed_arr = JSON.parse(json_images_parsed_arr.toString("utf-8"));
@@ -50,12 +50,31 @@ function load_images(gzip_json_images_parsed_arr, delete_previous=false) {  // h
             els[0].remove();
         }
 
+        els = document.getElementById('filter_overview').getElementsByClassName('filter_overview_item');
+        while (els.length > 0) {
+            els[0].remove();
+        }
+
         // delete saved items
         window.items = {};
     }
 
     // make sure that the project page is visible
     toggle_start_project("project");
+
+    // save scan ranges - we set them to a square
+    const w = topright[0]-bottomleft[0];
+    const h = topright[1]-bottomleft[1];
+    if (w > h) {
+        bottomleft[1] = bottomleft[1] - (w-h) / 2;
+        topright[1] = topright[1] + (w-h) / 2;
+    } else if (h > w) {
+        bottomleft[0] = bottomleft[0] - (h-w) / 2;
+        topright[0] = topright[0] + (h-w) / 2;
+
+    }
+    window.bottomleft = bottomleft;
+    window.topright = topright;
 
     // loads new images
     for (let i = 0, imax = images_parsed_arr.length; i < imax; i++) {

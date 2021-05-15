@@ -17,7 +17,7 @@ using SpmImages
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v122
+mutable struct SpmImageGridItem_v123
     id::String                                 # id (will be filename and suffixes for virtual copies)
     filename_original::String                  # original filename (.sxm)
     created::DateTime                          # file creation date
@@ -29,6 +29,7 @@ mutable struct SpmImageGridItem_v122
     channel_unit::String                       # unit for the respective channel
     scansize::Vector{Float64}                  # scan size in physical units
     scansize_unit::String                      # scan size unit
+    center::Vector{Float64}                    # center of scan frame (in scansize_units)
     angle::Float64                             # scan angle
     comment::String                            # comment in the file
     background_correction::String              # type of background correction used
@@ -41,16 +42,16 @@ mutable struct SpmImageGridItem_v122
     status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fullyimplemented yet)
     virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v122(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmImageGridItem_v123(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
          filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
-        channel_name="", channel_unit="", scansize=[], scansize_unit="", angle=0, comment="", background_correction="none", colorscheme="gray",
+        channel_name="", channel_unit="", scansize=[], scansize_unit="", center=[], angle=0, comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, filename_original, created, recorded, last_modified,
         filename_display, filename_display_last_modified,
-        channel_name, channel_unit, scansize, scansize_unit, angle, comment, background_correction, colorscheme,
+        channel_name, channel_unit, scansize, scansize_unit, center, angle, comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v122
+SpmImageGridItem = SpmImageGridItem_v123
 
 
 include("config.jl")
@@ -444,6 +445,41 @@ function get_new_id(images_parsed::Dict{String, SpmImageGridItem},id_original::S
 end
 
 
+"""Returns the scan range of all images. Returns bottom left and top right corner coordinates."""
+function get_scan_range(images_parsed::Dict{String, SpmImageGridItem})::Tuple{Vector{Float64},Vector{Float64}}
+    c = first(values(images_parsed)).center
+    min_max_corners_x = [c[1], c[1]]
+    min_max_corners_y = [c[2], c[2]]
+    for img in values(images_parsed)
+        if img.virtual_copy > 0
+            continue
+        end
+        cosangle = cosd(img.angle)
+        sinangle = sind(img.angle)
+        w_half, h_half = img.scansize / 2
+        min_max_corners_x = extrema([
+            img.center[1] + w_half * cosangle - h_half * sinangle,
+            img.center[1] - w_half * cosangle - h_half * sinangle,
+            img.center[1] - w_half * cosangle + h_half * sinangle,
+            img.center[1] + w_half * cosangle + h_half * sinangle,
+            min_max_corners_x...
+        ])
+
+        min_max_corners_y = extrema([
+            img.center[2] + w_half * sinangle + h_half * cosangle,
+            img.center[2] - w_half * sinangle + h_half * cosangle,
+            img.center[2] - w_half * sinangle - h_half * cosangle,
+            img.center[2] + w_half * sinangle - h_half * cosangle,
+            min_max_corners_y...
+        ])
+    end
+    bottomleft = [min_max_corners_x[1], min_max_corners_y[1]]
+    topright = [min_max_corners_x[2], min_max_corners_y[2]]
+
+    return bottomleft, topright
+end
+
+
 """Sets the virtual_copy-field values in the SpmImageGridItems to consecutive numbers (starting with 1). Creates a position to insert a new virtual copy (after the items with id 'id').
 Returns the new position."""
 function update_virtual_copies_order!(virtual_copies::Array{SpmImageGridItem}, id::String)::Int
@@ -508,6 +544,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id].recorded = im_spm.start_time
             images_parsed[id].scansize = im_spm.scansize
             images_parsed[id].scansize_unit = im_spm.scansize_unit
+            images_parsed[id].center = im_spm.center
             images_parsed[id].angle = im_spm.angle
             images_parsed[id].comment = utf8ify(im_spm.header["Comment"])
             images_parsed[id].status = 0
@@ -516,7 +553,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             channel_name = default_channel_name(im_spm, channels_feedback_on, channels_feedback_off)
             images_parsed[id] = SpmImageGridItem(
                 id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
-                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit, angle=im_spm.angle,
+                channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
+                center=im_spm.center, angle=im_spm.angle,
                 comment=utf8ify(im_spm.header["Comment"])
             )
         end
@@ -532,6 +570,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 images_parsed[virtual_copy.id].recorded = im_spm.start_time
                 images_parsed[virtual_copy.id].scansize = im_spm.scansize
                 images_parsed[virtual_copy.id].scansize_unit = im_spm.scansize_unit
+                images_parsed[virtual_copy.id].center = im_spm.center
                 images_parsed[virtual_copy.id].angle = im_spm.angle
                 images_parsed[virtual_copy.id].comment = utf8ify(im_spm.header["Comment"])
                 images_parsed[virtual_copy.id].status = 0
@@ -781,6 +820,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             global cancel_sent = false  # user might send cancel during the next steps
             save_all(dir_data, images_parsed)
             images_parsed = parse_files(dir_data)
+            bottomleft, topright = get_scan_range(images_parsed)
             if cancel_sent
                 @js_ w console.log()
                 global cancel_sent = false
@@ -788,7 +828,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 # only send the images with status >=0 (deleted ones are not sent, but still saved)
                 images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, values(images_parsed))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
                 json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
-                @js_ w load_images($json_compressed, true)
+                @js_ w load_images($json_compressed, $bottomleft, $topright, true)
             end
         catch e
             error(e, w)
@@ -890,6 +930,7 @@ function load_directory(dir_data::String, w::Window)
     # parse images etc
     global cancel_sent = false  # user might send cancel during the next step
     images_parsed = parse_files(dir_data, w)
+    bottomleft, topright = get_scan_range(images_parsed)
     if cancel_sent
         msg = "Cancelled loading $dir_data"
         @js_ w page_start_load_error($msg)
@@ -912,7 +953,7 @@ function load_directory(dir_data::String, w::Window)
     # only send the images with status >=0 (deleted ones are not sent, but still saved)
     images_parsed_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(images_parsed))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
     json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
-    @js_ w load_images($json_compressed, true)
+    @js_ w load_images($json_compressed, $bottomleft, $topright, true)
 
     set_event_handlers(w, dir_data, images_parsed)
 

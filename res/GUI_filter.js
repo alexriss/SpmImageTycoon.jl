@@ -14,6 +14,17 @@ function filter_timeout_clear() {
     }
 }
 
+function filter_showhide(id, show) {
+    // show/hide image in the frontend
+    if (show) {
+        document.getElementById(id).classList.remove('is-hidden');
+        document.getElementById("filter_overview_item_" + id).classList.remove('filtered_out');
+    } else {
+        document.getElementById(id).classList.add('is-hidden');
+        document.getElementById("filter_overview_item_" + id).classList.add('filtered_out');
+    }
+}
+
 function filter_items(ids=[], random_id=-1) {
     // filters items as specified by the input fields in the filter-sidebar
     // if ids is specified (when certain images have been updated, re-filter those images)
@@ -115,7 +126,7 @@ function filter_items(ids=[], random_id=-1) {
             continue;
         }
         // item is not filtered out, unhide it
-        document.getElementById(id).classList.remove('is-hidden');
+        filter_showhide(id, true);
     }
 
     let num_result = document.querySelectorAll('#imagegrid .item:not(.is-hidden').length;
@@ -136,7 +147,7 @@ function filter_items__selected(id) {
     if (el.classList.contains('active')) {
         return false;
     } else {
-        el.classList.add('is-hidden');
+        filter_showhide(id, false);
         return true;
     }
 }
@@ -147,35 +158,35 @@ function filter_items__rating(id, item, filter_rating, filter_rating_comparator)
         if (item.rating >= filter_rating) {
             return false;
         } else {
-            document.getElementById(id).classList.add('is-hidden');
+            filter_showhide(id, false);
             return true;
         }
     } else if (filter_rating_comparator == ">") {
         if (item.rating > filter_rating) {
             return false;
         } else {
-            document.getElementById(id).classList.add('is-hidden');
+            filter_showhide(id, false);
             return true;
         }
     } else if (filter_rating_comparator == "=") {
         if (item.rating == filter_rating) {
             return false;
         } else {
-            document.getElementById(id).classList.add('is-hidden');
+            filter_showhide(id, false);
             return true;
         }
     } else if (filter_rating_comparator == "<") {
         if (item.rating < filter_rating) {
             return false;
         } else {
-            document.getElementById(id).classList.add('is-hidden');
+            filter_showhide(id, false);
             return true;
         }
     } else if (filter_rating_comparator == "<=") {
         if (item.rating <= filter_rating) {
             return false;
         } else {
-            document.getElementById(id).classList.add('is-hidden');
+            filter_showhide(id, false);
             return true;
         }
     }
@@ -188,7 +199,7 @@ function filter_items__keywords(id, item, filter_keywords) {
     if (filter_keywords.test(keyword_str)) {
         return false;
     } else {
-        document.getElementById(id).classList.add('is-hidden');
+        filter_showhide(id, false);
         return true;
     }
 }
@@ -198,7 +209,7 @@ function filter_items__textfield(id, item, field, filter) {
     if (filter.test(item[field])) {
         return false;
     } else {
-        document.getElementById(id).classList.add('is-hidden');
+        filter_showhide(id, false);
         return true;
     }
 }

@@ -66,8 +66,9 @@ body {
   /* overflow: hidden; */
   /* height: 100%; */
   /* border: 1px red solid; */
-  scroll-snap-align: start;
-  scroll-margin-top: 12px;
+  
+  /* scroll-snap-align: start;
+  scroll-margin-top: 12px; */
 }
 
 .imagegrid .item .content {
@@ -470,6 +471,11 @@ body {
 
 /*  sidebar for filtering */
 
+#sidebar_filter {
+  overflow-y: auto;  /* we need this for overview */
+  overflow-x: hidden;
+}
+
 #sidebar_filter_table {
   background-color: #ffffff00;
 }
@@ -496,6 +502,44 @@ body {
 #sidebar_filter_table img.warning {
   margin-top:0.2rem;
 }
+
+/* overview in filter sidebar */
+
+#filter_overview_container {
+  border: 1px solid #c0c0c0;
+}
+
+#filter_overview {
+  width: 100%;
+  padding-top: 100%;
+  position: relative;
+}
+
+#filter_overview_position {
+  color:#909090;
+  vertical-align: baseline;
+}
+
+#filter_overview_position_x,
+#filter_overview_position_y {
+  display: inline-block;
+  min-width: 2.3em;
+}
+
+.filter_overview_item {
+  position: absolute;
+  border: 1px dashed #606060;
+}
+
+.filter_overview_item.filtered_out {
+  border: 1px dashed #c0c0c0;
+}
+
+.filter_overview_item.highlight {
+  border: 1px solid #234b88;
+  box-shadow: 0px 0px 1px 1.5px #234b88;
+}
+
 
 /* sidebar imagezoomtools */
 

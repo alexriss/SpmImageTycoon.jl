@@ -201,6 +201,29 @@ function event_handlers() {
         el.addEventListener("input", filter_timeout);
     });
 
+    document.getElementById('filter_info_show_more').addEventListener('click', function() {
+        document.getElementById('filter_info_show_more_container').classList.add("is-hidden");
+        document.querySelectorAll('#sidebar_filter .info_more').forEach((el) => {
+            el.classList.remove("is-hidden");
+        });
+    });
+
+    document.getElementById('filter_info_show_less').addEventListener('click', function() {
+        document.getElementById('filter_info_show_more_container').classList.remove("is-hidden");
+        document.querySelectorAll('#sidebar_filter .info_more').forEach((el) => {
+            el.classList.add("is-hidden");
+        });
+    });
+
+    document.getElementById('filter_overview').addEventListener('mousemove', function(e) {
+        document.getElementById('filter_overview_position').classList.remove("is-invisible");
+        filter_overview_display_coordinates(e);
+    });
+
+    document.getElementById('filter_overview').addEventListener('mouseout', function() {
+        document.getElementById('filter_overview_position').classList.add("is-invisible");
+    });
+
     Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
         if (el.id == "button_delete_filter_rating") {
             el.addEventListener('click', function(e) {
