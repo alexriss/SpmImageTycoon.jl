@@ -549,6 +549,10 @@ body {
   border: 1.5px solid #234b88;
 }
 
+.filter_overview_item.selected.filtered_out {
+  border: 1.5px solid #a0a0a0;
+}
+
 .filter_overview_item.highlight {
   border: 1px solid #234b88;
   box-shadow: 0px 0px 1px 1.5px #234b88;

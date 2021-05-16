@@ -96,6 +96,7 @@ document.addEventListener("keydown", function (event) {
         }
     } else if (event.ctrlKey) {
         if (event.key in ctrl_key_commands) {
+            event.preventDefault();
             ctrl_key_commands[event.key].command(...ctrl_key_commands[event.key].args);
         }
     } else if (event.shiftKey && event.key in shift_key_commands) {  // this will not block the non-modifier commands (some of those can only be typed with the shift key)
