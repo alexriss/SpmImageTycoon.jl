@@ -28,6 +28,8 @@ odp_channel_names_short = OrderedDict(  # channel names to be replaced for short
 const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
 auto_save_minutes = 10  # auto-save every n minutes
 
+overview_max_images = 100  # maximum number of images displayed in the filter_overview
+
 last_directories = []  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
 
@@ -108,6 +110,10 @@ function load_config()
             global auto_save_minutes = d["auto_save_minutes"]
         end
 
+        if haskey(d, "overview_max_images") && isa(d["overview_max_images"], Real)
+            global overview_max_images = d["overview_max_images"]
+        end
+
         if haskey(d, "last_directories") && isa(d["last_directories"], Array)
             global last_directories = string.(d["last_directories"])
         end
@@ -145,6 +151,7 @@ function save_config(new_directory::String="")
         "channels_feedback_on" => channels_feedback_on,
         "channels_feedback_off" => channels_feedback_off,
         "auto_save_minutes" => auto_save_minutes,
+        "overview_max_images" => overview_max_images,
         "export" => odp_channel_names_short,
         "last_directories" => last_directories
     )

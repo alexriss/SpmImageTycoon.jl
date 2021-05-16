@@ -130,7 +130,7 @@ function zoom_drag_filter_overview_setup(divMain) {
     // config
     let scale = 1  // initial scale
     const factor = 0.2
-    const max_scale = 20
+    const max_scale = 100
     const min_scale = 1
 
     window.scale_filter_overview = scale  // need a global variable here

@@ -11,12 +11,13 @@ function load_page() {
     event_handlers();
 }
 
-function set_params(dir_res, auto_save_minutes) {
+function set_params(dir_res, auto_save_minutes, overview_max_images) {
     // set base directory for all relative paths (dir_res) and continuous auto-save
     const el = document.createElement('base');
     el.href = "file:///" + dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);
     window.auto_save_minutes = auto_save_minutes;
+    window.overview_max_images = overview_max_images;
 }
 
 function set_params_project(dir_data, dir_cache, dir_colorbars, filenames_colorbar) {

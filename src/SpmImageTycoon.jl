@@ -995,7 +995,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
         load!(w, asset_file)
     end
 
-    @js_ w set_params($dir_asset, $auto_save_minutes)
+    @js_ w set_params($dir_asset, $auto_save_minutes, $overview_max_images)
     @js_ w set_last_directories($last_directories)
     @js_ w load_page()
     @js_ w show_start()

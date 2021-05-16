@@ -9,6 +9,7 @@ window.topright = [];   // top right of overall scan range
 
 window.last_directories = [];  // array of last directories used (set by julia)
 window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
+window.overview_max_images = 0  // maximum number of images to display in the filter overview (set by julia)
 
 window.space_pressed = false;  // true if user is holding space down (for dragging etc)
 
@@ -591,8 +592,11 @@ function check_hover_enabled() {
     // checks whether the magedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
     // also writes the number of selected images into the footer.
+    // also adds images to the filter_overview window
     const grid = document.getElementById('imagegrid');
     const els = grid.getElementsByClassName('item active');
+    const overview = document.getElementById('filter_overview');
+
     if (els.length == 0) {
         grid.classList.add('hover_enabled');
     } else {
@@ -605,6 +609,35 @@ function check_hover_enabled() {
         document.getElementById('footer_num_images_container').classList.add("has-text-weight-bold");
     } else {
         document.getElementById('footer_num_images_container').classList.remove("has-text-weight-bold");
+    }
+
+    // filter overview
+    const els_with_background = Array.from(overview.getElementsByClassName("with_background"));
+    if (els.length == 0 || els.length > window.overview_max_images) {  // remove all backgrounds
+        for (let i=0; i < els_with_background.length; i++) {
+            els_with_background[i].firstElementChild.style.backgroundImage = "none";
+            els_with_background[i].classList.remove("with_background");
+        }
+    } else {  // update images
+        console.log("else");
+        // remove all other images
+        const prefix = "filter_overview_item_";
+        const prefix_length = prefix.length;
+        const ids = Array.from(els).map(function(el) {
+            return el.id;
+        });
+
+        for (let i=0; i < els_with_background.length; i++) {
+            if (!ids.includes(els_with_background[i].id.substring(prefix_length))) {  // we cut off the prefix
+                els_with_background[i].firstElementChild.style.backgroundImage = "none";
+                els_with_background[i].classList.remove("with_background");
+            }
+        }
+        for (let i=0; i<ids.length;i++) {
+            let el = document.getElementById(prefix + ids[i]);
+            el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+            el.classList.add("with_background");
+        }        
     }
 }
 

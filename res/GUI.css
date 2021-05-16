@@ -543,6 +543,7 @@ body {
 
 .filter_overview_item.filtered_out {
   border: 1px dashed #c0c0c0;
+  background-image: none;
 }
 
 .filter_overview_item.selected {
@@ -562,6 +563,18 @@ body {
   background: rgba(46, 115, 252, 0.11);
   border: 1px solid rgba(98, 155, 255, 0.85);
   border-radius: 0.15em;
+}
+
+.filter_overview_item_background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.filter_overview_item.filtered_out .filter_overview_item_background {
+  opacity: 0.2;
 }
 
 #filter_overview_reset_zoom {
