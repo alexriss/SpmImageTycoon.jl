@@ -39,7 +39,7 @@ mutable struct SpmImageGridItem_v123
     filters::Vector{String}                    # array of filters used (not implemented yet)
     keywords::Vector{String}                   # keywords
     rating::Int                                # rating (0 to 5 stars)
-    status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fullyimplemented yet)
+    status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
     virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
     SpmImageGridItem_v123(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
@@ -451,9 +451,10 @@ function get_scan_range(images_parsed::Dict{String, SpmImageGridItem})::Tuple{Ve
     min_max_corners_x = [c[1], c[1]]
     min_max_corners_y = [c[2], c[2]]
     for img in values(images_parsed)
-        if img.virtual_copy > 0
+        if img.virtual_copy > 0 || img.status < 0
             continue
         end
+        println(img.id)
         cosangle = cosd(img.angle)
         sinangle = sind(img.angle)
         w_half, h_half = img.scansize / 2
