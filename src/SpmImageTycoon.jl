@@ -454,7 +454,6 @@ function get_scan_range(images_parsed::Dict{String, SpmImageGridItem})::Tuple{Ve
         if img.virtual_copy > 0 || img.status < 0
             continue
         end
-        println(img.id)
         cosangle = cosd(img.angle)
         sinangle = sind(img.angle)
         w_half, h_half = img.scansize / 2
