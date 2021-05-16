@@ -32,7 +32,20 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
   
 ## Demo
 
-[![](http://img.youtube.com/vi/x_KSCst92Lo/0.jpg)](http://www.youtube.com/watch?v=x_KSCst92Lo "Video on YouTube")
+<table>
+  <tr>
+    <td>
+      <a href="http://www.youtube.com/watch?v=x_KSCst92Lo" target="_blank"><img src="http://img.youtube.com/vi/x_KSCst92Lo/0.jpg" width="250" /></a>
+    </td>
+    <td>
+      <a href="http://www.youtube.com/watch?v=FRl0HwMmiD4" target="_blank"><img src="http://img.youtube.com/vi/FRl0HwMmiD4/0.jpg" width="250" /></a>
+    </td>
+  </tr>
+  <tr>
+    <td>Feature demo (YouTube)</td>
+    <td>Global scan frame filter (YouTube)</td>
+  </tr>
+</table>
 
 ## Technical comments
 
