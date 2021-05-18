@@ -619,7 +619,6 @@ function check_hover_enabled() {
             els_with_background[i].classList.remove("with_background");
         }
     } else {  // update images
-        console.log("else");
         // remove all other images
         const prefix = "filter_overview_item_";
         const prefix_length = prefix.length;
