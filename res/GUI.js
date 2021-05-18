@@ -858,6 +858,12 @@ function update_image(id) {
         next_item(0);  // updates the img src etc
     }
     document.getElementById(id).firstElementChild.firstElementChild.src = file_url(id);
+    // images in overview
+    const el = document.getElementById("filter_overview_item_" + id);
+    if (el.classList.contains("with_background")) {
+        el.firstElementChild.style.backgroundImage = 'url("' + file_url(id).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+    }
+
 }
 
 function escape_handler() {

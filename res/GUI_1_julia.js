@@ -103,7 +103,6 @@ function update_images(gzip_json_images_parsed) {  // "images_parsed" is a dicti
     let json_images_parsed = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed));
     let images_parsed = JSON.parse(json_images_parsed.toString("utf-8"));
 
-
     for (let key in images_parsed) {
         window.items[key] = images_parsed[key];
         update_image(key);

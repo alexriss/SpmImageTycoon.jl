@@ -538,7 +538,8 @@ body {
 
 .filter_overview_item {
   position: absolute;
-  border: 1px dashed #606060;
+  border: 1px dashed #909090;
+  z-index: 0;
 }
 
 .filter_overview_item.filtered_out {
@@ -551,12 +552,13 @@ body {
 }
 
 .filter_overview_item.selected.filtered_out {
-  border: 1.5px solid #a0a0a0;
+  border: 1.5px solid #c0c0c0;
 }
 
 .filter_overview_item.highlight {
-  border: 1px solid #234b88;
-  box-shadow: 0px 0px 1px 1.5px #234b88;
+  border: 1px solid #193764;
+  box-shadow: 0px 0px 2px 2px #1c63cc, 0px 0px 4px 3px #000000;
+  z-index: 10;
 }
 
 .filter_overview_selection_area {
@@ -571,6 +573,7 @@ body {
   height: 100%;
   background-repeat: no-repeat;
   background-size: 100% 100%;
+  z-index: -1;
 }
 
 .filter_overview_item.filtered_out .filter_overview_item_background {
