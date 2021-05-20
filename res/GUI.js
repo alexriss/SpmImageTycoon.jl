@@ -695,6 +695,44 @@ function next_item(jump) {
     }
 }
 
+function scroll_to_selected(next=true) {
+    // scrolls to next/previous selected item
+
+    if (get_view() != "grid") {
+        return;
+    }
+
+    const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden).active'));
+    if (items.length == 0) {
+        return;
+    }
+    const gridsub = document.getElementById('imagegrid_container_sub');
+    const curr = gridsub.scrollTop;
+    let item_scrollto = null;
+    if (next) {
+        for (let i=0; i<items.length; i++) {
+            if (items[i].offsetTop > curr + 12) {
+                item_scrollto = items[i];
+                break;
+            }
+        }
+        if (item_scrollto === null) {  // wrap around
+            item_scrollto = items[0];
+        }
+    } else {
+        for (let i=items.length-1; i>=0; i--) {
+            if (items[i].offsetTop < curr) {
+                item_scrollto = items[i];
+                break;
+            }
+        }
+        if (item_scrollto === null) {  // wrap around
+            item_scrollto = items[items.length - 1];
+        }
+    }
+    gridsub.scrollTop = item_scrollto.offsetTop - 10;
+}
+
 function select_item(event) {
     // selects one item or a bunch of items (if shift or ctrl is pressed)
 

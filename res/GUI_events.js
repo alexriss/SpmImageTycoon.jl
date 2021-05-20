@@ -39,6 +39,8 @@ let key_commands = {
 let shift_key_commands = {
     E: { command: open_in_explorer, args: [] },
     Delete: { command: virtual_copy, args: ["delete"] },
+    ArrowDown: { command: scroll_to_selected, args: [] },
+    ArrowUp: { command: scroll_to_selected, args: [false] },
 }
 
 let alt_key_commands = {
