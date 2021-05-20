@@ -4,7 +4,7 @@ keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunnelin
 license = "GPLv3"
 desc = "Organize scanning probe microscopy images"
 authors = ["Alex Riss"]
-version = "0.2.0"
+version = "0.2.1"
 
 [compat]
 julia = "1.6"
