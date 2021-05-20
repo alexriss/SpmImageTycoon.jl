@@ -45,6 +45,32 @@ function filter_overview_display_coordinates(e) {
     document.getElementById("filter_overview_position_y").innerText = xy_nm[1].toFixed(1);
 }
 
+function filter_overview_clear_selection() {
+    // clears selection
+    window.filter_overview_selection_object.clearSelection();
+    Array.from(document.getElementById('filter_overview').getElementsByClassName('selected')).forEach(el => {
+        el.classList.remove('selected');
+    });
+    filter_overview_display_num_selected();
+}
+
+function filter_overview_display_num_selected() {
+    // displays number of selected items
+    const num_selected = window.filter_overview_selection_object.getSelection().length;
+    const filter_overview_info = document.getElementById("filter_overview_info");
+    const filter_overview_num_selected_container = document.getElementById("filter_overview_num_selected_container");
+    const filter_overview_num_selected = document.getElementById("filter_overview_num_selected");
+
+    filter_overview_num_selected.innerText = num_selected;
+    if (num_selected > 0) {
+        filter_overview_info.classList.add("is-hidden");
+        filter_overview_num_selected_container.classList.remove("is-hidden");
+    } else {
+        filter_overview_num_selected_container.classList.add("is-hidden");
+        filter_overview_info.classList.remove("is-hidden");
+    }
+}
+
 
 function filter_overview_setup() {
     // Initialize selectionjs
@@ -83,6 +109,8 @@ function filter_overview_setup() {
     }).on('stop', () => {
         window.filter_overview_selection_object.keepSelection();
         window.filter_overview_selecting = false;
+
+        filter_overview_display_num_selected();
         filter_items();
     });
 }

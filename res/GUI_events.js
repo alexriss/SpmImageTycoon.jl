@@ -247,6 +247,13 @@ function event_handlers() {
                     filter_items();
                 }
             });
+        } else if (el.id == "button_delete_filter_overview") {
+            el.addEventListener('click', function(e) {
+                filter_overview_clear_selection();
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    filter_items();
+                }
+            });
         } else {
             let id_field = el.id.replace("button_delete_", "");
             el.addEventListener('click', function(e) {
@@ -262,11 +269,6 @@ function event_handlers() {
         Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
             el.click();
         });
-        // also clear overview selection
-        Array.from(document.getElementById('filter_overview').getElementsByClassName('selected')).forEach(el => {
-            el.classList.remove('selected');
-        });
-        window.filter_overview_selection_object.clearSelection();
 
         filter_items();
     });

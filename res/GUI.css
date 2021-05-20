@@ -481,6 +481,8 @@ body {
 
 #sidebar_filter_table td, #sidebar_filter_table th {
   vertical-align: middle;
+  padding: .2em .75em;
+  height: 3em;
 }
 
 #sidebar_filter_table select.is-arrowless::after {
@@ -498,8 +500,19 @@ body {
   margin-top:0.0rem;
 }
 
+#sidebar_filter_table input {
+  margin-top:0.3rem;
+  margin-bottom:0.3rem;
+}
+
+
 #sidebar_filter_table img.warning {
   margin-top:0.2rem;
+}
+
+#filter_overview_info, #filter_overview_num_selected_container {
+  font-style: italic;
+  color:#909090;
 }
 
 /* overview in filter sidebar */
