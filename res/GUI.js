@@ -17,6 +17,7 @@ window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
+window.grid_last_scrolltop = 0;  // last y-scroll position in grid view (does not seem to be properly restored when hiding/showing grid view)
 
 window.line_profile_object = null;  // hold the line profile object
 
@@ -413,6 +414,7 @@ function toggle_imagezoom(target_view = "") {
     // toggles between grid and imagezoom views
 
     const grid = document.getElementById('imagegrid_container');
+    const gridsub = document.getElementById('imagegrid_container_sub');
     const zoom = document.getElementById('imagezoom_container');
     const footer_num_images_container = document.getElementById('footer_num_images_container');
 
@@ -426,9 +428,11 @@ function toggle_imagezoom(target_view = "") {
         footer_num_images_container.classList.remove("is-invisible");
         image_info_quick_timeout_clear();  // if we leave zoom-mode, we might need to get rid of the quick image info (if mouse is not hovering anything)
         toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
+        gridsub.scrollTop = window.grid_last_scrolltop;
     } else {
         let el = grid.querySelector('div.item:hover');
         if (el != null) {
+            window.grid_last_scrolltop = gridsub.scrollTop;
             grid.classList.add("is-hidden");
             zoom.classList.remove("is-hidden");
             footer_num_images_container.classList.add("is-invisible")
@@ -464,12 +468,14 @@ function imagezoom_size_adjust() {
     let w_img = el_img.naturalWidth;
     let h_img = el_img.naturalHeight;
 
-    if (w_img/h_img >= w/h) {
-        el_img.classList.add("fullwidth");
-        el_img.classList.remove("fullheight");
-    } else {
-        el_img.classList.remove("fullwidth");
-        el_img.classList.add("fullheight");
+    if (w_img > 0 && h_img > 0) {  // sometimes the image is not ready yet
+        if (w_img/h_img >= w/h) {
+            el_img.classList.add("fullwidth");
+            el_img.classList.remove("fullheight");
+        } else {
+            el_img.classList.remove("fullwidth");
+            el_img.classList.add("fullheight");
+        }
     }
     if (window.line_profile_object !== null) {
         window.line_profile_object.setup();  // will set up size of canvas
