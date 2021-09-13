@@ -60,7 +60,6 @@ The program relies on
 
 - [SpmImages.jl](https://github.com/alexriss/SpmImages.jl): Julia library to read and display SPM images.
 
-which is currently not yet in the  default Julia package registry.
 
 #### Third party libraries (included)
 
