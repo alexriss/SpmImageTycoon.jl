@@ -1,2 +1,2 @@
-julia -t 4 -e "using SpmImageTycoon; tycoon();"
+julia -t auto -e "using SpmImageTycoon; tycoon();"
 timeout /t 60
