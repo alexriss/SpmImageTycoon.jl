@@ -7,7 +7,21 @@ authors = ["Alex Riss"]
 version = "0.2.1"
 
 [compat]
-julia = "1.6"
+julia = "^1.6"
+Blink = "^0.12"
+CodecZlib = "^0.7"
+ColorSchemes = "^3.15"
+DataStructures = "^0.18"
+ImageIO = "^0.5"
+Images = "^0.24"
+JLD2 = "^0.4"
+JSON = "^0.21"
+Mustache = "^1.0"
+NaturalSort = "^1.0"
+SpmImages = "^0.1.2"
+StatsBase = "^0.33"
+ZipFile = "^0.9"
+
 
 [deps]
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
