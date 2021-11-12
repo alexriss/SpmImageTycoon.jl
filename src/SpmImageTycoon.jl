@@ -826,7 +826,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 global cancel_sent = false
             else
                 # only send the images with status >=0 (deleted ones are not sent, but still saved)
-                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, values(images_parsed))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, collect(values(images_parsed)))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
                 json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
                 @js_ w load_images($json_compressed, $bottomleft, $topright, true)
             end

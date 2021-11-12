@@ -116,6 +116,7 @@ function reset_all() {
     document.getElementById("sidebar_content_none").classList.remove("is-hidden");
     document.getElementById("sidebar_content").classList.add("is-hidden");
 
+    show_message(); // empty footer message
     standard_view();
 }
 
@@ -485,11 +486,13 @@ function imagezoom_size_adjust() {
 function show_message(msg = "") {
     // shows message in the footer
     if (window.timeout != null) {
-        clearTimeout(window.timeout);
+        // clearTimeout(window.timeout);
     }
     let el = document.getElementById('footer_message');
     el.innerText = msg;
-    window.timeout = setTimeout(show_message, 2500);
+    if (msg != "") {
+        window.timeout = setTimeout(show_message, 2500);
+    }
 }
 
 function clear_all_active_mouse(event) {
