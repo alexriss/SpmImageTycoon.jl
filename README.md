@@ -69,6 +69,7 @@ Pkg.add("SpmImageTycoon")
 ```
 3. To run the app, type (within Julia):
 ```julia
+using SpmImageTycoon
 tycoon()
 ```
 (if there are any firewall request, please accept them - it is only for local server/client communication)
