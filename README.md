@@ -10,6 +10,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 
 [Features](#features)  
 [Demo](#demo)  
+[Disclaimer](#disclaimer)  
 [Installation](#installation)  
 [Technical comments](#technical-comments)  
 [Dependencies](#dependencies)  
