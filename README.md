@@ -67,7 +67,7 @@ To install and use, do the following:
 using Pkg
 Pkg.install("SpmImageTycoon")
 ```
-3. To run the app, type:
+3. To run the app, type (within Julia):
 ```julia
 tycoon()
 ```
