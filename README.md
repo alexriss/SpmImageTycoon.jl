@@ -72,7 +72,7 @@ Pkg.add("SpmImageTycoon")
 using SpmImageTycoon
 tycoon()
 ```
-(if there are any firewall request, please accept them - it is only for local server/client communication)
+(if there are any firewall requests, please accept them - it is only for local server/client communication)
 
 4. As a more convenient alternative to 3, just use one of the scripts in the [helpers directory](helpers/) to start the app. There is a [shell script](helpers/SpmImageTycoon.sh) for linux, as well as a [bat script](helpers/windows_tray/SpmImageTycoon.bat) for windows and also an [autohotkey script](helpers/windows_tray/SpmImageTycoon.ahk). You can find more information on autohotkey [here](https://www.autohotkey.com/).
 
