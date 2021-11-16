@@ -65,7 +65,7 @@ To install and use, do the following:
 2. Start Julia and type the following two commands:
 ```julia
 using Pkg
-Pkg.install("SpmImageTycoon")
+Pkg.add("SpmImageTycoon")
 ```
 3. To run the app, type (within Julia):
 ```julia
