@@ -9,8 +9,9 @@ Cross-platform app to manage and edit scanning probe microscopy (SPM) images. *U
 Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images are supported.
 
 [Features](#features)  
-[Technical comments](#technical-comments)  
 [Demo](#demo)  
+[Installation](#installation)  
+[Technical comments](#technical-comments)  
 [Dependencies](#dependencies)  
 [Third party libraries](#third-party-libraries-included)  
 [Related projects](#related-projects)  
@@ -47,12 +48,31 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
   </tr>
 </table>
 
+## Installation
+
+1. Install [Julia](https://julialang.org/)
+2. Start Julia and type the following two commands:
+```julia
+using Pkg
+Pkg.install("SpmImageTycoon")
+```
+3. To run the app, type:
+```julia
+tycoon()
+```
+(if there are any firewall request, please accept them - it is only for local server/client communication)
+
+4. As a more convenient alternative to 3, just use one of the scripts in the [helpers directory](helpers/) to start the app. There is a [shell script](helpers/SpmImageTycoon.sh) for linux, as well as a [bat script](helpers/windows_tray/SpmImageTycoon.bat) for windows and also an [autohotkey script](helpers/windows_tray/SpmImageTycoon.ahk). You can find more information on autohotkey [here](https://www.autohotkey.com/).
+
+### You can stop reading here and start using the program now.
+
+
 ## Technical comments
 
 The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
 
 - To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads 4`
-- There is some overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
+- There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 
 ## Dependencies
 
