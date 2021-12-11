@@ -120,6 +120,16 @@ function reset_all() {
     standard_view();
 }
 
+function toggle_pixelated() {
+    // toggles pixelated vs interpolated display of images in zoom mode
+    let img_zoom = document.getElementById("imagezoom_image");
+    if (img_zoom.classList.contains("pixelated")) {
+        img_zoom.classList.remove("pixelated");
+    } else {
+        img_zoom.classList.add("pixelated");
+    }
+}
+
 function toggle_help() {
     // toggle help modal
     if (document.getElementById("modal_help").classList.contains("is-active")) {

@@ -139,6 +139,10 @@ body {
   -ms-user-select: none;
 }
 
+.pixelated {
+  image-rendering: pixelated;
+}
+
 
 /* zoom view */
 

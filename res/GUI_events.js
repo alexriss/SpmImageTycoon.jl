@@ -30,6 +30,7 @@ let key_commands = {
     "?": { command: toggle_help, args: [] },
     "/": { command: toggle_help, args: [] },
     F1: { command: toggle_help, args: [] },
+    "=": { command: toggle_pixelated, args: [] },
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: escape_handler, args: [] },
