@@ -573,7 +573,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id] = SpmImageGridItem(
                 id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
                 channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
-                center=im_spm.center, angle=im_spm.angle, scan_direction=im_spm.scan_direction,
+                center=im_spm.center, angle=im_spm.angle, scan_direction=scan_direction,
                 bias=im_spm.bias, z_feedback=im_spm.z_feedback, z_feedback_setpoint=im_spm.z_feedback_setpoint, z_feedback_setpoint_unit=im_spm.z_feedback_setpoint_unit, z=im_spm.z,
                 comment=utf8ify(im_spm.header["Comment"])
             )
