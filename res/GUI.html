@@ -288,7 +288,7 @@
             </svg>
           </div>
         </div>
-        <div class="columns is-mobile abbreviate title is-size-6 mb-0 pb-0">
+        <div class="columns is-mobile abbreviate title is-size-6 mb-2 pb-0">
           <div class="column abbreviate pt-0 pb-1">
             <span class="is-size-7 has-text-weight-normal">
               <span class="icon is-small img-icon"><img style="opacity:1.0;" src="tilted_plane.svg" /></span>
@@ -296,13 +296,34 @@
             </span>
           </div>
           <div class="column abbreviate has-text-left pt-0 pb-1">
-            <span id="image_info_scansize" class="is-size-7 has-text-weight-normal"></span>
+            <span id="image_info_scansize" class="is-size-7 has-text-weight-normal mr-0"></span>
+            <span id="image_info_scan_direction_up" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="arrow-up.svg" /></span>
+            <span id="image_info_scan_direction_down" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="arrow-down.svg" /></span>
           </div>
           <div class="column abbreviate has-text-right is-narrow pl-0 pt-0 pb-0" style="width:90px;">
             <span class="ml-2 is-size-7 has-text-weight-normal has-text-grey">
               <!-- <span class="icon is-small img-icon"><img style="opacity:0.7;width:80%;" src="colorwheel.svg" /></span> -->
               <span id="image_info_colorscheme_clamped" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="clamped.svg" /></span>
               <span id="image_info_colorscheme"></span>
+            </span>
+          </div>
+        </div>
+        <div class="columns is-mobile abbreviate title is-size-6 mb-0 pb-0">
+          <div class="column abbreviate pt-0 pb-1">
+            <span class="is-size-7 has-text-weight-normal">
+              <span id="image_info_bias"></span>
+              <span id="image_info_bias_unit_prefix"></span>V
+            </span>
+          </div>
+          <div class="column abbreviate has-text-left pt-0 pb-1">
+            <span class="is-size-7 has-text-weight-normal">
+              <span id="image_info_z_feedback_setpoint"></span>
+              <span id="image_info_z_feedback_setpoint_unit_prefix"></span><span id="image_info_z_feedback_setpoint_unit"></span>
+            </span>
+          </div>
+          <div class="column abbreviate has-text-right is-narrow pl-0 pt-0 pb-0" style="width:90px;">
+            <span class="is-size-7 has-text-weight-normal has-text-grey">
+              <span id="image_info_angle"></span>°
             </span>
           </div>
         </div>

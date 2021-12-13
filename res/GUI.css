@@ -300,7 +300,7 @@ body {
   max-width: 400px;
   display: flex;
   height: 85vh; 
-  height: calc(var(--vh, 1vh) * 100 - 11.8rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
+  height: calc(var(--vh, 1vh) * 100 - 13.3rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
   overflow-y: hidden;
   display: none;
 }

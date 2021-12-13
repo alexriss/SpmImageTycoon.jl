@@ -17,7 +17,7 @@ using SpmImages
 
 export SpmImageGridItem, tycoon
 
-mutable struct SpmImageGridItem_v123
+mutable struct SpmImageGridItem_v125
     id::String                                 # id (will be filename and suffixes for virtual copies)
     filename_original::String                  # original filename (.sxm)
     created::DateTime                          # file creation date
@@ -30,7 +30,15 @@ mutable struct SpmImageGridItem_v123
     scansize::Vector{Float64}                  # scan size in physical units
     scansize_unit::String                      # scan size unit
     center::Vector{Float64}                    # center of scan frame (in scansize_units)
-    angle::Float64                             # scan angle
+    angle::Float64                             # scan angle (in degrees)
+    scan_direction::Bool                       # scan direction (true = up, false = down)
+
+    bias::Float64                              # Bias in V
+    z_feedback::Bool                           # feedback controller on/off
+    z_feedback_setpoint::Float64               # feedback setpoint
+    z_feedback_setpoint_unit::String           # feedback setpoint unit
+    z::Float64                                 # Z position in m
+
     comment::String                            # comment in the file
     background_correction::String              # type of background correction used
     colorscheme::String                        # color scheme
@@ -42,16 +50,20 @@ mutable struct SpmImageGridItem_v123
     status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
     virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v123(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmImageGridItem_v125(; id="", filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
          filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
-        channel_name="", channel_unit="", scansize=[], scansize_unit="", center=[], angle=0, comment="", background_correction="none", colorscheme="gray",
+        channel_name="", channel_unit="", scansize=[], scansize_unit="", center=[], angle=0, scan_direction=false,
+        bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0,
+        comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, filename_original, created, recorded, last_modified,
         filename_display, filename_display_last_modified,
-        channel_name, channel_unit, scansize, scansize_unit, center, angle, comment, background_correction, colorscheme,
+        channel_name, channel_unit, scansize, scansize_unit, center, angle, scan_direction,
+        bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z,
+        comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v123
+SpmImageGridItem = SpmImageGridItem_v125
 
 
 include("config.jl")
@@ -533,6 +545,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
         s = stat(datafile)
         created = unix2datetime(s.ctime)
         last_modified = unix2datetime(s.mtime)
+        scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
         
         id = filename_original
 
@@ -546,6 +559,12 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id].scansize_unit = im_spm.scansize_unit
             images_parsed[id].center = im_spm.center
             images_parsed[id].angle = im_spm.angle
+            images_parsed[id].scan_direction = scan_direction
+            images_parsed[id].bias = im_spm.bias
+            images_parsed[id].z_feedback = im_spm.z_feedback
+            images_parsed[id].z_feedback_setpoint = im_spm.z_feedback_setpoint
+            images_parsed[id].z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
+            images_parsed[id].z = im_spm.z
             images_parsed[id].comment = utf8ify(im_spm.header["Comment"])
             images_parsed[id].status = 0
         else
@@ -554,7 +573,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
             images_parsed[id] = SpmImageGridItem(
                 id=id, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
                 channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
-                center=im_spm.center, angle=im_spm.angle,
+                center=im_spm.center, angle=im_spm.angle, scan_direction,
+                bias=im_spm.bias, z_feedback=im_spm.z_feedback, z_feedback_setpoint=im_spm.z_feedback_setpoint, z_feedback_setpoint_unit=im_spm.z_feedback_setpoint_unit, z=im_spm.z,
                 comment=utf8ify(im_spm.header["Comment"])
             )
         end
@@ -572,6 +592,12 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 images_parsed[virtual_copy.id].scansize_unit = im_spm.scansize_unit
                 images_parsed[virtual_copy.id].center = im_spm.center
                 images_parsed[virtual_copy.id].angle = im_spm.angle
+                images_parsed[virtual_copy.id].scan_direction = im_spm.scan_direction
+                images_parsed[virtual_copy.id].bias = im_spm.bias
+                images_parsed[virtual_copy.id].z_feedback = im_spm.z_feedback
+                images_parsed[virtual_copy.id].z_feedback_setpoint = im_spm.z_feedback_setpoint
+                images_parsed[virtual_copy.id].z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
+                images_parsed[virtual_copy.id].z = im_spm.z
                 images_parsed[virtual_copy.id].comment = utf8ify(im_spm.header["Comment"])
                 images_parsed[virtual_copy.id].status = 0
                 Threads.@spawn create_image!(images_parsed[virtual_copy.id], im_spm, resize_to=resize_to, base_dir=dir_cache)

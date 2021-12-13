@@ -190,6 +190,32 @@ function show_info(id, gzip_info_json) {
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
     document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
 
+    // angle
+    document.getElementById("image_info_angle").innerText = window.items[id].angle.toFixed(0);
+
+    if (window.items[id].scan_direction) {
+        document.getElementById("image_info_scan_direction_up").classList.remove("is-hidden");
+        document.getElementById("image_info_scan_direction_down").classList.add("is-hidden");
+    } else {
+        document.getElementById("image_info_scan_direction_up").classList.add("is-hidden");
+        document.getElementById("image_info_scan_direction_down").classList.remove("is-hidden");
+    }
+
+    let nnp = format_number_prefix(window.items[id].bias,1);
+    document.getElementById("image_info_bias").innerText = nnp.number_formatted;
+    document.getElementById("image_info_bias_unit_prefix").innerText = nnp.prefix;
+    if (window.items[id].z_feedback) {
+        nnp = format_number_prefix(window.items[id].z_feedback_setpoint,1);
+        document.getElementById("image_info_z_feedback_setpoint").innerText = nnp.number_formatted;
+        document.getElementById("image_info_z_feedback_setpoint_unit_prefix").innerText = nnp.prefix;
+        document.getElementById("image_info_z_feedback_setpoint_unit").innerText = window.items[id].z_feedback_setpoint_unit;
+    } else {
+        nnp = format_number_prefix(window.items[id].z,3);  // we want high precision here
+        document.getElementById("image_info_z_feedback_setpoint").innerText = nnp.number_formatted;
+        document.getElementById("image_info_z_feedback_setpoint_unit_prefix").innerText = nnp.prefix;
+        document.getElementById("image_info_z_feedback_setpoint_unit").innerText = "m";
+    }
+
     if (window.items[id].channel_range_selected.length == 2) {
         const diff = Math.abs(window.items[id].channel_range_selected[0] - 0) + Math.abs(1 - window.items[id].channel_range_selected[1]);
         if (diff > 0.0005) {
@@ -228,7 +254,7 @@ function show_info(id, gzip_info_json) {
             searchable: true,
             // fixedHeight: true,
             paging: false,
-            scrollY: "calc(var(--vh, 1vh) * 100 - 13.88rem)",
+            scrollY: "calc(var(--vh, 1vh) * 100 - 15.6rem)",
             // fixedColumns: true,
             // columns: { select: [2], sortable: false },
         })
