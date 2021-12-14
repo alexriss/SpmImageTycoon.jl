@@ -56,7 +56,7 @@ mutable struct SpmImageGridItem_v125
         bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0,
         comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
-    new(id, filename_original, created, recorded, last_modified,
+    new(id, filename_original, created, last_modified, recorded,
         filename_display, filename_display_last_modified,
         channel_name, channel_unit, scansize, scansize_unit, center, angle, scan_direction,
         bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z,
@@ -525,7 +525,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
     # load saved data - if available
     images_parsed = load_all(dir_data, w)
 
-    images_parsed_new = Array{String}[]
+    images_parsed_new = String[]
     virtual_copies_dict = Dict{String, Array{SpmImageGridItem}}()
     if !only_new
         # get all virtual copies that are saved
@@ -549,12 +549,12 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         last_modified = unix2datetime(s.mtime)
 
         id = filename_original
-        im_spm = load_image(datafile, output_info=0)
-        scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
-
         if only_new && haskey(images_parsed, id)
             continue
         end
+
+        im_spm = load_image(datafile, output_info=0)
+        scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
         
         if haskey(images_parsed, id)
             # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
@@ -862,15 +862,27 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 @js_ w console.log()
                 global cancel_sent = false
             else
-                if parse_all
-                    images_parsed_values = collect(values(images_parsed))
-                else
-                    images_parsed_values = [images_parsed[k] for k in images_parsed_new]
-                end
                 # only send the images with status >=0 (deleted ones are not sent, but still saved)
-                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, images_parsed_values)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
-                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
-                @js_ w load_images($json_compressed, $bottomleft, $topright, $parse_all)
+                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, collect(values(images_parsed)))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+                if parse_all
+                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
+                    @js_ w load_images($json_compressed, $bottomleft, $topright, $parse_all, true)
+                else
+                    ids_after = String[]
+                    images_parsed_sub = OrderedDict{String, SpmImageGridItem}()
+                    prev_id = ""
+                    global images_parsed_values_test = copy(images_parsed_values)
+                    for im in images_parsed_values
+                        if im.id in images_parsed_new
+                            images_parsed_sub[im.id] = im
+                            push!(ids_after, prev_id)
+                            @show im.id, prev_id
+                        end
+                        prev_id = im.id
+                    end
+                    @show images_parsed_sub, ids_after
+                    @js_ w insert_images($images_parsed_sub, $ids_after)  # insert images after positions of ids
+                end
             end
         catch e
             error(e, w)

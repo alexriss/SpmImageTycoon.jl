@@ -38,7 +38,7 @@ function show_start() {
     toggle_start_project("start");
 }
 
-function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_previous=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
+function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_previous=false, open_job_close=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
     // load all images into the page
     let json_images_parsed_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed_arr));
     let images_parsed_arr = JSON.parse(json_images_parsed_arr.toString("utf-8"));
@@ -91,8 +91,8 @@ function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_p
     filter_items();
     document.getElementById('footer_num_images_total').innerText = images_parsed_arr.length;
 
-    if (delete_previous) {
-        open_jobs(-1);  // this is interactively called only with delete_previous=true
+    if (open_job_close) {
+        open_jobs(-1);
     }
 }
 

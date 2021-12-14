@@ -864,7 +864,9 @@ function add_image(id, id_after=null) {
     el.id = id;
     el.querySelector('img').src = file_url(id);
     if (id_after === null) {
-        grid.appendChild(el);
+        grid.append(el);
+    } else if (id_after === "") {
+        grid.prepend(el);
     } else {
         insertAfter(el, document.getElementById(id_after));
     }
