@@ -61,7 +61,9 @@ function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_p
     }
 
     // make sure that the project page is visible
-    toggle_start_project("project");
+    if (delete_previous) {
+        toggle_start_project("project");
+    }
 
     // save scan ranges - we set them to a square
     const w = topright[0]-bottomleft[0];
@@ -499,11 +501,15 @@ function get_line_profile(id, start_point, end_point, width) {
     open_jobs(1);
 }
 
-function re_parse_images() {
+function re_parse_images(all=false) {
     // delete all images from DOM and re-parses them
-    if (get_view() == "grid") {
-        Blink.msg("re_parse_images", []);
-        show_message("reloading.")
+    if (get_view() == "grid" || all === false) {
+        Blink.msg("re_parse_images", [all]);
+        if (all) {
+            show_message("reloading all images.")
+        } else {
+            show_message("looking for new images.")
+        }
         open_jobs(1);
     }
 }

@@ -519,18 +519,22 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_info::Int=1)::Dict{String, SpmImageGridItem}
+function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmImageGridItem},Array{String}}
     dir_cache = get_dir_cache(dir_data)
 
     # load saved data - if available
     images_parsed = load_all(dir_data, w)
 
-    # get all virtual copies that are saved
-    virtual_copies_dict = get_virtual_copies_dict(images_parsed)
-    
-    # set all status to -2 (will be then re-set to 0 when the file is found in the directory)
-    map(x -> x.status=-2, values(images_parsed))  # we do not need to use "map! (we even cant use it)
-    
+    images_parsed_new = Array{String}[]
+    virtual_copies_dict = Dict{String, Array{SpmImageGridItem}}()
+    if !only_new
+        # get all virtual copies that are saved
+        virtual_copies_dict = get_virtual_copies_dict(images_parsed)
+        
+        # set all status to -2 (will be then re-set to 0 when the file is found in the directory)
+        map(x -> x.status=-2, values(images_parsed))  # we do not need to use "map! (we even cant use it)
+    end
+
     datafiles = filter!(x -> isfile(x) && endswith(x, extension_spm), readdir(dir_data, join=true))
     if w !== nothing && length(datafiles) > 1  # 1 files will have the plural-s problem in the frontend, so just skip it
         @js_ w page_start_load_params($(length(datafiles)))
@@ -539,16 +543,19 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
     num_parsed = 0
     time_start = Dates.now()
     @sync for datafile in datafiles
-        im_spm = load_image(datafile, output_info=0)
-        
         filename_original = basename(datafile)
         s = stat(datafile)
         created = unix2datetime(s.ctime)
         last_modified = unix2datetime(s.mtime)
-        scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
-        
-        id = filename_original
 
+        id = filename_original
+        im_spm = load_image(datafile, output_info=0)
+        scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
+
+        if only_new && haskey(images_parsed, id)
+            continue
+        end
+        
         if haskey(images_parsed, id)
             # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
             images_parsed[id].filename_original = filename_original
@@ -577,6 +584,9 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
                 bias=im_spm.bias, z_feedback=im_spm.z_feedback, z_feedback_setpoint=im_spm.z_feedback_setpoint, z_feedback_setpoint_unit=im_spm.z_feedback_setpoint_unit, z=im_spm.z,
                 comment=utf8ify(im_spm.header["Comment"])
             )
+            if only_new
+                push!(images_parsed_new, id)
+            end
         end
         Threads.@spawn create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
 
@@ -623,7 +633,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; output_
         msg = "Parsed $(length(images_parsed)) files in $elapsed_time."
         log(msg, w)
     end
-    return images_parsed
+    return images_parsed, images_parsed_new
 end
 
 
@@ -841,20 +851,26 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
     end
 
     handle(w, "re_parse_images") do args
+        parse_all = args[1]
         lock(l)
         try
             global cancel_sent = false  # user might send cancel during the next steps
             save_all(dir_data, images_parsed)
-            images_parsed = parse_files(dir_data)
+            images_parsed, images_parsed_new = parse_files(dir_data, only_new=!parse_all)
             bottomleft, topright = get_scan_range(images_parsed)
             if cancel_sent
                 @js_ w console.log()
                 global cancel_sent = false
             else
+                if parse_all
+                    images_parsed_values = collect(values(images_parsed))
+                else
+                    images_parsed_values = [images_parsed[k] for k in images_parsed_new]
+                end
                 # only send the images with status >=0 (deleted ones are not sent, but still saved)
-                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, collect(values(images_parsed)))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, images_parsed_values)), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
                 json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
-                @js_ w load_images($json_compressed, $bottomleft, $topright, true)
+                @js_ w load_images($json_compressed, $bottomleft, $topright, $parse_all)
             end
         catch e
             error(e, w)
@@ -955,7 +971,7 @@ end
 function load_directory(dir_data::String, w::Window)
     # parse images etc
     global cancel_sent = false  # user might send cancel during the next step
-    images_parsed = parse_files(dir_data, w)
+    images_parsed, _ = parse_files(dir_data, w)
     bottomleft, topright = get_scan_range(images_parsed)
     if cancel_sent
         msg = "Cancelled loading $dir_data"

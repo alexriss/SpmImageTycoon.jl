@@ -31,6 +31,7 @@ let key_commands = {
     "/": { command: toggle_help, args: [] },
     F1: { command: toggle_help, args: [] },
     "=": { command: toggle_pixelated, args: [] },
+    F5: { command: re_parse_images, args: [false] },
     ArrowRight: { command: next_item, args: [1] },
     ArrowLeft: { command: next_item, args: [-1] },
     Escape: { command: escape_handler, args: [] },
@@ -57,7 +58,7 @@ let ctrl_key_commands = {
     w: { command: toggle_start_project, args: ["start", true] },
     q: { command: toggle_start_project, args: ["re-project"] },
     F12: { command: toggle_dev_tools, args: [] },
-    F5: { command: re_parse_images, args: [] },
+    F5: { command: re_parse_images, args: [true] },
 }
 
 // for debugging, F5 for reload, F12 for dev tools
