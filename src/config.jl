@@ -4,11 +4,14 @@ const config_dir = ".spmimagetycoon"  # will be in home directory
 
 
 # default settings - the ones that are not declared as constants can be overriden by values from the config file
-channels_feedback_on = ["Z"]
-channels_feedback_off = ["Frequency Shift", "Current"]
+image_channels_feedback_on = ["Z"]
+image_channels_feedback_off = ["Frequency Shift", "Current"]
+spectrum_channels_bias_spectroscopy = ["LIX 1 omega", "Frequency Shift", "Current"]
+spectrum_channels_z_spectroscopy = ["Frequency Shift", "Current"]
 
 const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
-const extension_spm = ".sxm"
+const extension_image = ".sxm"
+const extension_spectrum = ".dat"
 
 const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated image files here)
 const dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
@@ -98,12 +101,20 @@ function load_config()
     config_filepath = joinpath(homedir(), config_dir, config_filename)
     if isfile(config_filepath)
         d = JSON.parsefile(config_filepath)
-        if haskey(d, "channels_feedback_on") && isa(d["channels_feedback_on"], Array)
-            global channels_feedback_on = string.(d["channels_feedback_on"])
+        if haskey(d, "image_channels_feedback_on") && isa(d["image_channels_feedback_on"], Array)
+            global image_channels_feedback_on = string.(d["image_channels_feedback_on"])
         end
 
-        if haskey(d, "channels_feedback_off") && isa(d["channels_feedback_off"], Array)
-            global channels_feedback_off = string.(d["channels_feedback_off"])
+        if haskey(d, "image_channels_feedback_off") && isa(d["image_channels_feedback_off"], Array)
+            global image_channels_feedback_off = string.(d["image_channels_feedback_off"])
+        end
+
+        if haskey(d, "spectrum_channels_bias_spectroscopy") && isa(d["spectrum_channels_bias_spectroscopy"], Array)
+            global spectrum_channels_bias_spectroscopy = string.(d["spectrum_channels_bias_spectroscopy"])
+        end
+
+        if haskey(d, "spectrum_channels_z_spectroscopy") && isa(d["spectrum_channels_z_spectroscopy"], Array)
+            global spectrum_channels_z_spectroscopy = string.(d["spectrum_channels_z_spectroscopy"])
         end
 
         if haskey(d, "auto_save_minutes") && isa(d["auto_save_minutes"], Real)
@@ -148,8 +159,8 @@ function save_config(new_directory::String="")
 
     config_filepath = joinpath(homedir(), config_dir, config_filename)
     d = OrderedDict(
-        "channels_feedback_on" => channels_feedback_on,
-        "channels_feedback_off" => channels_feedback_off,
+        "image_channels_feedback_on" => image_channels_feedback_on,
+        "image_channels_feedback_off" => image_channels_feedback_off,
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
         "export" => odp_channel_names_short,

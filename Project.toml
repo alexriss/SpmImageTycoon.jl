@@ -4,7 +4,7 @@ keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunnelin
 license = "GPLv3"
 desc = "Organize scanning probe microscopy images"
 authors = ["Alex Riss"]
-version = "0.2.4"
+version = "0.2.5"
 
 [deps]
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
@@ -20,6 +20,7 @@ Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 NaturalSort = "c020b1a1-e9b0-503a-9c33-f039bfc54a85"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SpmImages = "a5d333f8-9588-4c9f-ac4d-4583361e1fcb"
+SpmSpectroscopy = "9ab0b2fc-e013-4186-b0b9-58e9a8cad668"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
@@ -35,6 +36,7 @@ JSON = "^0.21"
 Mustache = "^1.0"
 NaturalSort = "^1.0"
 SpmImages = "^0.1.3"
+SpmSpectroscopy = "^0.2.0"
 StatsBase = "^0.33"
 ZipFile = "^0.9"
 julia = "^1.6"
