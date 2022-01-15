@@ -253,7 +253,10 @@ end
 
 
 """Parses an image file and creates the images in the cache directory if necessary."""
-function parse_image!(images_parsed::Dict{String, SpmImageGridItem}, virtual_copies_dict::Dict{String,Array{SpmImageGridItem}}, dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
+function parse_image!(images_parsed::Dict{String, SpmImageGridItem}, virtual_copies_dict::Dict{String,Array{SpmImageGridItem}},
+    images_parsed_new::Vector{String}, only_new::Bool,
+    dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
+    
     im_spm = load_image(datafile, output_info=0)
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
 

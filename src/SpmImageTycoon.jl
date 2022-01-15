@@ -22,7 +22,7 @@ export SpmImageGridItem, tycoon
 @enum SpmImageGridItemType SpmGridImage SpmGridSpectrum
 
 # entries for SPM images and SPM spectra
-mutable struct SpmImageGridItem_v126
+mutable struct SpmImageGridItem_v127
     id::String                                 # id (will be filename and suffixes for virtual copies)
     type::SpmImageGridItemType                 # type of the griditem
     filename_original::String                  # original filename (.sxm for images or .dat for spectra)
@@ -33,6 +33,8 @@ mutable struct SpmImageGridItem_v126
     filename_display_last_modified::DateTime   # png/svg image last modified
     channel_name::String                       # channel name (" bwd" indicates backward direction)
     channel_unit::String                       # unit for the respective channel
+    channel2_name::String                      # xaxis channel name for spectra
+    channel2_unit::String                      # xaxis unit for spectra
     scansize::Vector{Float64}                  # scan size in physical units, not used for spectra
     scansize_unit::String                      # scan size unit
     center::Vector{Float64}                    # center of scan frame or position of spectrum (in scansize_units) 
@@ -48,7 +50,7 @@ mutable struct SpmImageGridItem_v126
     comment::String                            # comment in the file
     background_correction::String              # type of background correction used
     colorscheme::String                        # color scheme
-    channel_range::Vector{Float64}             # min/max of current channel
+    channel_range::Vector{Float64}             # min/max of current channel (for spectra this contains the min/max of channel and channel2)
     channel_range_selected::Vector{Float64}    # selected min/max for current channel
     filters::Vector{String}                    # array of filters used (not implemented yet)
     keywords::Vector{String}                   # keywords
@@ -56,25 +58,28 @@ mutable struct SpmImageGridItem_v126
     status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
     virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v126(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmImageGridItem_v127(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
-        channel_name="", channel_unit="", scansize=[], scansize_unit="", center=[], angle=0, scan_direction=false,
+        channel_name="", channel_unit="", channel2_name="", channel2_unit="",
+        scansize=[], scansize_unit="", center=[], angle=0, scan_direction=false,
         bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0,
         comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, type, filename_original, created, last_modified, recorded,
         filename_display, filename_display_last_modified,
-        channel_name, channel_unit, scansize, scansize_unit, center, angle, scan_direction,
+        channel_name, channel_unit, channel2_name, channel2_unit,
+        scansize, scansize_unit, center, angle, scan_direction,
         bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z,
         comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v126
+SpmImageGridItem = SpmImageGridItem_v127
 
 
 include("config.jl")
 include("helper_functions.jl")
 include("image_functions.jl")
+include("spectrum_functions.jl")
 include("export.jl")
 
 
@@ -161,8 +166,8 @@ function get_scan_range(images_parsed::Dict{String, SpmImageGridItem})::Tuple{Ve
             continue
         end
 
-        if img.type == SpmSpectrum
-            return [img.center, img.center]
+        if img.type == SpmGridSpectrum
+            return (img.center, img.center)
         end
 
         cosangle = cosd(img.angle)
@@ -253,9 +258,11 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         end
 
         if endswith(filename_original, extension_image)
-            parse_image!(images_parsed, virtual_copies_dict, dir_cache, datafile, id, filename_original, created, last_modified)
+            parse_image!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
+                dir_cache, datafile, id, filename_original, created, last_modified)
         elseif endswith(filename_original, extension_spectrum)
-            # TODO: load spectra
+            parse_spectrum!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
+                dir_cache, datafile, id, filename_original, created, last_modified)
         end
 
         num_parsed += 1
@@ -274,7 +281,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        msg = "Parsed $(length(images_parsed)) files in $elapsed_time."
+        msg = "Parsed $(num_parsed) files and created $(length(images_parsed)) items in $elapsed_time."
         log(msg, w)
     end
     return images_parsed, images_parsed_new

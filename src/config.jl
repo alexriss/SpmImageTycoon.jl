@@ -69,6 +69,9 @@ const colorscheme_list_pre = OrderedDict{String,ColorScheme}(
 )
 colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
 
+const color_spectrum_fwd = "#241571"
+const color_spectrum_bwd = "#B80F0A"
+
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
 The resulting schemes are stored in the OrderedDict dict_colorschemes."""
