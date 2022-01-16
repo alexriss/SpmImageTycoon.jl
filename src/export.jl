@@ -133,8 +133,6 @@ end
 
 """returns the formatted sample bias and feedback parameters"""
 function get_image_parameters(griditem::SpmGridItem)::Tuple{String,String}
-    # TODO: maybe the header info for bias and feedback should be read into the SpmGridItem already
-
     if isnan(griditem.bias)
         r_bias = "-"
     elseif griditem.bias == 0
@@ -176,6 +174,10 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
     comment_lines_old = Vector{String}(undef, 0)
     count = 1
     for id in ids
+        if images_parsed[id].type != "SpmGridImage"  # TODO: parse spectra (need different template, probably we also have to regenerate the svg - or png  if svgs dont work in presentation)
+            continue
+        end
+
         dict_image = Dict{String, Any}()
         
         # get comments
