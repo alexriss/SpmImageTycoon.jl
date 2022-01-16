@@ -1,5 +1,5 @@
 """gets the default channel name for the y-axis and x-axis, as well as their units, 
-according to the lists spectrum_channels_bias_spectroscopy and spectrum_channels_z_spectroscopy in config.jl
+according to the lists spectrum_channels and spectrum_channels_x in config.jl
 and the type of the experiment."""
 function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String,String,String}
     channel_name = spectrum.channel_names[2]   # yaxis
@@ -8,11 +8,14 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
     channel2_unit = spectrum.channel_units[1]
 
     if haskey(spectrum.header, "Experiment")
+        experiment = spectrum.header["Experiment"] 
         channels = String[]
-        if spectrum.header["Experiment"] == "bias spectroscopy"
-            channels = spectrum_channels_bias_spectroscopy
-        elseif spectrum.header["Experiment"] == "Z spectroscopy"
-            channels = spectrum_channels_z_spectroscopy
+        channels2 = String[]
+        if haskey(spectrum_channels, experiment)
+            channels = spectrum_channels[experiment]
+        end
+        if haskey(spectrum_channels_x, experiment)
+            channels2 = spectrum_channels_x[experiment]
         end
         if length(channels) > 0
             for c in channels
@@ -22,6 +25,18 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
                     # get corresponding unit
                     c_idx = findfirst(isequal(c), spectrum.channel_names)
                     channel_unit = spectrum.channel_units[c_idx]
+                    break
+                end
+            end
+        end
+        if length(channels2) > 0
+            for c in channels2
+                if c in spectrum.channel_names
+                    channel2_name = c
+
+                    # get corresponding unit
+                    c_idx = findfirst(isequal(c), spectrum.channel_names)
+                    channel2_unit = spectrum.channel_units[c_idx]
                     break
                 end
             end
@@ -76,7 +91,7 @@ function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_d
     """
     svg_footer = "</svg>"
     polyline_header_1 = """<polyline style="stroke:"""  # insert color here
-    polyline_header_2 = """; stroke-linecap:butt; stroke-linejoin:round; stroke-width:12; stroke-opacity:1; fill:none" points=\""""
+    polyline_header_2 = """; stroke-linecap:butt; stroke-linejoin:round; stroke-width:12; stroke-opacity:0.6; fill:none" points=\""""
     polyline_footer = """"/>\n"""
 
     @assert length(y_datas) == length(colors)
@@ -141,7 +156,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmImageGridItem}, virtual_
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
-    spectrum = load_spectrum(datafile)
+    spectrum = load_spectrum(datafile, index_column=true)
     z_feedback_setpoint = 0.0
     z_feedback_setpoint_unit = ""
     if haskey(spectrum.header, "Z-Controller>Setpoint")

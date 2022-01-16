@@ -6,8 +6,14 @@ const config_dir = ".spmimagetycoon"  # will be in home directory
 # default settings - the ones that are not declared as constants can be overriden by values from the config file
 image_channels_feedback_on = ["Z"]
 image_channels_feedback_off = ["Frequency Shift", "Current"]
-spectrum_channels_bias_spectroscopy = ["LIX 1 omega", "Frequency Shift", "Current"]
-spectrum_channels_z_spectroscopy = ["Frequency Shift", "Current"]
+spectrum_channels = OrderedDict{String,Vector{String}}(
+    "bias spectroscopy" => ["LIX 1 omega", "Frequency Shift", "Current"],
+    "Z spectroscopy" => ["Frequency Shift", "Current"],
+    "History Data" => ["Current", "Frequency Shift"]
+)
+spectrum_channels_x = OrderedDict{String,Vector{String}}(
+    "History Data" => ["Index"]
+)
 
 const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
 const extension_image = ".sxm"
@@ -21,7 +27,7 @@ const show_load_progress_every = 20  # show load progress every n files
 
 const dir_template_odp = abspath(joinpath(@__DIR__, dir_res, "template_odp"))  # template for openoffice document
 const odp_ignore_comment_lines = ["User"]   # comment lines starting with these words are ignored
-odp_channel_names_short = OrderedDict(  # channel names to be replaced for shorter versions
+odp_channel_names_short = OrderedDict{String,String}(  # channel names to be replaced for shorter versions
     "Frequency Shift" => "Δf",
     "Frequency Shift bwd" => "Δf<",
     "Current" => "I",
@@ -112,10 +118,24 @@ function load_config()
             global image_channels_feedback_off = string.(d["image_channels_feedback_off"])
         end
 
-        if haskey(d, "spectrum_channels_bias_spectroscopy") && isa(d["spectrum_channels_bias_spectroscopy"], Array)
-            global spectrum_channels_bias_spectroscopy = string.(d["spectrum_channels_bias_spectroscopy"])
+        if haskey(d, "spectrum_channels") && isa(d["spectrum_channels"], Dict)
+            global spectrum_channels = OrderedDict{String,Vector{String}}()
+            for (k,v) in d["spectrum_channels"]
+                if isa(v, Array)
+                    spectrum_channels[string(k)] = string.(v)
+                end
+            end
         end
 
+        if haskey(d, "spectrum_channels") && isa(d["spectrum_channels_x"], Dict)
+            global spectrum_channels_x = OrderedDict{String,Vector{String}}()
+            for (k,v) in d["spectrum_channels_x"]
+                if isa(v, Array)
+                    spectrum_channels_x[string(k)] = string.(v)
+                end
+            end
+        end
+        
         if haskey(d, "spectrum_channels_z_spectroscopy") && isa(d["spectrum_channels_z_spectroscopy"], Array)
             global spectrum_channels_z_spectroscopy = string.(d["spectrum_channels_z_spectroscopy"])
         end
@@ -136,7 +156,7 @@ function load_config()
             if haskey(d["export"], "channel_names_short") && isa(d["export"]["channel_names_short"], Dict)
                 global odp_channel_names_short = OrderedDict{String,String}()
                 for (k,v) in d["export"]["channel_names_short"]
-                    odp_channel_names_short[string[k]] = string[v]
+                    odp_channel_names_short[string(k)] = string(v)
                 end
             end
         end
@@ -161,9 +181,11 @@ function save_config(new_directory::String="")
     end
 
     config_filepath = joinpath(homedir(), config_dir, config_filename)
-    d = OrderedDict(
+    d = OrderedDict{String,Any}(
         "image_channels_feedback_on" => image_channels_feedback_on,
         "image_channels_feedback_off" => image_channels_feedback_off,
+        "spectrum_channels" => spectrum_channels,
+        "spectrum_channels_x" => spectrum_channels_x,
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
         "export" => odp_channel_names_short,
