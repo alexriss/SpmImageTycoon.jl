@@ -132,23 +132,21 @@ end
 
 
 """returns the formatted sample bias and feedback parameters"""
-function get_image_parameters(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem})::Tuple{String,String}
+function get_image_parameters(griditem::SpmGridItem)::Tuple{String,String}
     # TODO: maybe the header info for bias and feedback should be read into the SpmGridItem already
 
-    header = get_griditem_header(images_parsed[id], dir_data)
-    bias = parse(Float64, header["Bias"])
-    if bias == 0
+    if isnan(griditem.bias)
+        r_bias = "-"
+    elseif griditem.bias == 0
         r_bias = "0"
     else
         # r_bias = format(bias, precision=1, autoscale=:metric)
-        r_bias = format_with_prefix(bias)
+        r_bias = format_with_prefix(griditem.bias)
     end
     r_bias *= "V"
 
-    if header["Z-Controller>Controller status"] == "ON"
-        feedback = parse(Float64, header["Z-Controller>Setpoint"])
-        feedback_unit = header["Z-Controller>Setpoint unit"]
-        r_feedback = format_with_prefix(feedback) * feedback_unit
+    if griditem.z_feedback
+        r_feedback = format_with_prefix(griditem.z_feedback_setpoint) * griditem.z_feedback_setpoint_unit
     else
         r_feedback = "z=const"
     end
@@ -207,7 +205,7 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         dict_image["width"] = min(odp_width_image, width/height * odp_width_image)
         dict_image["height"] = dict_image["width"] * height/width
         dict_image["image_x"] = x + (odp_width_image - dict_image["width"]) / 2  # center horizontally
-        dict_image["image_y"] = y + (odp_width_image - dict_image["height"]) /2  # center vertically
+        dict_image["image_y"] = y + (odp_width_image - dict_image["height"]) / 2  # center vertically
         
         # scalebar size
         scalebar_width_nm = get_scalebar_width(width)
@@ -237,7 +235,7 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         else
             dict_image["channel_name"] = images_parsed[id].channel_name
         end
-        dict_image["bias"], dict_image["feedback"] = get_image_parameters(id, dir_data, images_parsed)
+        dict_image["bias"], dict_image["feedback"] = get_image_parameters(images_parsed[id])
 
         filename_display = images_parsed[id].filename_display
         filename_odp = joinpath(dir_media_odp, filename_display)
