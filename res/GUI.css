@@ -13,6 +13,10 @@ body {
   text-overflow: ellipsis;
 }
 
+.rtl {
+  direction: rtl;
+}
+
 .footer {
   position: fixed;
   left: 0;

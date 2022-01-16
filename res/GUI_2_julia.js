@@ -170,11 +170,12 @@ function re_parse_images_cancelled() {
     open_jobs(-1);
 }
 
-function show_info(id, gzip_info_json) {
+function show_info(id, gzip_info_json, extra_info={}) {
     /// shows header data for an image
     if (window.image_info_id != id) return;  // there was some other event already
 
     let info_json = require("zlib").gunzipSync(new Buffer.from(gzip_info_json));
+    let nnp;
 
     if (document.getElementById("sidebar_content").classList.contains("is-hidden")) {
         document.getElementById("sidebar_content_none").classList.add("is-hidden");
@@ -186,48 +187,86 @@ function show_info(id, gzip_info_json) {
     const filename_original = window.items[id].filename_original
     document.getElementById("image_info_filename").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
     document.getElementById("image_info_channel_name").innerText = window.items[id].channel_name;
-    document.getElementById("image_info_scansize").innerText =
-        number_max_decimals(window.items[id].scansize[0], 3) + " x " + number_max_decimals(window.items[id].scansize[1], 3)
-        + " " + window.items[id].scansize_unit;
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
-    document.getElementById("image_info_colorscheme").innerText = window.items[id].colorscheme;
+    if (window.items[id].type == "SpmGridSpectrum") {
+        document.getElementById("image_info_scansize_or_xaxis").innerText = window.items[id].channel2_name;
+        document.getElementById("image_info_angle_or_points").innerText = window.items[id].points + " pts";
+        const num_channels = extra_info["Units"].split(", ").length - 1;  // we subtract one, becuase "Index" is not really a channel
+        document.getElementById("image_info_colorscheme_or_channels").innerText =  num_channels + " chs";
 
-    // angle
-    document.getElementById("image_info_angle").innerText = window.items[id].angle.toFixed(0);
+        if (window.items[id].channel_range.length == 4) {  // first two are y-axis, second two are x-axis
+            let xaxis_range_selected = [window.items[id].channel_range[2], window.items[id].channel_range[3]];
+            if (window.items[id].channel_range_selected.length == 4) {  // first two are y-axis, second two are x-axis
+                xaxis_range_selected[0] *= window.items[id].channel_range_selected[2];
+                xaxis_range_selected[1] *= window.items[id].channel_range_selected[3];
+            }
+            const nnps = format_numbers_prefix(xaxis_range_selected, 1);
+            document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnps[0].number_formatted +
+                     " to " + nnps[1].number_formatted + " " + nnps[1].prefix + window.items[id].channel2_unit;
+        } else {
+            document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = "-" + window.items[id].channel2_unit;
+        }
 
-    if (window.items[id].scan_direction) {
-        document.getElementById("image_info_scan_direction_up").classList.remove("is-hidden");
-        document.getElementById("image_info_scan_direction_down").classList.add("is-hidden");
-    } else {
+        if (window.items[id].channel_range_selected.length == 4) {
+            // check deviation from (0,1) for xaxis
+            const diff = Math.abs(window.items[id].channel_range_selected[2] - 0) + Math.abs(1 - window.items[id].channel_range_selected[3]);
+            if (diff > 0.0005) {
+                document.getElementById("image_info_xaxis_clamped").classList.remove("is-invisible");
+            } else {
+                document.getElementById("image_info_xaxis_clamped").classList.add("is-invisible");    
+            }
+        } else {
+            document.getElementById("image_info_xaxis_clamped").classList.add("is-invisible");
+        }
+
+        // only needed for images
+        document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");
         document.getElementById("image_info_scan_direction_up").classList.add("is-hidden");
-        document.getElementById("image_info_scan_direction_down").classList.remove("is-hidden");
+        document.getElementById("image_info_scan_direction_down").classList.add("is-hidden");
+    } else { // images
+        document.getElementById("image_info_scansize_or_xaxis").innerText =
+            number_max_decimals(window.items[id].scansize[0], 3) + " x " + number_max_decimals(window.items[id].scansize[1], 3)
+            + " " + window.items[id].scansize_unit;
+        document.getElementById("image_info_colorscheme_or_channels").innerText = window.items[id].colorscheme;
+        document.getElementById("image_info_angle_or_points").innerText = window.items[id].angle.toFixed(0) + "°";
+
+        if (window.items[id].scan_direction) {
+            document.getElementById("image_info_scan_direction_up").classList.remove("is-hidden");
+            document.getElementById("image_info_scan_direction_down").classList.add("is-hidden");
+        } else {
+            document.getElementById("image_info_scan_direction_up").classList.add("is-hidden");
+            document.getElementById("image_info_scan_direction_down").classList.remove("is-hidden");
+        }
+        
+        if (window.items[id].channel_range_selected.length == 2) {
+            const diff = Math.abs(window.items[id].channel_range_selected[0] - 0) + Math.abs(1 - window.items[id].channel_range_selected[1]);
+            if (diff > 0.0005) {
+                document.getElementById("image_info_colorscheme_clamped").classList.remove("is-invisible");
+            } else {
+                document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");    
+            }
+        } else {
+            document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");
+        }
+
+        if (window.items[id].z_feedback) {
+            nnp = format_number_prefix(window.items[id].z_feedback_setpoint,1);
+            document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnp.number_formatted +
+            " " + nnp.prefix + window.items[id].z_feedback_setpoint_unit
+        } else {
+            nnp = format_number_prefix(window.items[id].z,3);  // we want high precision here
+            document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnp.number_formatted +
+            " " + nnp.prefix + "m";
+        }
+
+        // only used for spectra
+        document.getElementById("image_info_xaxis_clamped").classList.add("is-invisible");
     }
 
-    let nnp = format_number_prefix(window.items[id].bias,1);
+    nnp = format_number_prefix(window.items[id].bias,1);
     document.getElementById("image_info_bias").innerText = nnp.number_formatted;
     document.getElementById("image_info_bias_unit_prefix").innerText = nnp.prefix;
-    if (window.items[id].z_feedback) {
-        nnp = format_number_prefix(window.items[id].z_feedback_setpoint,1);
-        document.getElementById("image_info_z_feedback_setpoint").innerText = nnp.number_formatted;
-        document.getElementById("image_info_z_feedback_setpoint_unit_prefix").innerText = nnp.prefix;
-        document.getElementById("image_info_z_feedback_setpoint_unit").innerText = window.items[id].z_feedback_setpoint_unit;
-    } else {
-        nnp = format_number_prefix(window.items[id].z,3);  // we want high precision here
-        document.getElementById("image_info_z_feedback_setpoint").innerText = nnp.number_formatted;
-        document.getElementById("image_info_z_feedback_setpoint_unit_prefix").innerText = nnp.prefix;
-        document.getElementById("image_info_z_feedback_setpoint_unit").innerText = "m";
-    }
 
-    if (window.items[id].channel_range_selected.length == 2) {
-        const diff = Math.abs(window.items[id].channel_range_selected[0] - 0) + Math.abs(1 - window.items[id].channel_range_selected[1]);
-        if (diff > 0.0005) {
-            document.getElementById("image_info_colorscheme_clamped").classList.remove("is-invisible");
-        } else {
-            document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");    
-        }
-    } else {
-        document.getElementById("image_info_colorscheme_clamped").classList.add("is-invisible");
-    }
 
     if (window.items[id].virtual_copy > 0) {
         document.getElementById("image_info_virtual_copy").classList.remove("is-hidden");
@@ -250,7 +289,6 @@ function show_info(id, gzip_info_json) {
         document.getElementById("sidebar_keywords_container").appendChild(el_keyword);
     });
 
-    
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
             searchable: true,

@@ -49,7 +49,7 @@ end
 
 """Get, background correct and filter image data for a specific griditem.
 Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors."""
-function get_spectrum_data(griditem::SpmImageGridItem, spectrum::SpmSpectrum)::Tuple{Vector{Float64},Vector{Vector{Float64}},Vector{String}}
+function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{Vector{Float64},Vector{Vector{Float64}},Vector{String}}
     x_data = spectrum.data[!, griditem.channel2_name]
 
     # TODO: implement average sweeps
@@ -84,8 +84,9 @@ end
     function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Nothing
 
 Saves a graph of multiple curves to a SVG file (`filename`). Each curve is shares the same `x_data` and is represented by an element in the vectors `y_datas` and `colors`.
+Returns the ranges of y_datas and x_data.
 """
-function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Nothing
+function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Vector{Float64}
     svg_header = """<?xml version="1.0" encoding="utf-8"?>
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000">
     """
@@ -95,6 +96,7 @@ function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_d
     polyline_footer = """"/>\n"""
 
     @assert length(y_datas) == length(colors)
+    yxranges = Float64[]
 
     open(filename, "w") do f
         write(f, svg_header)
@@ -122,15 +124,16 @@ function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_d
             write(f, polyline_header_1 * colors[i] * polyline_header_2 * points * polyline_footer)
         end
         write(f, svg_footer)
+        yxranges = [y_minmax[1], y_minmax[2], x_minmax[1], x_minmax[2]]
     end
-    return nothing
+    return yxranges
 end
 
 
 """Creates and saves a svg image for channel_name vs channel2_name.
-The "filename_display" field of the SpmImageGridItem is updated (to the svg filename without the directory prefix)
+The "filename_display" field of the SpmGridItem is updated (to the svg filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_spectrum!(griditem::SpmImageGridItem, spectrum::SpmSpectrum; base_dir::String="", use_existing::Bool=false)
+function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir::String="", use_existing::Bool=false)
     if use_existing
         f = joinpath(base_dir, griditem.filename_display)
         if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
@@ -140,10 +143,13 @@ function create_spectrum!(griditem::SpmImageGridItem, spectrum::SpmSpectrum; bas
 
     # load spectrum
     x_data, y_datas, colors = get_spectrum_data(griditem, spectrum)
+    griditem.points = length(x_data)
 
     filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).svg"
     f = joinpath(base_dir, filename_display)
-    save_spectrum_svg(f, x_data, y_datas, colors)
+    yxranges = save_spectrum_svg(f, x_data, y_datas, colors)
+
+    griditem.channel_range = yxranges
 
     griditem.filename_display = filename_display
     griditem.filename_display_last_modified = unix2datetime(mtime(f))
@@ -152,7 +158,7 @@ end
 
 
 """Parses a spectrum file and creates the preview in the cache directory if necessary."""
-function parse_spectrum!(images_parsed::Dict{String, SpmImageGridItem}, virtual_copies_dict::Dict{String,Array{SpmImageGridItem}},
+function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
@@ -185,7 +191,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmImageGridItem}, virtual_
     else
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name, channel_unit, channel2_name, channel2_unit = default_channel_names_units(spectrum)
-        images_parsed[id] = SpmImageGridItem(
+        images_parsed[id] = SpmGridItem(
             id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=spectrum.start_time,
             channel_name=channel_name, channel_unit=channel_unit, channel2_name=channel2_name, channel2_unit=channel2_unit,
             center=spectrum.position,

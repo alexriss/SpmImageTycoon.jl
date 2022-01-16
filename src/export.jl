@@ -132,10 +132,10 @@ end
 
 
 """returns the formatted sample bias and feedback parameters"""
-function get_image_parameters(id::String, dir_data::String, images_parsed::Dict{String,SpmImageGridItem})::Tuple{String,String}
-    # TODO: maybe the header info for bias and feedback should be read into the SpmImageGridItem already
+function get_image_parameters(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem})::Tuple{String,String}
+    # TODO: maybe the header info for bias and feedback should be read into the SpmGridItem already
 
-    header = get_image_header(id, dir_data, images_parsed)
+    header = get_griditem_header(images_parsed[id], dir_data)
     bias = parse(Float64, header["Bias"])
     if bias == 0
         r_bias = "0"
@@ -158,7 +158,7 @@ end
 
 
 """Saves an OpenOffice Document presentation"""
-function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{String, SpmImageGridItem}, filename_export::String)
+function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{String, SpmGridItem}, filename_export::String)
     dir_cache = get_dir_cache(dir_data)
     
     dict_template = Dict{String,Any}()

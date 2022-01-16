@@ -16,15 +16,15 @@ using SpmImages
 using SpmSpectroscopy
 using StatsBase
 
-export SpmImageGridItem, tycoon
+export SpmGridItem, tycoon
 
 
-@enum SpmImageGridItemType SpmGridImage SpmGridSpectrum
+@enum SpmGridItemType SpmGridImage SpmGridSpectrum
 
 # entries for SPM images and SPM spectra
-mutable struct SpmImageGridItem_v127
+mutable struct SpmGridItem_v128
     id::String                                 # id (will be filename and suffixes for virtual copies)
-    type::SpmImageGridItemType                 # type of the griditem
+    type::SpmGridItemType                      # type of the griditem
     filename_original::String                  # original filename (.sxm for images or .dat for spectra)
     created::DateTime                          # file creation date
     last_modified::DateTime                    # file last modified date
@@ -46,6 +46,7 @@ mutable struct SpmImageGridItem_v127
     z_feedback_setpoint::Float64               # feedback setpoint
     z_feedback_setpoint_unit::String           # feedback setpoint unit
     z::Float64                                 # Z position in m
+    points::Int64                              # number of points in spectrum
 
     comment::String                            # comment in the file
     background_correction::String              # type of background correction used
@@ -54,26 +55,27 @@ mutable struct SpmImageGridItem_v127
     channel_range_selected::Vector{Float64}    # selected min/max for current channel
     filters::Vector{String}                    # array of filters used (not implemented yet)
     keywords::Vector{String}                   # keywords
-    rating::Int                                # rating (0 to 5 stars)
-    status::Int                                # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
-    virtual_copy::Int                          # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
+    rating::Int64                              # rating (0 to 5 stars)
+    status::Int64                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
+    virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmImageGridItem_v127(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmGridItem_v128(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
         channel_name="", channel_unit="", channel2_name="", channel2_unit="",
         scansize=[], scansize_unit="", center=[], angle=0, scan_direction=false,
-        bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0,
+        bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0.0, points=0,
         comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, type, filename_original, created, last_modified, recorded,
         filename_display, filename_display_last_modified,
         channel_name, channel_unit, channel2_name, channel2_unit,
         scansize, scansize_unit, center, angle, scan_direction,
-        bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z,
+        bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z, points,
         comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmImageGridItem = SpmImageGridItem_v127
+SpmGridItem = SpmGridItem_v128
+SpmImageGridItem = SpmGridItem_v128  # legacy, for old databases
 
 
 include("config.jl")
@@ -89,7 +91,7 @@ cancel_sent = false  # user can cancel load-directory operation
 
 
 """sets keywords"""
-function set_keywords!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, mode::String, keywords::Vector{String})
+function set_keywords!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, mode::String, keywords::Vector{String})
     for id in ids
         if mode == "add"
             for keyword in keywords
@@ -109,8 +111,8 @@ end
 
 
 """returns a subset of the dictionary parsed_images. this can then be passed to the js"""
-function get_subset(images_parsed::Dict{String, SpmImageGridItem}, ids::Vector{String})::OrderedDict{String, SpmImageGridItem}
-    images_parsed_sub = OrderedDict{String, SpmImageGridItem}()
+function get_subset(images_parsed::Dict{String, SpmGridItem}, ids::Vector{String})::OrderedDict{String, SpmGridItem}
+    images_parsed_sub = OrderedDict{String, SpmGridItem}()
     map(ids) do id
         images_parsed_sub[id] = images_parsed[id]
     end
@@ -119,13 +121,13 @@ end
 
 
 """gets a dictionary "original_id" => (array of virtual copies) with all virtual copies in images_parsed"""
-function get_virtual_copies_dict(images_parsed::Dict{String, SpmImageGridItem})::Dict{String,Array{SpmImageGridItem}}
+function get_virtual_copies_dict(images_parsed::Dict{String, SpmGridItem})::Dict{String,Array{SpmGridItem}}
     virtual_copies = filter(x -> last(x).virtual_copy > 0, images_parsed)
-    virtual_copies_dict = Dict{String, Array{SpmImageGridItem}}()  # create a dict for quick lookup
+    virtual_copies_dict = Dict{String, Array{SpmGridItem}}()  # create a dict for quick lookup
     for virtual_copy in values(virtual_copies)
         id_original = virtual_copy.filename_original
         if !haskey(virtual_copies_dict, id_original)
-            virtual_copies_dict[id_original] = Array{SpmImageGridItem}(undef, 0);
+            virtual_copies_dict[id_original] = Array{SpmGridItem}(undef, 0);
         end
         push!(virtual_copies_dict[id_original], virtual_copy)
     end
@@ -134,15 +136,15 @@ function get_virtual_copies_dict(images_parsed::Dict{String, SpmImageGridItem}):
 end
 
 
-"""gets the virtual copies that have been created for id. Returns an array of SpmImageGridItem"""
-function get_virtual_copies(images_parsed::Dict{String, SpmImageGridItem}, id::String)::Array{SpmImageGridItem}
+"""gets the virtual copies that have been created for id. Returns an array of SpmGridItem"""
+function get_virtual_copies(images_parsed::Dict{String, SpmGridItem}, id::String)::Array{SpmGridItem}
     virtual_copies = filter(x -> last(x).filename_original==id && last(x).virtual_copy > 0, images_parsed)
     return collect(values(virtual_copies))
 end
 
 
 """Generates a new unique id that is not yet present in images_parsed by appending numbers to the given id"""
-function get_new_id(images_parsed::Dict{String, SpmImageGridItem},id_original::String)::String
+function get_new_id(images_parsed::Dict{String, SpmGridItem},id_original::String)::String
     id = id_original
     i = 1
     while true
@@ -157,7 +159,7 @@ end
 
 
 """Returns the scan range of all images. Returns bottom left and top right corner coordinates."""
-function get_scan_range(images_parsed::Dict{String, SpmImageGridItem})::Tuple{Vector{Float64},Vector{Float64}}
+function get_scan_range(images_parsed::Dict{String, SpmGridItem})::Tuple{Vector{Float64},Vector{Float64}}
     c = first(values(images_parsed)).center
     min_max_corners_x = [c[1], c[1]]
     min_max_corners_y = [c[2], c[2]]
@@ -196,9 +198,29 @@ function get_scan_range(images_parsed::Dict{String, SpmImageGridItem})::Tuple{Ve
 end
 
 
-"""Sets the virtual_copy-field values in the SpmImageGridItems to consecutive numbers (starting with 1). Creates a position to insert a new virtual copy (after the items with id 'id').
+"""Loads the header data for an griditem and returns a tuple: the dictionary with all the header data, as well as some extra info"""
+function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{OrderedDict{String,String}, OrderedDict{String,String}}
+    filename_original_full = joinpath(dir_data, griditem.filename_original)
+    extra_info = OrderedDict{String,String}()
+    if griditem.type == SpmGridImage
+        im_spm = load_image(filename_original_full, header_only=true, output_info=0)
+        return im_spm.header, extra_info
+    elseif griditem.type == SpmGridSpectrum
+        spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)
+        extra_info["Channels"] = join(spectrum.channel_names, ", ")
+        extra_info["Units"] = join(spectrum.channel_units, ", ")
+        # we add this information to the header
+        spectrum.header["Channels"] = extra_info["Channels"]
+        spectrum.header["Units"] = extra_info["Units"]
+
+        return spectrum.header, extra_info
+    end
+end
+
+
+"""Sets the virtual_copy-field values in the SpmGridItems to consecutive numbers (starting with 1). Creates a position to insert a new virtual copy (after the items with id 'id').
 Returns the new position."""
-function update_virtual_copies_order!(virtual_copies::Array{SpmImageGridItem}, id::String)::Int
+function update_virtual_copies_order!(virtual_copies::Array{SpmGridItem}, id::String)::Int
     sort!(virtual_copies, by=x -> x.virtual_copy)
     i_new = -1
     i = 1
@@ -223,14 +245,14 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmImageGridItem},Array{String}}
+function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Array{String}}
     dir_cache = get_dir_cache(dir_data)
 
     # load saved data - if available
     images_parsed = load_all(dir_data, w)
 
     images_parsed_new = String[]
-    virtual_copies_dict = Dict{String, Array{SpmImageGridItem}}()
+    virtual_copies_dict = Dict{String, Array{SpmGridItem}}()
     if !only_new
         # get all virtual copies that are saved
         virtual_copies_dict = get_virtual_copies_dict(images_parsed)
@@ -289,9 +311,8 @@ end
 
 
 """load data from saved file"""
-function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmImageGridItem}
-    dir_cache = get_dir_cache(dir_data)
-    images_parsed = Dict{String, SpmImageGridItem}()
+function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmGridItem}
+    images_parsed = Dict{String, SpmGridItem}()
     
     f = joinpath(get_dir_cache(dir_data), filename_db)
     if isfile(f)
@@ -303,20 +324,20 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmI
 
         first_value = first(values(images_parsed_save))
         t_save = typeof(first_value)
-        if t_save <: Pair # JLD2 apparently reconstructs an array of pairs{id, SpmImageGridItem}
+        if t_save <: Pair # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
             t_save = typeof(first_value[2])
         end
 
-        if t_save != SpmImageGridItem  # there was a change in the struct specification, lets try to copy field by field
+        if t_save != SpmGridItem  # there was a change in the struct specification, lets try to copy field by field
             log("Old database detected. Converting... ", w, new_line=false)
 
             fieldnames_save = fieldnames(t_save)
-            fieldnames_common = filter(x -> x in fieldnames_save, fieldnames(SpmImageGridItem))
+            fieldnames_common = filter(x -> x in fieldnames_save, fieldnames(SpmGridItem))
 
-            for pair in images_parsed_save  # JLD2 apparently reconstructs an array of pairs{id, SpmImageGridItem}
+            for pair in images_parsed_save  # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
                 id = pair[1]
                 griditem = pair[2]
-                images_parsed[id] = SpmImageGridItem()
+                images_parsed[id] = SpmGridItem()
                 for f in fieldnames_common
                     setfield!(images_parsed[id], f, getfield(griditem, f))
                 end
@@ -333,7 +354,7 @@ end
 
 
 """saves the images_parsed dictionary to file"""
-function save_all(dir_data::String, images_parsed::Dict{String, SpmImageGridItem})
+function save_all(dir_data::String, images_parsed::Dict{String, SpmGridItem})
     f = joinpath(get_dir_cache(dir_data), filename_db)
     JLD2.@save f images_parsed_save=images_parsed
     return nothing
@@ -341,7 +362,7 @@ end
 
 
 """sets the julia handlers that are triggered by javascript events"""
-function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{String,SpmImageGridItem})
+function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{String,SpmGridItem})
     # change channel
     l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
@@ -353,15 +374,15 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             histogram = args[3]
             # get header data
             try
-                image_header = get_image_header(id, dir_data, images_parsed)
+                image_header, extra_info = get_griditem_header(images_parsed[id], dir_data)
                 k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
                 v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
                 v = utf8ify.(v)
                 image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
                 json_compressed = transcode(GzipCompressor, image_header_json)
-                @js_ w show_info($id, $json_compressed);
+                @js_ w show_info($id, $json_compressed, $extra_info);
                 if histogram
-                    width, counts = get_histogram(id, dir_data, images_parsed)
+                    width, counts = get_histogram(images_parsed[id], dir_data)
                     @js_ w show_histogram($id, $width, $counts)
                 end
             catch e
@@ -520,7 +541,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     @js_ w load_images($json_compressed, $bottomleft, $topright, $parse_all, true)
                 else
                     ids_after = String[]
-                    images_parsed_sub = OrderedDict{String, SpmImageGridItem}()
+                    images_parsed_sub = OrderedDict{String, SpmGridItem}()
                     prev_id = ""
                     global images_parsed_values_test = copy(images_parsed_values)
                     for im in images_parsed_values

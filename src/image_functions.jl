@@ -17,9 +17,9 @@ end
 
 """calculates the histogram for the image specified by id.
 Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
-function get_histogram(id::String, dir_data::String, images_parsed::Dict{String, SpmImageGridItem})::Tuple{Float32,Vector{Float32}}
-    im_spm = load_image(joinpath(dir_data, images_parsed[id].filename_original), output_info=0)
-    d = vec(get_image_data(images_parsed[id], im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
+function get_histogram(griditem::SpmGridItem, dir_data::String)::Tuple{Float32,Vector{Float32}}
+    im_spm = load_image(joinpath(dir_data, griditem.filename_original), output_info=0)
+    d = vec(get_image_data(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
     normalize01!(d)  # we normalize here, otherwise the hist generation does not seem to be robust
@@ -120,7 +120,7 @@ end
 
 
 """Get, resize, background correct and filter image data for a specific griditem. Returns a 2d array, the channel unit, minimum and maximum values."""
-function get_image_data(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
     channel = get_channel(im_spm, griditem.channel_name, origin="upper");
     d = channel.data
     unit = channel.unit
@@ -148,9 +148,9 @@ end
 
 
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
-The "filename_display" field of the SpmImageGridItem is updated (to the png filename without the directory prefix)
+The "filename_display" field of the SpmGridItem is updated (to the png filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="", use_existing::Bool=false)
+function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="", use_existing::Bool=false)
     if use_existing
         f = joinpath(base_dir, griditem.filename_display)
         if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
@@ -179,16 +179,8 @@ function create_image!(griditem::SpmImageGridItem, im_spm::SpmImage; resize_to::
 end
 
 
-"""Loads the header data for an image and returns a dictionary with all the data"""
-function get_image_header(id::String, dir_data::String, images_parsed::Dict{String,SpmImageGridItem})::OrderedDict{String,String}
-    filename_original = images_parsed[id].filename_original
-    im_spm = load_image(joinpath(dir_data, filename_original), header_only=true, output_info=0)
-    return im_spm.header
-end
-
-
 """sets selected range and recreates images"""
-function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, range_selected::Array{Float64}, full_resolution::Bool)
+function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, range_selected::Array{Float64}, full_resolution::Bool)
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = images_parsed[id].filename_original
@@ -201,7 +193,7 @@ end
 
 
 """calcuates a line profile"""
-function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
+function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
     filename_original = images_parsed[id].filename_original
     im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
     bg = background_correction_list[images_parsed[id].background_correction]
@@ -216,7 +208,7 @@ for the images specified by ids. The type of change is specified by the argument
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
 Modifies the images_parsed array."""
-function switch_channel_direction_background!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmImageGridItem}, what::String, jump::Int, full_resolution::Bool)
+function switch_channel_direction_background!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, what::String, jump::Int, full_resolution::Bool)
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
         filename_original = images_parsed[id].filename_original
@@ -253,10 +245,10 @@ end
 
 
 """Parses an image file and creates the images in the cache directory if necessary."""
-function parse_image!(images_parsed::Dict{String, SpmImageGridItem}, virtual_copies_dict::Dict{String,Array{SpmImageGridItem}},
+function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
-    
+
     im_spm = load_image(datafile, output_info=0)
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
 
@@ -283,7 +275,7 @@ function parse_image!(images_parsed::Dict{String, SpmImageGridItem}, virtual_cop
     else
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name = default_channel_name(im_spm)
-        images_parsed[id] = SpmImageGridItem(
+        images_parsed[id] = SpmGridItem(
             id=id, type=SpmGridImage, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
             channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
             center=im_spm.center, angle=im_spm.angle, scan_direction=scan_direction,
