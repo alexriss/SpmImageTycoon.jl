@@ -427,6 +427,18 @@
             <td class="px-0"><button id="button_delete_filter_rating" class="delete"></button></td>
           </tr>
           <tr>
+            <th>Type</th>
+            <td class="pr-1">
+              <select class="pl-1 pr-1 select is-small" id="filter_type">
+                <option value="any">Any</option>
+                <option value="SpmGridImage">Images</option>
+                <option value="SpmGridSpectrum">Spectra</option>
+              </select>
+            </td>
+            <td class="px-0"><img class="warning is-invisible" id="warning_filter_type" src="alert-circle.svg" /></td>
+            <td class="px-0"><button id="button_delete_filter_type" class="delete"></button></td>
+          </tr>
+          <tr>
             <th>Filename</th>
             <td class="pr-1"><input class="input is-small" type="text" id="filter_filename_original"></td>
             <td class="px-0"><img class="warning is-invisible" id="warning_filter_filename_original" src="alert-circle.svg" /></td>
@@ -451,6 +463,12 @@
             <td class="px-0"><button id="button_delete_filter_channel_name" class="delete"></button></td>
           </tr>
           <tr>
+            <th>Selected Only</th>
+            <td><input class="checkbox" type="checkbox" id="filter_selected"></td>
+            <td></td>
+            <td class="px-0"><button id="button_delete_filter_selected" class="delete"></button></td>
+          </tr>
+          <tr>
             <th>Location</th>
             <td>
               <span id="filter_overview_info">select below</span>
@@ -460,12 +478,6 @@
             </td>
             <td></td>
             <td class="px-0"><button id="button_delete_filter_overview" class="delete"></button></td>
-          </tr>
-          <tr>
-            <th>Selected Only</th>
-            <td><input class="checkbox" type="checkbox" id="filter_selected"></td>
-            <td></td>
-            <td class="px-0"><button id="button_delete_filter_selected" class="delete"></button></td>
           </tr>
           <tr>
             <td colspan="4" class="has-text-right pt-3"><button id="button_delete_all_filters" class="button is-small" type="reset">Clear all</button></td>

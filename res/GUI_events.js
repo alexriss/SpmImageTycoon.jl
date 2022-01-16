@@ -242,6 +242,13 @@ function event_handlers() {
                     filter_items();
                 }
             })
+        } else if (el.id == "button_delete_filter_type") {
+            el.addEventListener('click', function(e) {
+                document.getElementById('filter_type').value = "any";
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    filter_items();
+                }
+            });
         } else if (el.id == "button_delete_filter_selected") {
             el.addEventListener('click', function(e) {
                 document.getElementById('filter_selected').checked = false;

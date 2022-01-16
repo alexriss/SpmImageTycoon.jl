@@ -228,7 +228,7 @@ function show_info(id, gzip_info_json, extra_info={}) {
             number_max_decimals(window.items[id].scansize[0], 3) + " x " + number_max_decimals(window.items[id].scansize[1], 3)
             + " " + window.items[id].scansize_unit;
         document.getElementById("image_info_colorscheme_or_channels").innerText = window.items[id].colorscheme;
-        document.getElementById("image_info_angle_or_points").innerText = window.items[id].angle.toFixed(0) + "°";
+        document.getElementById("image_info_angle_or_points").innerHTML = window.items[id].angle.toFixed(0) + "&deg;";
 
         if (window.items[id].scan_direction) {
             document.getElementById("image_info_scan_direction_up").classList.remove("is-hidden");

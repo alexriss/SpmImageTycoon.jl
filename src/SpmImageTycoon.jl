@@ -37,7 +37,7 @@ mutable struct SpmGridItem_v128
     channel2_unit::String                      # xaxis unit for spectra
     scansize::Vector{Float64}                  # scan size in physical units, not used for spectra
     scansize_unit::String                      # scan size unit
-    center::Vector{Float64}                    # center of scan frame or position of spectrum (in scansize_units) 
+    center::Vector{Float64}                    # center of scan frame or position of spectrum (in scansize_units - typically in nm) 
     angle::Float64                             # scan angle (in degrees), not used for spectra
     scan_direction::Bool                       # scan direction (true = up, false = down), not used for spectra
 
@@ -62,7 +62,7 @@ mutable struct SpmGridItem_v128
     SpmGridItem_v128(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
         channel_name="", channel_unit="", channel2_name="", channel2_unit="",
-        scansize=[], scansize_unit="", center=[], angle=0, scan_direction=false,
+        scansize=[], scansize_unit="nm", center=[], angle=0, scan_direction=false,
         bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0.0, points=0,
         comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
@@ -169,27 +169,34 @@ function get_scan_range(images_parsed::Dict{String, SpmGridItem})::Tuple{Vector{
         end
 
         if img.type == SpmGridSpectrum
-            return (img.center, img.center)
+            min_max_corners_x = extrema([
+                img.center[1],
+                min_max_corners_x...
+            ])
+            min_max_corners_y = extrema([
+                img.center[2],
+                min_max_corners_y...
+            ])
+        else
+            cosangle = cosd(img.angle)
+            sinangle = sind(img.angle)
+            w_half, h_half = img.scansize / 2
+            min_max_corners_x = extrema([
+                img.center[1] + w_half * cosangle - h_half * sinangle,
+                img.center[1] - w_half * cosangle - h_half * sinangle,
+                img.center[1] - w_half * cosangle + h_half * sinangle,
+                img.center[1] + w_half * cosangle + h_half * sinangle,
+                min_max_corners_x...
+            ])
+
+            min_max_corners_y = extrema([
+                img.center[2] + w_half * sinangle + h_half * cosangle,
+                img.center[2] - w_half * sinangle + h_half * cosangle,
+                img.center[2] - w_half * sinangle - h_half * cosangle,
+                img.center[2] + w_half * sinangle - h_half * cosangle,
+                min_max_corners_y...
+            ])
         end
-
-        cosangle = cosd(img.angle)
-        sinangle = sind(img.angle)
-        w_half, h_half = img.scansize / 2
-        min_max_corners_x = extrema([
-            img.center[1] + w_half * cosangle - h_half * sinangle,
-            img.center[1] - w_half * cosangle - h_half * sinangle,
-            img.center[1] - w_half * cosangle + h_half * sinangle,
-            img.center[1] + w_half * cosangle + h_half * sinangle,
-            min_max_corners_x...
-        ])
-
-        min_max_corners_y = extrema([
-            img.center[2] + w_half * sinangle + h_half * cosangle,
-            img.center[2] - w_half * sinangle + h_half * cosangle,
-            img.center[2] - w_half * sinangle - h_half * cosangle,
-            img.center[2] + w_half * sinangle - h_half * cosangle,
-            min_max_corners_y...
-        ])
     end
     bottomleft = [min_max_corners_x[1], min_max_corners_y[1]]
     topright = [min_max_corners_x[2], min_max_corners_y[2]]

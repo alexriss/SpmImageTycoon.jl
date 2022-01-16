@@ -172,6 +172,19 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         z_feedback_setpoint_unit = spectrum.header["Z-Controller>Setpoint unit"]
     end
 
+    # sometimes x and y coordinates can be NaN (this happens for history data)
+    # then we get the first point if available
+    if isnan(spectrum.position[1])
+        if "X" in spectrum.channel_names
+            spectrum.position[1] = spectrum.data[1, "X"]
+        end
+    end
+    if isnan(spectrum.position[2])
+        if "Y" in spectrum.channel_names
+            spectrum.position[2] = spectrum.data[1, "Y"]
+        end
+    end
+
     if haskey(images_parsed, id)
         griditem = images_parsed[id]
         # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
@@ -180,7 +193,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         griditem.created = created
         griditem.last_modified = last_modified
         griditem.recorded = spectrum.start_time
-        griditem.center = spectrum.position
+        griditem.center = spectrum.position .* 1e9  # convert to nm
         griditem.bias = spectrum.bias
         griditem.z_feedback = spectrum.z_feedback
         griditem.z_feedback_setpoint = z_feedback_setpoint
@@ -194,7 +207,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         images_parsed[id] = SpmGridItem(
             id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=spectrum.start_time,
             channel_name=channel_name, channel_unit=channel_unit, channel2_name=channel2_name, channel2_unit=channel2_unit,
-            center=spectrum.position,
+            center=spectrum.position .* 1e9,
             bias=spectrum.bias, z_feedback=spectrum.z_feedback,
             z_feedback_setpoint=z_feedback_setpoint, z_feedback_setpoint_unit=z_feedback_setpoint_unit, z=spectrum.position[3],
             comment=utf8ify(spectrum.header["User"])
@@ -216,7 +229,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
             griditem.created = created
             griditem.last_modified = last_modified
             griditem.recorded = spectrum.start_time
-            griditem.center = spectrum.position
+            griditem.center = spectrum.position .* 1e9  # convert to nm
             griditem.bias = spectrum.bias
             griditem.z_feedback = spectrum.z_feedback
             griditem.z_feedback_setpoint = z_feedback_setpoint

@@ -582,6 +582,46 @@ body {
   z-index: 10;
 }
 
+.filter_overview_dot {
+  height: 5px;
+  width: 5px;
+  margin-top: -2.5px;
+  margin-left: -2.5px;
+  border: 0px solid #909090;
+  background-color: #909090;
+  border-radius: 50%;
+}
+
+.filter_overview_dot.filtered_out {
+  border: 0px solid #c0c0c0;
+  background-color: #c0c0c0;
+}
+
+
+.filter_overview_dot.selected {
+  border: 0px solid #234b88;
+  background-color: #234b88;
+  box-shadow: 0px 0px 1px 1px #1c63cc, 0px 0px 2px 1px #000000;
+}
+
+.filter_overview_dot.with_background {
+  border: 0px solid #234b88;
+  background-color: #234b88;
+  box-shadow: 0px 0px 2px 2px #234b88;
+}
+
+.filter_overview_dot.selected.filtered_out {
+  border: 0px solid #c0c0c0;
+  background-color: #c0c0c0;
+}
+
+.filter_overview_dot.highlight {
+  border-color: #193764;
+  background-color: #193764;
+  box-shadow: 0px 0px 2px 2px #1c63cc, 0px 0px 4px 3px #000000;
+  z-index: 10;
+}
+
 .filter_overview_selection_area {
   background: rgba(46, 115, 252, 0.11);
   border: 1px solid rgba(98, 155, 255, 0.85);

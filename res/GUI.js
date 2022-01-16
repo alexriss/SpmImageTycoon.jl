@@ -608,7 +608,7 @@ function get_active_element_ids(only_current=false, all_visible_if_none_selected
 }
 
 function check_hover_enabled() {
-    // checks whether the magedrid should get the class hover_enabled
+    // checks whether the imagedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
     // also writes the number of selected images into the footer.
     // also adds images to the filter_overview window
@@ -653,7 +653,9 @@ function check_hover_enabled() {
         }
         for (let i=0; i<ids.length;i++) {
             let el = document.getElementById(prefix + ids[i]);
-            el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+            if (window.items[ids[i]].type == "SpmGridImage") {
+                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+            }
             el.classList.add("with_background");
         }        
     }
@@ -888,11 +890,17 @@ function add_image_overview(id) {
     const el = t.content.firstElementChild.cloneNode(true)
     el.id = "filter_overview_item_" + id;
 
+    let wh_nm = [0.0, 0.0];
+    
     // set position
-    const wh_nm = [
-        window.items[id].scansize[0],
-        window.items[id].scansize[1]
-    ];
+    if (window.items[id].type == "SpmGridImage") {
+        wh_nm = [
+            window.items[id].scansize[0],
+            window.items[id].scansize[1]
+        ];
+    } else {  // spectrum
+        el.classList.add("filter_overview_dot"); // spectra will be displayed as dots
+    }
     const wh_rel = filter_overview_nm_to_rel(wh_nm, coords=false);  // defined in GUI_filter_overview.js
     const topleft_nm = [
         window.items[id].center[0] - wh_nm[0] / 2,
@@ -901,12 +909,16 @@ function add_image_overview(id) {
     const topleft_rel = filter_overview_nm_to_rel(topleft_nm);
     el.style.left = "" + topleft_rel[0]*100 + "%";
     el.style.top = "" + topleft_rel[1]*100 + "%";
-    el.style.width = "" + wh_rel[0]*100 + "%";
-    el.style.height = "" + wh_rel[1]*100 + "%";
-    const angle = window.items[id].angle;
-    if (angle != 0) {
-        el.style.transform = "rotate("+ angle +"deg)";
+    if (window.items[id].type == "SpmGridImage") {
+        el.style.width = "" + wh_rel[0]*100 + "%";
+        el.style.height = "" + wh_rel[1]*100 + "%";  // for spectra there is no width and height, it is done via border
+        
+        const angle = window.items[id].angle;
+        if (angle != 0) {
+            el.style.transform = "rotate("+ angle +"deg)";
+        }
     }
+
     overview.appendChild(el);
 }
 
@@ -919,7 +931,9 @@ function update_image(id) {
     // images in overview
     const el = document.getElementById("filter_overview_item_" + id);
     if (el.classList.contains("with_background")) {
-        el.firstElementChild.style.backgroundImage = 'url("' + file_url(id).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+        if (window.items[id].type == "SpmGridImage") {
+            el.firstElementChild.style.backgroundImage = 'url("' + file_url(id).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+        }
     }
 
 }

@@ -54,6 +54,7 @@ function filter_items(ids=[], random_id=-1) {
 
     const filter_rating = document.querySelector('#sidebar_filter input[name=filter_rating]:checked').value;
     const filter_rating_comparator = document.getElementById('filter_rating_comparator').value;
+    const filter_type = document.getElementById('filter_type').value;
     const filter_keywords_raw = document.getElementById('filter_keywords').value;
     let filter_keywords = null;
     if (filter_keywords_raw.length > 0) {
@@ -119,6 +120,9 @@ function filter_items(ids=[], random_id=-1) {
             }
         }
         if (filter_items__rating(id, item, filter_rating, filter_rating_comparator)) {
+            continue;
+        }
+        if (filter_items__type(id, item, filter_type)) {
             continue;
         }
         if (filter_keywords != null) {
@@ -211,6 +215,18 @@ function filter_items__rating(id, item, filter_rating, filter_rating_comparator)
             filter_showhide(id, false);
             return true;
         }
+    }
+}
+
+function filter_items__type(id, item, filter_type) {
+    // filters items by type ("any", SpmGridImage", "SpmGridSpectrum")
+    if (filter_type == "any") {
+        return false;
+    } else if (item.type == filter_type) {
+        return false;
+    } else {
+        filter_showhide(id, false);
+        return true;
     }
 }
 
