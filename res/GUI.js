@@ -68,8 +68,9 @@ function file_url(id) {
     // returns the display filename url
     const item = window.items[id];
     return 'file:///' + window.dir_cache + item.filename_display +
-         "?" + item.channel_name + "_" + item.background_correction + "_" + item.colorscheme +
-         "_range" + item.channel_range_selected[0] + "_" + item.channel_range_selected[1];  // to prevent caching and force reload
+         "?" + item.channel_name + "_" + item.channel2_name + "_" + item.background_correction + "_" + item.colorscheme +
+         "_" + item.scan_direction + 
+         "_range_" + item.channel_range_selected;  // to prevent caching and force reload
 }
 
 function file_url_colorbar(id) {
@@ -912,7 +913,7 @@ function add_image_overview(id) {
     if (window.items[id].type == "SpmGridImage") {
         el.style.width = "" + wh_rel[0]*100 + "%";
         el.style.height = "" + wh_rel[1]*100 + "%";  // for spectra there is no width and height, it is done via border
-        
+
         const angle = window.items[id].angle;
         if (angle != 0) {
             el.style.transform = "rotate("+ angle +"deg)";

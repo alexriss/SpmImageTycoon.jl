@@ -42,14 +42,20 @@ overview_max_images = 100  # maximum number of images displayed in the filter_ov
 last_directories = []  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
 
-const background_correction_list = OrderedDict{String,Background}(
-    "none" => no_correction,
-    "plane" => plane_linear_fit,
-    "line average" => line_average,
-    "vline average" => vline_average,
-    "line linear" => line_linear_fit,
-    "vline linear" => vline_linear_fit,
-    "offset" => subtract_minimum,
+const background_correction_list_image = OrderedDict{String,SpmImages.Background}(
+    "none" => SpmImages.no_correction,
+    "plane" => SpmImages.plane_linear_fit,
+    "line average" => SpmImages.line_average,
+    "vline average" => SpmImages.vline_average,
+    "line linear" => SpmImages.line_linear_fit,
+    "vline linear" => SpmImages.vline_linear_fit,
+    "offset" => SpmImages.subtract_minimum,
+)
+
+const background_correction_list_spectrum = OrderedDict{String,SpmSpectroscopy.Background}(
+    "none" => SpmSpectroscopy.no_correction,
+    "linear" => SpmSpectroscopy.linear_fit,
+    "offset" => SpmSpectroscopy.subtract_minimum,
 )
 
 const colorscheme_list_pre = OrderedDict{String,ColorScheme}(

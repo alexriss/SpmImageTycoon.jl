@@ -59,51 +59,79 @@ function default_channel_name(im_spm::SpmImage)::String
 end
 
 
-"""Gets the channel name after current_channel_name in the list of image's channel names."""
-function next_channel_name(im_spm::SpmImage, current_channel_name::String, jump::Int)::String
+"""Sets the next channel name for the griditem."""
+function next_channel_name!(griditem::SpmGridItem, im_spm::SpmImage, jump::Int)::Nothing
+    channel_name = griditem.channel_name    
+    
     backward_suffix = ""
-    if endswith(current_channel_name, " bwd")
-        current_channel_name = current_channel_name[1:end-4]
+    if endswith(channel_name, " bwd")
+        channel_name = channel_name[1:end-4]
         backward_suffix = " bwd"
     end
-    i = findfirst(x -> x == current_channel_name, im_spm.channel_names)
+    i = findfirst(x -> x == channel_name, im_spm.channel_names)
     if i === nothing  # this should never happen anyways
-        return im_spm.channel_names[1]
+        channel_name = im_spm.channel_names[1]
     else
         i = (i + jump - 1) % length(im_spm.channel_names) + length(im_spm.channel_names)
         i = i % length(im_spm.channel_names) + 1
-        return im_spm.channel_names[i] * backward_suffix
+        channel_name = im_spm.channel_names[i] * backward_suffix
     end
+
+    griditem.channel_name = channel_name
+    griditem.channel_range_selected = [] # reset selected range when switching channel (we try to keep it for all other cases for now)
+    return nothing
 end
 
 
-"""Gets the next background_correction key in the list of possible background corrections"""
-function next_background_correction(background_correction::String, jump::Int)::String
-    keys_bg = collect(keys(background_correction_list))
-    i = findfirst(x -> x == background_correction, keys_bg)
-    i = (i + jump - 1) % length(background_correction_list) + length(background_correction_list)
-    i = i % length(background_correction_list) + 1
-    return keys_bg[i]
+"""Sets the next channel2 name for the griditem, dummy function for images."""
+function next_channel2_name!(griditem::SpmGridItem, im_spm::SpmImage, jump::Int)::Nothing
+    return nothing
 end
 
 
-"""Gets the next colorscheme key in the list of possible colorschemes"""
-function next_colorscheme(colorscheme::String, jump::Int)::String
+# toggles between forwards and backward scan
+function next_direction!(griditem::SpmGridItem, im_spm::SpmImage)::Nothing
+    if endswith(griditem.channel_name, " bwd")
+        channel_name = griditem.channel_name[1:end-4]
+    else
+        channel_name = griditem.channel_name * " bwd"
+    end
+    griditem.channel_name = channel_name
+
+    return nothing
+end
+
+
+"""Sets the next background_correction key in the list of possible background corrections"""
+function next_background_correction!(griditem::SpmGridItem, im_spm::SpmImage, jump::Int)::Nothing
+    keys_bg = collect(keys(background_correction_list_image))
+    i = findfirst(x -> x == griditem.background_correction, keys_bg)
+    i = (i + jump - 1) % length(background_correction_list_image) + length(background_correction_list_image)
+    i = i % length(background_correction_list_image) + 1
+    griditem.background_correction = keys_bg[i]
+    return nothing
+end
+
+
+"""Sets the next colorscheme key in the list of possible colorschemes"""
+function next_colorscheme!(griditem::SpmGridItem, im_spm::SpmImage, jump::Int)::Nothing
     keys_cs = collect(keys(colorscheme_list))
-    i = findfirst(x -> x == colorscheme, keys_cs)
+    i = findfirst(x -> x == griditem.colorscheme, keys_cs)
     i = (i + sign(jump) + jump - 1) % length(colorscheme_list) + length(colorscheme_list)   # inverted and normal are alternating, so an extra +1 or -1 (i.e. sign(jump) is needed
     i = i % length(colorscheme_list) + 1
-    return keys_cs[i]
+    griditem.colorscheme = keys_cs[i]
+    return nothing
 end
 
 
-"""Gets the inverted colorscheme key in the list of possible colorschemes"""
-function invert_colorscheme(colorscheme::String)::String
-    if endswith(colorscheme, " inv")
-        return colorscheme[1:end-4]
+"""Sets the inverted colorscheme key in the list of possible colorschemes"""
+function next_invert!(griditem::SpmGridItem, im_spm::SpmImage)::Nothing
+    if endswith(griditem.colorscheme, " inv")
+        griditem.colorscheme = griditem.colorscheme[1:end-4]
     else
-        return colorscheme * " inv"
+        griditem.colorscheme = griditem.colorscheme * " inv"
     end
+    return nothing
 end
 
 
@@ -133,7 +161,7 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=
         d = imresize(d, ratio=ratio)
     end
 
-    d = correct_background(d, background_correction_list[griditem.background_correction])
+    d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
     if normalize
         vmin, vmax = normalize01!(d, range_selected=griditem.channel_range_selected)  # normalize each value in the array to values between 0 and 1
     else
@@ -196,51 +224,10 @@ end
 function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
     filename_original = images_parsed[id].filename_original
     im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
-    bg = background_correction_list[images_parsed[id].background_correction]
+    bg = background_correction_list_image[images_parsed[id].background_correction]
     coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, images_parsed[id].channel_name, start_point, end_point, width, background=bg)
 
     return coords, distances, values, start_point_value, end_point_value
-end
-
-
-"""Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
-for the images specified by ids. The type of change is specified by the argument "what".
-The argument "jump" specifies whether to cycle backward or forward (if applicable).
-The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
-Modifies the images_parsed array."""
-function switch_channel_direction_background!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, what::String, jump::Int, full_resolution::Bool)
-    dir_cache = get_dir_cache(dir_data)
-    Threads.@threads for id in ids
-        filename_original = images_parsed[id].filename_original
-        im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
-        channel_name = images_parsed[id].channel_name
-        background_correction = images_parsed[id].background_correction
-        colorscheme = images_parsed[id].colorscheme
-        if what == "channel"
-            channel_name = next_channel_name(im_spm, channel_name, jump)
-            images_parsed[id].channel_name = channel_name
-            images_parsed[id].channel_range_selected = [] # reset selected range when switching channel (we try to keep it for all other cases for now)
-        elseif what == "direction"
-            if endswith(channel_name, " bwd")
-                channel_name = channel_name[1:end-4]
-            else
-                channel_name = channel_name * " bwd"
-            end
-            images_parsed[id].channel_name = channel_name
-        elseif what == "background_correction"
-            background_correction = next_background_correction(background_correction, jump)
-            images_parsed[id].background_correction = background_correction
-        elseif what == "colorscheme"
-            colorscheme = next_colorscheme(colorscheme, jump)
-            images_parsed[id].colorscheme = colorscheme
-        elseif what == "inverted"
-            colorscheme = invert_colorscheme(colorscheme)
-            images_parsed[id].colorscheme = colorscheme
-        end
-        resize_to_ = full_resolution ? 0 : resize_to
-        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
-    end
-    return nothing
 end
 
 
@@ -250,7 +237,7 @@ function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_d
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
     im_spm = load_image(datafile, output_info=0)
-    scan_direction = (im_spm.scan_direction == SpmImages.up) ? true : false
+    scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
 
     if haskey(images_parsed, id)
         griditem = images_parsed[id]

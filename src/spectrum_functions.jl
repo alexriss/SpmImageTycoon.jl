@@ -47,46 +47,163 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
 end
 
 
+"""Gets the next channel name and corresponding unit of `spectrum`, skipping all backwards channels."""
+function next_channel_name_unit(spectrum::SpmSpectrum, channel_name::String, jump::Int)::Tuple{String, String}
+    channel_names = filter(!endswith(" [bwd]"), spectrum.channel_names)
+
+    i = findfirst(x -> x == channel_name, channel_names)
+    if i === nothing  # this should never happen anyways
+        next_channel_name = channel_names[1]
+    else
+        i = (i + jump - 1) % length(channel_names) + length(channel_names)
+        i = i % length(channel_names) + 1
+        next_channel_name = channel_names[i]
+    end
+
+    # get unit
+    i = findfirst(x -> x == next_channel_name, spectrum.channel_names)
+    next_channel_unit = spectrum.channel_units[i]
+
+    return next_channel_name, next_channel_unit
+end
+
+
+"""Sets the next channel name for the griditem."""
+function next_channel_name!(griditem::SpmGridItem, spectrum::SpmSpectrum, jump::Int)::Nothing
+    channel_name, channel_unit = next_channel_name_unit(spectrum, griditem.channel_name, jump)
+    griditem.channel_name = channel_name
+    griditem.channel_unit = channel_unit
+
+    if length(griditem.channel_range_selected) != 0
+         # reset selected range when switching channel (we try to keep it for all other cases for now)
+        griditem.channel_range_selected[1] = 0
+        griditem.channel_range_selected[2] = 1
+    end
+    return nothing
+end
+
+
+"""Sets the next channel2 name for the griditem, dummy function for images."""
+function next_channel2_name!(griditem::SpmGridItem, spectrum::SpmSpectrum, jump::Int)::Nothing
+    channel2_name, channel2_unit = next_channel_name_unit(spectrum, griditem.channel2_name, jump)
+    griditem.channel2_name = channel2_name
+    griditem.channel2_unit = channel2_unit
+    
+    if length(griditem.channel_range_selected) != 0
+         # reset selected range when switching channel (we try to keep it for all other cases for now)
+        griditem.channel_range_selected[3] = 0
+        griditem.channel_range_selected[4] = 1
+    end
+    return nothing
+end
+
+
+# toggles between forwards and backward scan
+function next_direction!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Nothing
+    griditem.scan_direction = (griditem.scan_direction + 1) % 3
+    return nothing
+end
+
+
+"""Sets the next background_correction key in the list of possible background corrections"""
+function next_background_correction!(griditem::SpmGridItem, spectrum::SpmSpectrum, jump::Int)::Nothing
+    keys_bg = collect(keys(background_correction_list_spectrum))
+    i = findfirst(x -> x == griditem.background_correction, keys_bg)
+    i = (i + jump - 1) % length(background_correction_list_spectrum) + length(background_correction_list_spectrum)
+    i = i % length(background_correction_list_spectrum) + 1
+    griditem.background_correction = keys_bg[i]
+    return nothing
+end
+
+
+"""Sets the next colorscheme key in the list of possible colorschemes, dummy function for spectra"""
+function next_colorscheme!(griditem::SpmGridItem, spectrum::SpmSpectrum, jump::Int)::Nothing
+    return nothing
+end
+
+
+"""Sets the inverted colorscheme key in the list of possible colorschemes"""
+function next_invert!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Nothing
+    if length(griditem.channel_range_selected) == 0
+        griditem.channel_range_selected = [1, 0, 0, 1]  # invert ydata
+    else
+        y_inverted = griditem.channel_range_selected[1] > griditem.channel_range_selected[2]
+        x_inverted = griditem.channel_range_selected[3] > griditem.channel_range_selected[4]
+        if y_inverted && x_inverted
+            griditem.channel_range_selected[1], griditem.channel_range_selected[2] = griditem.channel_range_selected[2], griditem.channel_range_selected[1]
+            griditem.channel_range_selected[3], griditem.channel_range_selected[4] = griditem.channel_range_selected[4], griditem.channel_range_selected[3]
+        elseif y_inverted
+            griditem.channel_range_selected[3], griditem.channel_range_selected[4] = griditem.channel_range_selected[4], griditem.channel_range_selected[3]
+        else  # if none inverted or x_inverted
+            griditem.channel_range_selected[1], griditem.channel_range_selected[2] = griditem.channel_range_selected[2], griditem.channel_range_selected[1]
+        end
+    end
+    return nothing
+end
+
+
+
 """Get, background correct and filter image data for a specific griditem.
 Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors."""
-function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{Vector{Float64},Vector{Vector{Float64}},Vector{String}}
-    x_data = spectrum.data[!, griditem.channel2_name]
-
+function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{Vector{Vector{Float64}},Vector{Vector{Float64}},Vector{String}}
     # TODO: implement average sweeps
-    if endswith(griditem.channel_name, " bwd")  # only backward channel
-        channel_name = griditem.channel_name[begin:end-4] * " [bwd]"
+    channel_name = griditem.channel_name
+    channel2_name = griditem.channel2_name
+    channel_name_bwd = griditem.channel_name * " [bwd]"
+    channel2_name_bwd = griditem.channel2_name * " [bwd]"
+
+    bwd_available = findfirst(endswith(" [bwd]"), spectrum.channel_names) !== nothing
+    if bwd_available
+        # there is no bwd-channel for "Index", but for all others there should be
+        if channel_name_bwd ∉ spectrum.channel_names
+            channel_name_bwd = channel_name
+        end
+        if channel2_name_bwd ∉ spectrum.channel_names
+            channel2_name_bwd = channel2_name
+        end
+    end
+
+    if griditem.scan_direction == 0  # only forward channel
         y_datas = [spectrum.data[!, channel_name]]
-        colors = [color_spectrum_bwd]
-    elseif endswith(griditem.channel_name, " fwd")  # only forward channel
-        channel_name = griditem.channel_name[begin:end-4]
-        y_datas = [spectrum.data[!, channel_name]]
+        x_datas = [spectrum.data[!, channel2_name]]
         colors = [color_spectrum_fwd]
+    elseif griditem.scan_direction == 1  # only backward channel
+        if bwd_available
+            y_datas = [spectrum.data[!, channel_name_bwd]]
+            x_datas = [spectrum.data[!, channel2_name_bwd]]
+            colors = [color_spectrum_bwd]
+        else
+            y_datas = [spectrum.data[!, channel_name]]
+            x_datas = [spectrum.data[!, channel2_name]]
+            colors = [color_spectrum_fwd]
+        end
     else  # both channels
-        channel_name = griditem.channel_name
-        channel_name_bwd = channel_name * " [bwd]"
-        if channel_name_bwd in spectrum.channel_names
+        if bwd_available
             y_datas = [spectrum.data[!, channel_name], spectrum.data[!, channel_name_bwd]]
+            x_datas = [spectrum.data[!, channel2_name], spectrum.data[!, channel2_name_bwd]]
             colors = [color_spectrum_fwd, color_spectrum_bwd]
         else
             y_datas = [spectrum.data[!, channel_name]]
+            x_datas = [spectrum.data[!, channel2_name]]
             colors = [color_spectrum_fwd]
         end
     end
 
-    # TODO: correct background, filter, ...
-    # d = correct_background(d, background_correction_list[griditem.background_correction])
+    for (x_data, y_data) in zip(x_datas, y_datas)
+        SpmSpectroscopy.correct_background!(x_data, y_data, background_correction_list_spectrum[griditem.background_correction])
+    end
 
-    return x_data, y_datas, colors
+    return x_datas, y_datas, colors
 end
 
 
 """
-    function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Nothing
+    function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Vector{Float64}
 
-Saves a graph of multiple curves to a SVG file (`filename`). Each curve is shares the same `x_data` and is represented by an element in the vectors `y_datas` and `colors`.
+Saves a graph of multiple curves to a SVG file (`filename`). Each curve is represented by an element in the vectors `x_datas`, `y_datas` and `colors`.
 Returns the ranges of y_datas and x_data.
 """
-function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Vector{Float64}
+function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Vector{Float64}
     svg_header = """<?xml version="1.0" encoding="utf-8"?>
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000">
     """
@@ -102,19 +219,21 @@ function save_spectrum_svg(filename::AbstractString, x_data::AbstractVector, y_d
         write(f, svg_header)
 
         # get minimum and maximum values for all data
-        x_minmax = extrema(x_data)
+        x_minmax = [x_datas[1][1], x_datas[1][1]]
         y_minmax = [y_datas[1][1], y_datas[1][1]]
         for i in 1:length(y_datas)
+            x_minmaxi = extrema(x_datas[i])
+            x_minmax[1] = min(x_minmax[1], x_minmaxi[1])
+            x_minmax[2] = max(x_minmax[2], x_minmaxi[2])
             y_minmaxi = extrema(y_datas[i])
             y_minmax[1] = min(y_minmax[1], y_minmaxi[1])
             y_minmax[2] = max(y_minmax[2], y_minmaxi[2])
         end
 
         x_scale = 1000 / (x_minmax[2] - x_minmax[1])
-        x_data_plot = @. round((x_data - x_minmax[1]) * x_scale, digits=2)
-        polylines = ""
+        y_scale = 1000 / (y_minmax[2] - y_minmax[1])
         @views @inbounds for i in 1:length(y_datas)
-            y_scale = 1000 / (y_minmax[2] - y_minmax[1])
+            x_data_plot = @. round((x_datas[i] - x_minmax[1]) * x_scale, digits=2)
             y_data_plot = @. round(1000 - (y_datas[i] - y_minmax[1]) * y_scale, digits=2)
 
             points = ""
@@ -162,7 +281,8 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
-    spectrum = load_spectrum(datafile, index_column=true)
+    spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)
+
     z_feedback_setpoint = 0.0
     z_feedback_setpoint_unit = ""
     if haskey(spectrum.header, "Z-Controller>Setpoint")
@@ -207,7 +327,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         images_parsed[id] = SpmGridItem(
             id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=spectrum.start_time,
             channel_name=channel_name, channel_unit=channel_unit, channel2_name=channel2_name, channel2_unit=channel2_unit,
-            center=spectrum.position .* 1e9,
+            center=spectrum.position .* 1e9, scan_direction=2, 
             bias=spectrum.bias, z_feedback=spectrum.z_feedback,
             z_feedback_setpoint=z_feedback_setpoint, z_feedback_setpoint_unit=z_feedback_setpoint_unit, z=spectrum.position[3],
             comment=utf8ify(spectrum.header["User"])

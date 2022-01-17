@@ -2,11 +2,15 @@
 
 let key_commands = {
     c: { command: change_item, args: ["channel", "change channel."] },
+    y: { command: change_item, args: ["channel", "change channel.", 1] },
+    x: { command: change_item, args: ["channel2", "change x-channel.", 1] },
     d: { command: change_item, args: ["direction", "change direction."] },
     b: { command: change_item, args: ["background_correction", "change background."] },
     p: { command: change_item, args: ["colorscheme", "change colorscheme."] },
     i: { command: change_item, args: ["inverted", "invert colorscheme."] },
     C: { command: change_item, args: ["channel", "change channel.", -1] },
+    Y: { command: change_item, args: ["channel", "change channel.", -1] },
+    X: { command: change_item, args: ["channel2", "change x-channel.", -1] },
     D: { command: change_item, args: ["direction", "change direction.", -1] },
     B: { command: change_item, args: ["background_correction", "change background.", -1] },
     P: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },

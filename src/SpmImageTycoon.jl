@@ -22,7 +22,7 @@ export SpmGridItem, tycoon
 @enum SpmGridItemType SpmGridImage SpmGridSpectrum
 
 # entries for SPM images and SPM spectra
-mutable struct SpmGridItem_v128
+mutable struct SpmGridItem_v129
     id::String                                 # id (will be filename and suffixes for virtual copies)
     type::SpmGridItemType                      # type of the griditem
     filename_original::String                  # original filename (.sxm for images or .dat for spectra)
@@ -39,7 +39,7 @@ mutable struct SpmGridItem_v128
     scansize_unit::String                      # scan size unit
     center::Vector{Float64}                    # center of scan frame or position of spectrum (in scansize_units - typically in nm) 
     angle::Float64                             # scan angle (in degrees), not used for spectra
-    scan_direction::Bool                       # scan direction (true = up, false = down), not used for spectra
+    scan_direction::Int                        # scan direction (0=down, 1=up), for spectra 0=forward, 1=backward, 2=both
 
     bias::Float64                              # Bias in V
     z_feedback::Bool                           # feedback controller on/off
@@ -59,10 +59,10 @@ mutable struct SpmGridItem_v128
     status::Int64                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
     virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmGridItem_v128(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmGridItem_v129(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
         channel_name="", channel_unit="", channel2_name="", channel2_unit="",
-        scansize=[], scansize_unit="nm", center=[], angle=0, scan_direction=false,
+        scansize=[], scansize_unit="nm", center=[], angle=0, scan_direction=0,
         bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0.0, points=0,
         comment="", background_correction="none", colorscheme="gray",
         channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
@@ -74,8 +74,7 @@ mutable struct SpmGridItem_v128
         comment, background_correction, colorscheme,
         channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
 end
-SpmGridItem = SpmGridItem_v128
-SpmImageGridItem = SpmGridItem_v128  # legacy, for old databases
+SpmGridItem = SpmGridItem_v129
 
 
 include("config.jl")
@@ -203,6 +202,55 @@ function get_scan_range(images_parsed::Dict{String, SpmGridItem})::Tuple{Vector{
 
     return bottomleft, topright
 end
+
+
+"""Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
+for the images/spectra specified by ids. The type of change is specified by the argument "what".
+The argument "jump" specifies whether to cycle backward or forward (if applicable).
+The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
+Modifies the images_parsed array."""
+function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)
+    dir_cache = get_dir_cache(dir_data)
+    Threads.@threads for id in ids
+        filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
+        if images_parsed[id].type == SpmGridImage
+            item = load_image(filename_original_full, output_info=0)
+        elseif images_parsed[id].type == SpmGridSpectrum
+            item = load_spectrum(filename_original_full, index_column=true, index_column_type=Float64)
+        else
+            println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
+            continue
+        end
+
+        # multiple dispatch for update functions
+        if what == "channel"
+            next_channel_name!(images_parsed[id], item, jump)
+        elseif what == "channel2"
+            next_channel2_name!(images_parsed[id], item, jump)
+        elseif what == "direction"
+            next_direction!(images_parsed[id], item)
+        elseif what == "background_correction"
+            next_background_correction!(images_parsed[id], item, jump)
+        elseif what == "colorscheme"
+            next_colorscheme!(images_parsed[id], item, jump)
+        elseif what == "inverted"
+            next_invert!(images_parsed[id], item)
+        else
+            println("Unknown property to change: ", what)  # this should never happen, though
+            return nothing
+        end
+
+        # update the image or spectrum
+        if images_parsed[id].type == SpmGridImage
+            resize_to_ = full_resolution ? 0 : resize_to
+            create_image!(images_parsed[id], item, resize_to=resize_to, base_dir=dir_cache)    
+        elseif images_parsed[id].type == SpmGridSpectrum
+            create_spectrum!(images_parsed[id], item, base_dir=dir_cache)
+        end
+    end
+    return nothing
+end
+
 
 
 """Loads the header data for an griditem and returns a tuple: the dictionary with all the header data, as well as some extra info"""
@@ -346,7 +394,11 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmG
                 griditem = pair[2]
                 images_parsed[id] = SpmGridItem()
                 for f in fieldnames_common
-                    setfield!(images_parsed[id], f, getfield(griditem, f))
+                    val = getfield(griditem, f)
+                    if fieldtype(SpmGridItem, f) != typeof(val)  # this can happen; we changed "scan_direction" from bool to int in v129
+                        val = convert(fieldtype(SpmGridItem, f), val)
+                    end
+                    setfield!(images_parsed[id], f, val)
                 end
             end
 
@@ -400,7 +452,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             jump = args[3]
             full_resolution = args[4]
             try
-                switch_channel_direction_background!(ids, dir_data, images_parsed, what[6:end], jump, full_resolution)
+                change_griditem!(images_parsed, ids, dir_data, what[6:end], jump, full_resolution)
                 images_parsed_sub = get_subset(images_parsed, ids)
                 json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
                 @js_ w update_images($json_compressed);
