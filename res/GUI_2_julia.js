@@ -197,8 +197,9 @@ function show_info(id, gzip_info_json, extra_info={}) {
         if (window.items[id].channel_range.length == 4) {  // first two are y-axis, second two are x-axis
             let xaxis_range_selected = [window.items[id].channel_range[2], window.items[id].channel_range[3]];
             if (window.items[id].channel_range_selected.length == 4) {  // first two are y-axis, second two are x-axis
-                xaxis_range_selected[0] *= window.items[id].channel_range_selected[2];
-                xaxis_range_selected[1] *= window.items[id].channel_range_selected[3];
+                const scale_factor = (window.items[id].channel_range[3] - window.items[id].channel_range[2]);
+                xaxis_range_selected[0] = window.items[id].channel_range[2] + window.items[id].channel_range_selected[2] * scale_factor;
+                xaxis_range_selected[1] = window.items[id].channel_range[2] + window.items[id].channel_range_selected[3] * scale_factor;
             }
             const nnps = format_numbers_prefix(xaxis_range_selected, 1);
             document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnps[0].number_formatted +
@@ -209,14 +210,27 @@ function show_info(id, gzip_info_json, extra_info={}) {
 
         if (window.items[id].channel_range_selected.length == 4) {
             // check deviation from (0,1) for xaxis
-            const diff = Math.abs(window.items[id].channel_range_selected[2] - 0) + Math.abs(1 - window.items[id].channel_range_selected[3]);
+            const diff = 2 - Math.abs(window.items[id].channel_range_selected[3] - window.items[id].channel_range_selected[2]) -
+                Math.abs(window.items[id].channel_range_selected[1] - window.items[id].channel_range_selected[0]);
             if (diff > 0.0005) {
                 document.getElementById("image_info_xaxis_clamped").classList.remove("is-invisible");
             } else {
                 document.getElementById("image_info_xaxis_clamped").classList.add("is-invisible");    
             }
+            if (window.items[id].channel_range_selected[1] - window.items[id].channel_range_selected[0] < 0) {
+                document.getElementById("image_info_channel_inverted").classList.remove("is-hidden");
+            } else {
+                document.getElementById("image_info_channel_inverted").classList.add("is-hidden");
+            }
+            if (window.items[id].channel_range_selected[3] - window.items[id].channel_range_selected[2] < 0) {
+                document.getElementById("image_info_xaxis_inverted").classList.remove("is-hidden");
+            } else {
+                document.getElementById("image_info_xaxis_inverted").classList.add("is-hidden");
+            }
         } else {
             document.getElementById("image_info_xaxis_clamped").classList.add("is-invisible");
+            document.getElementById("image_info_channel_inverted").classList.add("is-hidden");
+            document.getElementById("image_info_xaxis_inverted").classList.add("is-hidden");
         }
 
         // only needed for images
@@ -239,7 +253,7 @@ function show_info(id, gzip_info_json, extra_info={}) {
         }
         
         if (window.items[id].channel_range_selected.length == 2) {
-            const diff = Math.abs(window.items[id].channel_range_selected[0] - 0) + Math.abs(1 - window.items[id].channel_range_selected[1]);
+            const diff = 1 - Math.abs(window.items[id].channel_range_selected[1] - window.items[id].channel_range_selected[0]);
             if (diff > 0.0005) {
                 document.getElementById("image_info_colorscheme_clamped").classList.remove("is-invisible");
             } else {
@@ -261,6 +275,8 @@ function show_info(id, gzip_info_json, extra_info={}) {
 
         // only used for spectra
         document.getElementById("image_info_xaxis_clamped").classList.add("is-invisible");
+        document.getElementById("image_info_channel_inverted").classList.add("is-hidden");
+        document.getElementById("image_info_xaxis_inverted").classList.add("is-hidden");
     }
 
     nnp = format_number_prefix(window.items[id].bias,1);

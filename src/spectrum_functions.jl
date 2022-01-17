@@ -129,12 +129,15 @@ function next_invert!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Nothing
     else
         y_inverted = griditem.channel_range_selected[1] > griditem.channel_range_selected[2]
         x_inverted = griditem.channel_range_selected[3] > griditem.channel_range_selected[4]
-        if y_inverted && x_inverted
+        if y_inverted && x_inverted # (inv, inv) -> (0, 0)
             griditem.channel_range_selected[1], griditem.channel_range_selected[2] = griditem.channel_range_selected[2], griditem.channel_range_selected[1]
             griditem.channel_range_selected[3], griditem.channel_range_selected[4] = griditem.channel_range_selected[4], griditem.channel_range_selected[3]
-        elseif y_inverted
+        elseif y_inverted # (inv, 0) -> (0, inv)
+            griditem.channel_range_selected[1], griditem.channel_range_selected[2] = griditem.channel_range_selected[2], griditem.channel_range_selected[1]
             griditem.channel_range_selected[3], griditem.channel_range_selected[4] = griditem.channel_range_selected[4], griditem.channel_range_selected[3]
-        else  # if none inverted or x_inverted
+        elseif x_inverted # (0, inv) -> (inv, inv)
+            griditem.channel_range_selected[1], griditem.channel_range_selected[2] = griditem.channel_range_selected[2], griditem.channel_range_selected[1]
+        else # (0, 0) -> (inv, 0)
             griditem.channel_range_selected[1], griditem.channel_range_selected[2] = griditem.channel_range_selected[2], griditem.channel_range_selected[1]
         end
     end
@@ -198,18 +201,22 @@ end
 
 
 """
-    function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Vector{Float64}
+    function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector},
+        colors::AbstractVector{<:AbstractString}; range_selected::Vector{Float64}=[0.,1.,0.,1.])::Vector{Float64}
 
 Saves a graph of multiple curves to a SVG file (`filename`). Each curve is represented by an element in the vectors `x_datas`, `y_datas` and `colors`.
+A relative zoom can be specified in a four-element vector `range_selected`.
 Returns the ranges of y_datas and x_data.
 """
-function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector}, colors::AbstractVector{<:AbstractString})::Vector{Float64}
+function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector},
+        colors::AbstractVector{<:AbstractString}; range_selected::Vector{Float64}=[0.,1.,0.,1.])::Vector{Float64}
+
     svg_header = """<?xml version="1.0" encoding="utf-8"?>
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
     """
     svg_footer = "</svg>"
     polyline_header_1 = """<polyline style="stroke:"""  # insert color here
-    polyline_header_2 = """; stroke-linecap:butt; stroke-linejoin:round; stroke-width:12; stroke-opacity:0.6; fill:none" points=\""""
+    polyline_header_2 = """; stroke-linecap:butt; stroke-linejoin:round; stroke-width:1; stroke-opacity:0.6; fill:none" points=\""""
     polyline_footer = """"/>\n"""
 
     @assert length(y_datas) == length(colors)
@@ -229,21 +236,44 @@ function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:A
             y_minmax[1] = min(y_minmax[1], y_minmaxi[1])
             y_minmax[2] = max(y_minmax[2], y_minmaxi[2])
         end
+        yxranges = [y_minmax[1], y_minmax[2], x_minmax[1], x_minmax[2]]
 
-        x_scale = 1000 / (x_minmax[2] - x_minmax[1])
-        y_scale = 1000 / (y_minmax[2] - y_minmax[1])
+        # extend axes by a few percent
+        x_delta = x_minmax[2] - x_minmax[1]
+        if x_delta == 0 
+            x_delta += 1e16
+        end
+        y_delta = y_minmax[2] - y_minmax[1]
+        if y_delta == 0 
+            y_delta += 1e-16
+        end
+        x_minmax[1] -= x_delta * 0.03
+        x_minmax[2] += x_delta * 0.03
+        y_minmax[1] -= y_delta * 0.03
+        y_minmax[2] += y_delta * 0.03
+        x_scale = 100 / (x_minmax[2] - x_minmax[1])
+        y_scale = 100 / (y_minmax[2] - y_minmax[1])
+
+        # adjust axis limits according to range_selected
+        x_range_scale = 1 / (range_selected[4] - range_selected[3])
+        y_range_scale = 1 / (range_selected[2] - range_selected[1])
+        x_scale *= x_range_scale
+        y_scale *= y_range_scale
+        x_range_translate = range_selected[3] * 100
+        y_range_translate = range_selected[1] * 100
+    
         @views @inbounds for i in 1:length(y_datas)
-            x_data_plot = @. round((x_datas[i] - x_minmax[1]) * x_scale, digits=2)
-            y_data_plot = @. round(1000 - (y_datas[i] - y_minmax[1]) * y_scale, digits=2)
+            x_data_plot = @. round((x_datas[i] - x_minmax[1]) * x_scale + x_range_translate, digits=2)
+            y_data_plot = @. round(100 - ((y_datas[i] - y_minmax[1]) * y_scale + y_range_translate), digits=2)
 
             points = ""
             @views @inbounds for j in 1:length(x_data_plot)
                 points *= "$(x_data_plot[j]),$(y_data_plot[j]) "
             end
+            scaling = 
             write(f, polyline_header_1 * colors[i] * polyline_header_2 * points * polyline_footer)
         end
         write(f, svg_footer)
-        yxranges = [y_minmax[1], y_minmax[2], x_minmax[1], x_minmax[2]]
     end
     return yxranges
 end
@@ -261,12 +291,12 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     end
 
     # load spectrum
-    x_data, y_datas, colors = get_spectrum_data(griditem, spectrum)
-    griditem.points = length(x_data)
+    x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum)
+    griditem.points = length(x_datas[1])
 
     filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).svg"
     f = joinpath(base_dir, filename_display)
-    yxranges = save_spectrum_svg(f, x_data, y_datas, colors)
+    yxranges = save_spectrum_svg(f, x_datas, y_datas, colors, range_selected=griditem.channel_range_selected)
 
     griditem.channel_range = yxranges
 

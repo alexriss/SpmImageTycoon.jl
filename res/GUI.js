@@ -707,7 +707,8 @@ function next_item(jump) {
         window.line_profile_object.setup(new_image=true);
         imagezoom_size_adjust();
 
-        image_info_timeout(null, el.id, histogram=true, timeout_ms=30);
+        let histogram = (window.items[el.id].type == "SpmGridImage") ? true : false;
+        image_info_timeout(null, el.id, histogram=histogram, timeout_ms=30);
     }
 }
 
@@ -796,7 +797,11 @@ function image_info_quick(id="") {
         }
     }
     if (id != "") {
-        document.getElementById('image_info_footer').innerText = window.items[id]["filename_original"] + ': ' + window.items[id]["channel_name"];
+        let str_footer = window.items[id]["filename_original"] + ': ' + window.items[id]["channel_name"];
+        if (window.items[id]["channel2_name"].length > 0) {
+            str_footer += " vs. " + window.items[id]["channel2_name"];
+        }
+        document.getElementById('image_info_footer').innerText = str_footer;
 
         // hover in filter overview (highlight will be disabled in image_info_quick_timeout_clear)
         const highlighted = document.getElementById("filter_overview").getElementsByClassName("highlight");
