@@ -211,15 +211,10 @@ Returns the ranges of y_datas and x_data.
 function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector},
         colors::AbstractVector{<:AbstractString}; range_selected::Vector{Float64}=[0.,1.,0.,1.])::Vector{Float64}
 
-    svg_header = """<?xml version="1.0" encoding="utf-8"?>
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
-    """
-    svg_footer = "</svg>"
-    polyline_header_1 = """<polyline style="stroke:"""  # insert color here
-    polyline_header_2 = """; stroke-linecap:butt; stroke-linejoin:round; stroke-width:1; stroke-opacity:0.6; fill:none" points=\""""
-    polyline_footer = """"/>\n"""
-
     @assert length(y_datas) == length(colors)
+    if length(range_selected) != 4
+        range_selected = [0., 1., 0., 1.]
+    end
     yxranges = Float64[]
 
     open(filename, "w") do f
@@ -247,10 +242,10 @@ function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:A
         if y_delta == 0 
             y_delta += 1e-16
         end
-        x_minmax[1] -= x_delta * 0.03
-        x_minmax[2] += x_delta * 0.03
-        y_minmax[1] -= y_delta * 0.03
-        y_minmax[2] += y_delta * 0.03
+        x_minmax[1] -= x_delta * 0.01
+        x_minmax[2] += x_delta * 0.01
+        y_minmax[1] -= y_delta * 0.01
+        y_minmax[2] += y_delta * 0.01
         x_scale = 100 / (x_minmax[2] - x_minmax[1])
         y_scale = 100 / (y_minmax[2] - y_minmax[1])
 

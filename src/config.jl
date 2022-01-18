@@ -85,6 +85,40 @@ const color_spectrum_fwd = "#241571"
 const color_spectrum_bwd = "#B80F0A"
 
 
+# for SVG generation for spectra
+const svg_header = """<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+"""
+const polyline_header_1 = """<polyline style="stroke:"""  # insert color here
+const polyline_header_2 = """; stroke-linecap:butt; stroke-linejoin:round; stroke-width:1; stroke-opacity:0.6; fill:none" points=\""""
+const polyline_footer = """"/>\n"""
+const svg_footer = "</svg>"
+
+# when exporting we change the existing SVG
+const svg_header_export = """<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-18 -5 120 120">
+    <style>
+        text {
+            font-family:Sans,Arial;
+            font-size:6px;
+            fill:#909090;
+        }
+    </style>
+"""
+const svg_footer_export = """
+<text x="50" y="108" style="fill:#303030;" text-anchor="middle" alignment-baseline="top">{{ x_axis_label }}</text>
+<text x="0" y="0" style="fill:#303030;" text-anchor="middle" alignment-baseline="center" transform="matrix(0 -1 1 0 -3 50)">{{ y_axis_label }}</text>
+<rect x="-1" y="-1" width="102" height="102" style="fill:none;stroke-width:0.5;stroke:#606060" />
+
+<text x="-2" y="108" text-anchor="start" alignment-baseline="top">{{ x_axis_min }}</text>
+<text x="102" y="108" text-anchor="end" alignment-baseline="top">{{ x_axis_max }}</text>
+
+<text x="-2" y="101" text-anchor="end" alignment-baseline="top">{{ y_axis_min }}</text>
+<text x="-2" y="3" text-anchor="end" alignment-baseline="top">{{ y_axis_max }}</text>
+   
+</svg>"""
+
+
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
 The resulting schemes are stored in the OrderedDict dict_colorschemes."""
 function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})

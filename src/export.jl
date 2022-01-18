@@ -22,16 +22,13 @@ const odp_max_comment_lines = 4  # maximum number of comment lines, otherwise ev
 const odp_scalebar_width = 0.26  # approximate target scalebar width as a fraction of the image (will be adjusted so that we have nicer numbers)
 
 const unit_prefixes = ["E", "P", "T", "G", "M", "k", "", "m", "µ", "n", "p", "f", "a"]
-const unit_factors = [10^18, 10^15, 10^12, 10^9, 10^6, 10^3, 1, 10^-3, 10^-6, 10^-9, 10^-12, 10^-15, 10^-18]
+const unit_factors = [1.0e18, 1.0e15, 1.0e12, 1.0e9, 1.0e6, 1.0e3, 1.0, 1.0e-3, 1.0e-6, 1.0e-9, 1.0e-12, 1.0e-15, 1.0e-18]
 
 
-"""formats a number to a notation that uses SI prefixes"""
-function format_with_prefix(number::Number, delimiter::String="")::String
+"""determines the best unit prefix for the given value"""
+function get_factor_prefix(number::Real)::Tuple{Float64, String}
     # The format function of the Formatting library supports some of the SI prefixes, but
     # 1. only down to pico, and 2. it will not convert 0.05 as 50.0m (instead as 0.0)
-    if number == 0
-        return "0$delimiter"
-    end
 
     unit_prefix = unit_prefixes[end]
     unit_factor = unit_factors[end]
@@ -44,8 +41,36 @@ function format_with_prefix(number::Number, delimiter::String="")::String
             break
         end
     end
+    return unit_factor, unit_prefix
+end
+
+
+"""formats a number to a notation that uses SI prefixes"""
+function format_with_prefix(number::Real; delimiter::String="")::String
+    if number == 0
+        return "0$delimiter"
+    end
+
+    unit_factor, unit_prefix = get_factor_prefix(number)
+
     number = number / unit_factor
     return @sprintf("%0.1f", number) * "$delimiter$unit_prefix"
+end
+
+
+"""formats a vector of numbers to a notation that uses DI prefixes"""
+function format_with_prefix(numbers::AbstractVector{<:Real})::Tuple{Vector{String}, String, Float64}
+    max_number = maximum(abs.(numbers))
+    unit_factor, unit_prefix = get_factor_prefix(max_number)
+
+    formatted = map(numbers) do number
+        if number == 0
+            return "0"
+        end
+        number = number / unit_factor
+        return @sprintf("%0.1f", number)
+    end
+    return formatted, unit_prefix, unit_factor
 end
 
 
@@ -175,9 +200,10 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
     count = 1
     for id in ids
         dict_image = Dict{String, Any}()
+        griditem = images_parsed[id]
         
         # get comments
-        comment_lines = get_comment_lines(images_parsed[id].comment)
+        comment_lines = get_comment_lines(griditem.comment)
         if comment_lines != comment_lines_old
             count = 1  # will force new page
         end
@@ -198,9 +224,9 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         dict_image["fullwidth"] = odp_width_image  # needed for some elements
         dict_image["halfwidth"] = odp_width_image / 2  # needed for some elements
 
-        if images_parsed[id].type == SpmGridImage
+        if griditem.type == SpmGridImage
             dict_image["scalebar_show"] = true
-            width, height = images_parsed[id].scansize
+            width, height = griditem.scansize
         else
             dict_image["scalebar_show"] = false
             width, height = 1., 1.
@@ -212,7 +238,7 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         dict_image["image_x"] = x + (odp_width_image - dict_image["width"]) / 2  # center horizontally
         dict_image["image_y"] = y + (odp_width_image - dict_image["height"]) / 2  # center vertically
 
-        if images_parsed[id].type == SpmGridImage
+        if griditem.type == SpmGridImage
             # scalebar size
             scalebar_width_nm = get_scalebar_width(width)
             if scalebar_width_nm == round(scalebar_width_nm, digits=0)
@@ -220,7 +246,7 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
             else
                 dict_image["scalebar_width_nm"] = round(scalebar_width_nm, digits=1)
             end
-            dict_image["scalebar_unit"] = images_parsed[id].scansize_unit
+            dict_image["scalebar_unit"] = griditem.scansize_unit
             dict_image["scalebar_width"] = dict_image["scalebar_width_nm"] * dict_image["width"] / width
             dict_image["scalebar_x1"] = x + odp_width_image - dict_image["scalebar_width"]
             dict_image["scalebar_x2"] = x + odp_width_image
@@ -238,26 +264,55 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         dict_image["channel_x"] = x
         dict_image["channel_y"] = y + odp_width_image + 2 * odp_spacer + odp_lineheight
 
-        if haskey(odp_channel_names_short, images_parsed[id].channel_name)
-            dict_image["channel_name"] = odp_channel_names_short[images_parsed[id].channel_name]
+        if haskey(odp_channel_names_short, griditem.channel_name)
+            dict_image["channel_name"] = odp_channel_names_short[griditem.channel_name]
         else
-            dict_image["channel_name"] = images_parsed[id].channel_name
+            dict_image["channel_name"] = griditem.channel_name
         end
-        dict_image["bias"], dict_image["feedback"] = get_image_parameters(images_parsed[id])
+        dict_image["bias"], dict_image["feedback"] = get_image_parameters(griditem)
+        if dict_image["bias"] == "-V"
+            dict_image["bias"] = ""
+        end
 
-        filename_display = images_parsed[id].filename_display
+        filename_display = griditem.filename_display
         filename_odp = joinpath(dir_media_odp, filename_display)
         filename_odp = replace(filename_odp, "\\" => "/")  # we seem to need forward-slashes for the ZipFile
-        union!(keywords, images_parsed[id].keywords)
+        union!(keywords, griditem.keywords)
         dict_image["filename_odp"] = filename_odp
-        dict_image["filename"] = images_parsed[id].filename_original
+        dict_image["filename"] = griditem.filename_original
         
         # save all image data to our main dictionary (will be used later for mustache rendering)
         push!(dict_template["pages"][end]["images"], dict_image)
 
-        # save png to zip files
+        # save png/svg to zip files
         f = ZipFile.addfile(zipfile, filename_odp; method=ZipFile.Deflate)
-        write(f, read(joinpath(dir_cache, filename_display), String))
+        if griditem.type == SpmGridImage
+            write(f, read(joinpath(dir_cache, filename_display), String))
+        else  # we adapt the svg file for spectra
+            svg_str = read(joinpath(dir_cache, filename_display), String)
+            channel_ranges = copy(griditem.channel_range)
+            if length(griditem.channel_range_selected) == length(channel_ranges)
+                channel_ranges[1] = griditem.channel_range[1] + (channel_ranges[2] - channel_ranges[1]) * griditem.channel_range_selected[1]
+                channel_ranges[2] = griditem.channel_range[1] + (channel_ranges[2] - channel_ranges[1]) * griditem.channel_range_selected[2]
+                channel_ranges[3] = griditem.channel_range[3] + (channel_ranges[4] - channel_ranges[3]) * griditem.channel_range_selected[3]
+                channel_ranges[4] = griditem.channel_range[3] + (channel_ranges[4] - channel_ranges[3]) * griditem.channel_range_selected[4]
+            end
+            footer = svg_footer_export  # we need to a few replacements first
+            x_channel_range_strs, x_unit_prefix, x_unit_factor = format_with_prefix(channel_ranges[3:4])
+            x_axis_label = griditem.channel2_name * " / " * x_unit_prefix * griditem.channel2_unit
+            footer = replace(footer, "{{ x_axis_label }}" => x_axis_label, count=1)
+            footer = replace(footer, "{{ x_axis_min }}" => x_channel_range_strs[1], count=1)
+            footer = replace(footer, "{{ x_axis_max }}" => x_channel_range_strs[2], count=1)
+            y_channel_range_strs, y_unit_prefix, y_unit_factor = format_with_prefix(channel_ranges[1:2])
+            y_axis_label = griditem.channel_name * " / " * y_unit_prefix * griditem.channel_unit
+            footer = replace(footer, "{{ y_axis_label }}" => y_axis_label, count=1)
+            footer = replace(footer, "{{ y_axis_min }}" => y_channel_range_strs[1], count=1)
+            footer = replace(footer, "{{ y_axis_max }}" => y_channel_range_strs[2], count=1)
+
+            svg_str = replace(svg_str, svg_footer => footer, count=1)
+            svg_str = replace(svg_str, svg_header => svg_header_export, count=1)
+            write(f, svg_str)
+        end
         
         comment_lines_old = comment_lines
         count += 1
