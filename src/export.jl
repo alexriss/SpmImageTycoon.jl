@@ -174,10 +174,6 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
     comment_lines_old = Vector{String}(undef, 0)
     count = 1
     for id in ids
-        if images_parsed[id].type != "SpmGridImage"  # TODO: parse spectra (need different template, probably we also have to regenerate the svg - or png  if svgs dont work in presentation)
-            continue
-        end
-
         dict_image = Dict{String, Any}()
         
         # get comments
@@ -202,30 +198,40 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         dict_image["fullwidth"] = odp_width_image  # needed for some elements
         dict_image["halfwidth"] = odp_width_image / 2  # needed for some elements
 
+        if images_parsed[id].type == SpmGridImage
+            dict_image["scalebar_show"] = true
+            width, height = images_parsed[id].scansize
+        else
+            dict_image["scalebar_show"] = false
+            width, height = 1., 1.
+        end
+
         # adjust height for non-square images
-        width, height = images_parsed[id].scansize
         dict_image["width"] = min(odp_width_image, width/height * odp_width_image)
         dict_image["height"] = dict_image["width"] * height/width
         dict_image["image_x"] = x + (odp_width_image - dict_image["width"]) / 2  # center horizontally
         dict_image["image_y"] = y + (odp_width_image - dict_image["height"]) / 2  # center vertically
-        
-        # scalebar size
-        scalebar_width_nm = get_scalebar_width(width)
-        if scalebar_width_nm == round(scalebar_width_nm, digits=0)
-            dict_image["scalebar_width_nm"] = Int(scalebar_width_nm)
-        else
-            dict_image["scalebar_width_nm"] = round(scalebar_width_nm, digits=1)
+
+        if images_parsed[id].type == SpmGridImage
+            # scalebar size
+            scalebar_width_nm = get_scalebar_width(width)
+            if scalebar_width_nm == round(scalebar_width_nm, digits=0)
+                dict_image["scalebar_width_nm"] = Int(scalebar_width_nm)
+            else
+                dict_image["scalebar_width_nm"] = round(scalebar_width_nm, digits=1)
+            end
+            dict_image["scalebar_unit"] = images_parsed[id].scansize_unit
+            dict_image["scalebar_width"] = dict_image["scalebar_width_nm"] * dict_image["width"] / width
+            dict_image["scalebar_x1"] = x + odp_width_image - dict_image["scalebar_width"]
+            dict_image["scalebar_x2"] = x + odp_width_image
+            dict_image["scalebar_y"] = y + odp_width_image + odp_spacer_scalebar   # it is a line - so just one y coordinate needed
+            
+            # scalebar label
+            dict_image["scalebar_label_x"] = x + odp_width_image / 2
+            dict_image["scalebar_label_y"] = y + odp_width_image + odp_spacer_scalebar_label
         end
-        dict_image["scalebar_unit"] = images_parsed[id].scansize_unit
-        dict_image["scalebar_width"] = dict_image["scalebar_width_nm"] * dict_image["width"] / width
-        dict_image["scalebar_x1"] = x + odp_width_image - dict_image["scalebar_width"]
-        dict_image["scalebar_x2"] = x + odp_width_image
-        dict_image["scalebar_y"] = y + odp_width_image + odp_spacer_scalebar   # it is a line - so just one y coordinate needed
-        
+      
         # captions and image parameters
-        dict_image["scalebar_label_x"] = x + odp_width_image / 2
-        dict_image["scalebar_label_y"] = y + odp_width_image + odp_spacer_scalebar_label
-        
         dict_image["filename_x"] = x
         dict_image["filename_y"] = y + odp_width_image + odp_spacer
         

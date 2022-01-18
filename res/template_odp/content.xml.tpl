@@ -209,7 +209,7 @@
                     <draw:g>
                         <draw:frame draw:style-name="gr5" draw:text-style-name="P1" draw:layer="layout" svg:width="{{ fullwidth }}cm" svg:height="0.395cm" svg:x="{{ filename_x }}cm" svg:y="{{ filename_y }}cm">
                             <draw:text-box>
-                                <text:p>{{filename}}</text:p>
+                                <text:p>{{ filename }}</text:p>
                             </draw:text-box>
                         </draw:frame>
                         <draw:frame draw:style-name="gr6" draw:text-style-name="P1" draw:layer="layout" svg:width="{{ halfwidth }}cm" svg:height="0.395cm" svg:x="{{ channel_x }}cm" svg:y="{{ channel_y }}cm">
@@ -218,6 +218,7 @@
                             </draw:text-box>
                         </draw:frame>
                     </draw:g>
+                    {{#scalebar_show}}
                     <draw:g>
                         <draw:line draw:style-name="SPM_3a__20_Scalebar" draw:layer="layout" svg:x1="{{ scalebar_x1 }}cm" svg:y1="{{ scalebar_y }}cm" svg:x2="{{ scalebar_x2 }}cm" svg:y2="{{ scalebar_y }}cm">
                             <text:p/>
@@ -228,6 +229,7 @@
                             </draw:text-box>
                         </draw:frame>
                     </draw:g>
+                    {{/scalebar_show}}
                 </draw:g>
                 {{/images}}
                 <presentation:notes draw:style-name="dp2">
