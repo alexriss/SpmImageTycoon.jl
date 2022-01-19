@@ -47,6 +47,9 @@ function SpectrumPlot(container_element) {
 SpectrumPlot.prototype = {
     // formats value (using the right exponent)
     formatValue(val, unit_exponent, decimals=2, factor=1.) {
+        if (isNaN(val)) {
+            return "--";
+        }
         return (val / 10**unit_exponent * factor).toFixed(decimals);
     },
 

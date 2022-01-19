@@ -362,7 +362,8 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
     let sidebar = document.getElementById('sidebar_imagezoomtools');
 
     if (restore_previous && get_view() == "zoom") {
-        if (window.sidebar_imagezoomtools) {
+        const griditem = window.items[window.zoom_last_selected];
+        if (window.sidebar_imagezoomtools && griditem.type == "SpmGridImage") {
             if (sidebar.classList.contains("is-hidden")) {
                 sidebar.classList.remove("is-hidden");
             }
@@ -465,7 +466,6 @@ function toggle_imagezoom(target_view = "") {
             }
             window.zoom_last_selected = el.id;
             next_item(0); // sets the img src and displays colorbar etc
-            toggle_sidebar_imagezoomtools(restore_previous=true);
         }
     }
 }
@@ -725,6 +725,7 @@ function next_item(jump) {
 
         image_info_timeout(null, el.id, zoomview=true, timeout_ms=30);
     }
+    toggle_sidebar_imagezoomtools(restore_previous=true);
 }
 
 function scroll_to_selected(next=true) {
