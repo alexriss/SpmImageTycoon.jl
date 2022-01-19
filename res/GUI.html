@@ -118,8 +118,29 @@
           <div id="spectrumzoom_content">
             <div id="spectrumzoom_plot_container"></div>
           </div>
-          <div id="spectrumzoom_form_container">
-            save zoom button
+          <div id="spectrumzoom_form_container" class="is-size-7">
+            <table id="spectrumzoom_form_table" class="table is-size-7">
+              <tr>
+                <th width="20%">x-axis</th>
+                <td width="30%" class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_x_min"></td>
+                <td width="30%" class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_x_max"></td>
+                <td width="20%"><span id="spectrumzoom_x_unit"></span></td>
+              </tr>
+              <tr>
+                <th>y-axis</th>
+                <td class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_y_min"></td>
+                <td class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_y_max"></td>
+                <td><span id="spectrumzoom_y_unit"></span></td>
+              </tr>
+              <tr>
+                <td colspan="4" class="pt-3 pl-2 pr-2">
+                  <p>
+                    <button id="spectrumzoom_save_zoom" class="button is-small">Save zoom</button>
+                  </p>
+                </td>
+              </tr>
+            </table>
+  
           </div>
         </div>
         <div id="zoomview_container_image">

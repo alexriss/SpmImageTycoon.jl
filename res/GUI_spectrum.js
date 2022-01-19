@@ -42,6 +42,13 @@ function SpectrumPlot(container_element) {
         stroke: "#3676d7",
         width: 1,
     }
+
+    this.form_el_x_unit = document.getElementById("spectrumzoom_x_unit");
+    this.form_el_y_unit = document.getElementById("spectrumzoom_y_unit");
+    this.form_el_x_min = document.getElementById("spectrumzoom_x_min");
+    this.form_el_x_max = document.getElementById("spectrumzoom_x_max");
+    this.form_el_y_min = document.getElementById("spectrumzoom_y_min");
+    this.form_el_y_max = document.getElementById("spectrumzoom_y_max");
 }
 
 SpectrumPlot.prototype = {
@@ -54,11 +61,16 @@ SpectrumPlot.prototype = {
     },
 
     // get size of container
-    getSize() {
+    getContainerSize() {
         return {
             width: this.container.parentElement.clientWidth - 20,
             height: this.container.parentElement.clientHeight - 60
         }
+    },
+
+    // sets plot size according to container
+    setPlotSize() {
+        this.plot_object.setSize(this.getContainerSize());
     },
 
     getLabel(suffix = "") {
@@ -126,6 +138,8 @@ SpectrumPlot.prototype = {
             this.plot_object.setScale("x", {min: x_min * this.x_factor, max: x_max * this.x_factor});
             this.plot_object.setScale("y", {min: y_min * this.y_factor, max: y_max * this.y_factor});
 
+            this.form_el_x_unit.innerText = this.unit_prefix +  griditem.channel_unit;
+            this.form_el_y_unit.innerText = this.unit2_prefix +  griditem.channel2_unit;
             // this.plot_object.redraw();  // setscale above already redraws
         }
     },
@@ -137,7 +151,7 @@ SpectrumPlot.prototype = {
             var opts = {
                 title: "",
                 id: "spectrumzoom_plot_uplot",
-                ...this.getSize(),
+                ...this.getContainerSize(),
                 scales: {
                     "x": {
                         time: false,
@@ -165,6 +179,16 @@ SpectrumPlot.prototype = {
                         values: (self, ticks) => ticks.map(rawValue => this.formatValue(rawValue, this.unit_exponent, 2, this.y_factor)),
                     }
                 ],
+                hooks: {
+					setScale: [
+						u => {
+                                that.form_el_x_min.value = this.formatValue(u.scales.x.min, this.unit2_exponent, 3, this.x_factor);
+                                that.form_el_x_max.value = this.formatValue(u.scales.x.max, this.unit2_exponent, 3, this.x_factor);
+                                that.form_el_y_min.value = this.formatValue(u.scales.y.min, this.unit_exponent, 3, this.y_factor);
+                                that.form_el_y_max.value = this.formatValue(u.scales.y.max, this.unit_exponent, 3, this.y_factor);
+ 							 }
+					],
+                },
                 cursor: {
                     drag: { x: true, y: true }  //  uni: Infinity
                 }
@@ -172,7 +196,7 @@ SpectrumPlot.prototype = {
             this.plot_object = new uPlot(opts, data, this.container);
 
             // adjust size when container is resized
-            new ResizeObserver(() => this.plot_object.setSize(this.getSize())).observe(this.container);
+            new ResizeObserver(() => this.setPlotSize()).observe(this.container);
         } else {
             // 
         }

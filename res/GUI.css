@@ -294,6 +294,19 @@ body {
   overflow: hidden;
 }
 
+#spectrumzoom_form_table {
+  background-color: #ffffff00;
+  width: 320px;
+  margin: auto;
+}
+
+#spectrumzoom_form_table td, #spectrumzoom_form_table th {
+  vertical-align: middle;
+  padding: .2em .75em;
+  height: 3em;
+}
+
+
 /* sidebar */
 
 .sidebar {
