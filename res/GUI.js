@@ -23,6 +23,8 @@ window.line_profile_object = null;  // hold the line profile object
 
 window.histogram_object = null;  // holds the histogram object
 
+window.spectrum_plot_object = null;  // hold the spectrum plot object
+
 window.filter_overview_selection_object = null;  // holds the selection object for overview filter
 window.filter_overview_selecting = false;  // user is currently making a selection
 
@@ -427,7 +429,7 @@ function toggle_imagezoom(target_view = "") {
 
     const grid = document.getElementById('imagegrid_container');
     const gridsub = document.getElementById('imagegrid_container_sub');
-    const zoom = document.getElementById('imagezoom_container');
+    const zoom = document.getElementById('zoomview_container');
     const footer_num_images_container = document.getElementById('footer_num_images_container');
 
     if (get_view() == "help") {
@@ -694,21 +696,34 @@ function next_item(jump) {
         window.image_info_id = el.id;
         window.zoom_last_selected = el.id;
 
-        document.getElementById('imagezoom_image').src = file_url(el.id)
-        document.getElementById('imagezoom_colorbar').src = file_url_colorbar(el.id);
-        if (window.histogram_object === null) {
-            window.histogram_object = new Histogram();
-        }
-        window.histogram_object.set_range_initial(window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
+        if (window.items[el.id].type == "SpmGridImage") {
+            document.getElementById('imagezoom_image').src = file_url(el.id)
+            document.getElementById('imagezoom_colorbar').src = file_url_colorbar(el.id);
 
-        if (window.line_profile_object === null) {
-            window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));
-        }
-        window.line_profile_object.setup(new_image=true);
-        imagezoom_size_adjust();
+            document.getElementById("zoomview_container_image").classList.remove("is-hidden");
+            document.getElementById("zoomview_container_spectrum").classList.add("is-hidden");
 
-        let histogram = (window.items[el.id].type == "SpmGridImage") ? true : false;
-        image_info_timeout(null, el.id, histogram=histogram, timeout_ms=30);
+            if (window.histogram_object === null) {
+                window.histogram_object = new Histogram();
+            }
+            window.histogram_object.set_range_initial(window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
+
+            if (window.line_profile_object === null) {
+                window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));
+            }
+            window.line_profile_object.setup(new_image=true);
+            imagezoom_size_adjust();
+        } else {
+            document.getElementById("zoomview_container_image").classList.add("is-hidden");
+            document.getElementById("zoomview_container_spectrum").classList.remove("is-hidden");
+
+            if (window.spectrum_plot_object === null) {
+                window.spectrum_plot_object = new SpectrumPlot(document.getElementById("spectrumzoom_plot_container"));
+            }
+            window.spectrum_plot_object.setup();
+        }
+
+        image_info_timeout(null, el.id, zoomview=true, timeout_ms=30);
     }
 }
 
@@ -813,7 +828,7 @@ function image_info_quick(id="") {
     }
 }
 
-function image_info_timeout(event, id="", histogram=false, timeout_ms=10) {
+function image_info_timeout(event, id="", zoomview=false, timeout_ms=10) {
     if (id == "") {
         const id = this.id;
     }
@@ -830,7 +845,7 @@ function image_info_timeout(event, id="", histogram=false, timeout_ms=10) {
     }
 
     window.timeout_image_info = window.setTimeout(function() {
-        get_image_info(id, histogram);
+        get_image_info(id, zoomview);
     }, timeout_ms);
 }
 

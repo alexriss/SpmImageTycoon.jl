@@ -113,43 +113,53 @@
           </div>
         </div>
       </div>
-      <div id="imagezoom_container" class="p-3 is-hidden">
-        <div id="imagezoom_content">
-          <section>
-            <img id="imagezoom_image" class="fullwidth pixelated" />
-            <canvas id="imagezoom_canvas"></canvas>
-          </section>
+      <div id="zoomview_container" class="p-3 is-hidden">
+        <div id="zoomview_container_spectrum">
+          <div id="spectrumzoom_content">
+            <div id="spectrumzoom_plot_container"></div>
+          </div>
+          <div id="spectrumzoom_form_container">
+            save zoom button
+          </div>
         </div>
-        <div id="imagezoom_histogram_table_container" class="columns is-gapless">
-          <div class="column">
-            <div id="imagezoom_histogram_container" class="unselectable">
-              <div id="imagezoom_histogram" class="unselectable">
-                <div id="imagezoom_histogram_canvas_container" class="unselectable">
-                  <canvas id="imagezoom_histogram_canvas"></canvas>
-                </div>
-                <div id="imagezoom_colorbar_container" class="unselectable">
-                  <img id="imagezoom_colorbar" class="unselectable" />
+        <div id="zoomview_container_image">
+          <div id="imagezoom_content">
+            <section>
+              <img id="imagezoom_image" class="fullwidth pixelated" />
+              <canvas id="imagezoom_canvas"></canvas>
+            </section>
+          </div>
+          <div id="imagezoom_histogram_table_container" class="columns is-gapless">
+            <div class="column">
+              <div id="imagezoom_histogram_container" class="unselectable">
+                <div id="imagezoom_histogram" class="unselectable">
+                  <div id="imagezoom_histogram_canvas_container" class="unselectable">
+                    <canvas id="imagezoom_histogram_canvas"></canvas>
+                  </div>
+                  <div id="imagezoom_colorbar_container" class="unselectable">
+                    <img id="imagezoom_colorbar" class="unselectable" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="column is-narrow">
-            <table id="imagezoom_table_range">
-              <!-- <tr><th colspan="4">Full:</th></tr> -->
-              <tr>
-                <td class="range_number"><span id="imagezoom_range_start"></span></td>
-                <td>to</td>
-                <td class="range_number"><span id="imagezoom_range_end"></span></td>
-                <td class="range_unit"><span class="range_unit_prefix"></span><span class="range_unit_unit"></span></td>
-              </tr>
-              <!--  <tr><th colspan="4">Selected:</th></tr> -->
-              <tr>
-                <td class="range_number"><input type="number" id="imagezoom_range_selected_start" step="0.01"></td>
-                <td>to</td>
-                <td class="range_number"><input type="number" id="imagezoom_range_selected_end" step="0.01"></td>
-                <td class="range_unit"><span class="range_unit_prefix"></span><span class="range_unit_unit"></span></td>
-              </tr>
-            </table>
+            <div class="column is-narrow">
+              <table id="imagezoom_table_range">
+                <!-- <tr><th colspan="4">Full:</th></tr> -->
+                <tr>
+                  <td class="range_number"><span id="imagezoom_range_start"></span></td>
+                  <td>to</td>
+                  <td class="range_number"><span id="imagezoom_range_end"></span></td>
+                  <td class="range_unit"><span class="range_unit_prefix"></span><span class="range_unit_unit"></span></td>
+                </tr>
+                <!--  <tr><th colspan="4">Selected:</th></tr> -->
+                <tr>
+                  <td class="range_number"><input type="number" id="imagezoom_range_selected_start" step="0.01"></td>
+                  <td>to</td>
+                  <td class="range_number"><input type="number" id="imagezoom_range_selected_end" step="0.01"></td>
+                  <td class="range_unit"><span class="range_unit_prefix"></span><span class="range_unit_unit"></span></td>
+                </tr>
+              </table>
+            </div>
           </div>
         </div>
       </div>

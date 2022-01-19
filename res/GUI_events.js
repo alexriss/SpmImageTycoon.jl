@@ -193,7 +193,7 @@ function event_handlers() {
     dragElement(document.getElementById("modal_keywords"), document.getElementById("modal_keywords_header"));
 
     // imagezoom
-    document.getElementById('imagezoom_container').addEventListener('dblclick', (e) => {
+    document.getElementById('zoomview_container').addEventListener('dblclick', (e) => {
         if (e.ctrlKey) {
             toggle_imagezoom("grid");
         }

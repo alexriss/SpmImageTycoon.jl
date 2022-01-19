@@ -4,9 +4,9 @@
 
 # SpmImage Tycoon
 
-Cross-platform app to manage and edit scanning probe microscopy (SPM) images. *Under development.*
+Cross-platform app to manage and edit scanning probe microscopy (SPM) images and spectra. *Under development.*
 
-Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images are supported.
+Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra are supported.
 
 [Features](#features)  
 [Demo](#demo)  
@@ -21,6 +21,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 ## Features
 
 - Load and display Nanonis SPM images: grid and zoom views
+- Load and display Nanonis spectra
 - Fast keyboard-based navigation
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
@@ -28,9 +29,10 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 - Star-rating and keyword systems
 - Powerful search
 - Line profiles *(experimental and not yet fully tested)*
-- Overview and position-based filtering *(experimental and not yet fully tested)*
+- Overview and position-based filtering
 - Export to [OpenDocument presentation](https://en.wikipedia.org/wiki/OpenDocument)
   (compatible with [LibreOffice](https://www.libreoffice.org/), [OpenOffice](https://www.openoffice.org/), [PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint), etc.)
+- Everything is experimental. And we all like experiments.
   
 ## Demo
 

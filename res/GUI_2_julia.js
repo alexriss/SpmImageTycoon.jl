@@ -327,6 +327,7 @@ function show_info(id, gzip_info_json, extra_info={}) {
 }
 
 function show_histogram(id, width, counts) {
+    // histogram in zoom view
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
         if (window.histogram_object != null) {
             window.histogram_object.plot_histogram(width, counts);
@@ -338,8 +339,20 @@ function show_histogram(id, width, counts) {
 function show_line_profile(id, distances, values, start_point_value, end_point_value) {
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
         if (window.line_profile_object != null) {
-            window.window.line_profile_object.showLineValues(start_point_value, end_point_value);
-            window.window.line_profile_object.plotLineProfile(distances, values);
+            window.line_profile_object.showLineValues(start_point_value, end_point_value);
+            window.line_profile_object.plotLineProfile(distances, values);
+        }
+    }
+    open_jobs(-1);
+}
+
+function show_spectrum(id, gzip_json_spectrum_data) {
+    if (get_view() == "zoom" && window.zoom_last_selected == id) {
+        let json_spectrum_data = require("zlib").gunzipSync(new Buffer.from(gzip_json_spectrum_data));
+        let spectrum_data = JSON.parse(json_spectrum_data.toString("utf-8"));
+
+        if (window.spectrum_plot_object != null) {
+            window.spectrum_plot_object.plotSpectrum(spectrum_data);
         }
     }
     open_jobs(-1);
@@ -492,7 +505,7 @@ function change_item_range(id, range_selected) {
 }
 
 
-function get_image_info(id="", histogram=false) {
+function get_image_info(id="", zoomview=false) {
     // gets info (header data) for the current image
 
     // console.log("get info");
@@ -513,10 +526,10 @@ function get_image_info(id="", histogram=false) {
     }
     if (id != "") {
         window.image_info_id = id;
-        if (histogram) {
+        if (zoomview) {
             open_jobs(1);
         }
-        Blink.msg("grid_item", ["get_info", [id], histogram]);
+        Blink.msg("grid_item", ["get_info", [id], zoomview]);
     }
 }
 

@@ -147,8 +147,11 @@ end
 
 
 """Get, background correct and filter image data for a specific griditem.
-Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors."""
-function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{Vector{Vector{Float64}},Vector{Vector{Float64}},Vector{String}}
+If `sort_x_asc` is `true` then the data is sorted by x_data in ascending direction.
+If `sort_x_any` is `true``, then the data is sorted by x_data in ascending direction if it is not yet sorted in ascending or descending direction.
+Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors.
+"""
+function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_asc::Bool=false, sort_x_any::Bool=false)::Tuple{Vector{Vector{Float64}},Vector{Vector{Float64}},Vector{String}}
     # TODO: implement average sweeps
     channel_name = griditem.channel_name
     channel2_name = griditem.channel2_name
@@ -193,10 +196,82 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{
     end
 
     for (x_data, y_data) in zip(x_datas, y_datas)
+        if sort_x_asc
+            if !issorted(x_data)
+                p = sortperm(x_data)
+                x_data .= x_data[p]
+                y_data .= y_data[p]
+            end
+        elseif sort_x_any && !issorted(x_data) && !issorted(x_data, rev=true)
+            p = sortperm(x_data)
+            x_data .= x_data[p]
+            y_data .= y_data[p]
+        end
         SpmSpectroscopy.correct_background!(x_data, y_data, background_correction_list_spectrum[griditem.background_correction])
     end
 
     return x_datas, y_datas, colors
+end
+
+
+"""gets spectrum data to be used in the js-plot function."""
+function get_spectrum_data_dict(griditem::SpmGridItem, dir_data::String)::Dict{String,Any}
+    type = "line"
+    zip_data = false
+    spectrum = load_spectrum(joinpath(dir_data, griditem.filename_original), index_column=true, index_column_type=Float64)
+    x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_asc=true)  # uplot needs ascending x_values
+    
+    i = 1
+    for (x_data,y_data) in zip(x_datas,y_datas)
+        if i > 1 && x_data[i] != x_data[1]  # uplot.js needs tone common x-axis
+            zip_data = true
+            type = "scatter"
+        end
+        i += 1
+    end
+
+    new_length = length(y_datas[1]) * length(y_datas)
+    x_data_new = Vector{Float64}(undef, new_length)
+    y_datas_new = [Vector{Float64}(undef, new_length) for _ in 1:length(y_datas)]
+    if zip_data  # uplot.js wants one common x_data, so we join the data now
+        idx = 1
+        for i_point = 1:length(y_datas[1])
+            x_datas_points = [x_data_curr[i_point] for x_data_curr in x_datas]
+            p = sortperm(x_datas_points)
+            for i_order in 1:length(p)
+                x_data_new[idx] = x_datas_points[p[i_order]]
+                for i_channel in 1:length(p)
+                    y_datas_new[i_channel][idx] = (p[i_order] == i_channel) ? y_datas[i_channel][i_point] : NaN
+                end
+                idx += 1
+            end
+        end
+    else
+        x_data_new = x_datas[1]
+        y_datas_new = y_datas
+    end
+
+    if length(griditem.channel_range_selected) != 4
+        griditem.channel_range_selected = [0., 1., 0., 1.]
+    end
+    x_inverted = (griditem.channel_range_selected[3] > griditem.channel_range_selected[4]) ? true : false
+    y_inverted = (griditem.channel_range_selected[1] > griditem.channel_range_selected[2]) ? true : false
+    if x_inverted
+        reverse!(x_data_new)
+        x_data_new .*= -1.
+    end
+    for y_data_new in y_datas_new
+        if x_inverted
+            reverse!(y_data_new)
+        end
+        if y_inverted
+            y_data_new .*= -1.
+        end
+    end
+
+    type = "line"  # let's always do a line for now
+    spectrum_data = Dict{String,Any}("x_data" => x_data_new, "y_datas" => y_datas_new, "colors" => colors, "type" => type, "x_inverted" => x_inverted, "y_inverted" => y_inverted)
+    return spectrum_data
 end
 
 
@@ -286,7 +361,7 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     end
 
     # load spectrum
-    x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum)
+    x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true)  # sort x_values (asc or desc is ok), so that we get a nice line plot
     griditem.points = length(x_datas[1])
 
     filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).svg"

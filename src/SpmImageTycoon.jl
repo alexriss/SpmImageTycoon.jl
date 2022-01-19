@@ -430,7 +430,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         ids = string.(args[2])  # for some reason its type is "Any" and not String
         if what == "get_info"
             id = ids[1]
-            histogram = args[3]
+            zoomview = args[3]
             # get header data
             try
                 image_header, extra_info = get_griditem_header(images_parsed[id], dir_data)
@@ -440,9 +440,16 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
                 json_compressed = transcode(GzipCompressor, image_header_json)
                 @js_ w show_info($id, $json_compressed, $extra_info);
-                if histogram
-                    width, counts = get_histogram(images_parsed[id], dir_data)
-                    @js_ w show_histogram($id, $width, $counts)
+                if zoomview
+                    if images_parsed[id].type == SpmGridImage
+                        width, counts = get_histogram(images_parsed[id], dir_data)
+                        @js_ w show_histogram($id, $width, $counts)
+                    else
+                        # get 2d data for spectrum
+                        spectrum_data = get_spectrum_data_dict(images_parsed[id], dir_data)
+                        json_compressed = transcode(GzipCompressor, JSON.json(spectrum_data))
+                        @js_ w show_spectrum($id, $json_compressed)
+                    end
                 end
             catch e
                 error(e, w)
