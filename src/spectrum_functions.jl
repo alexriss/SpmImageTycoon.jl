@@ -223,7 +223,7 @@ function get_spectrum_data_dict(griditem::SpmGridItem, dir_data::String)::Dict{S
     
     i = 1
     for (x_data,y_data) in zip(x_datas,y_datas)
-        if i > 1 && x_data[i] != x_data[1]  # uplot.js needs tone common x-axis
+        if i > 1 && x_data != x_datas[1]  # uplot.js needs tone common x-axis
             zip_data = true
             type = "scatter"
         end
