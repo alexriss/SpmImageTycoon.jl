@@ -1,5 +1,5 @@
 
-const config_filename = "settings.json"  # configuration settings
+const config_filename = "settings.toml"  # configuration settings
 const config_dir = ".spmimagetycoon"  # will be in home directory
 
 
@@ -38,6 +38,8 @@ const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
 auto_save_minutes = 10  # auto-save every n minutes
 
 overview_max_images = 100  # maximum number of images displayed in the filter_overview
+
+memcache_mb_spectra = 50  # size of memory cache for spectra (in mb)
 
 last_directories = []  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
@@ -157,54 +159,60 @@ function load_config()
 
     config_filepath = joinpath(homedir(), config_dir, config_filename)
     if isfile(config_filepath)
-        d = JSON.parsefile(config_filepath)
-        if haskey(d, "image_channels_feedback_on") && isa(d["image_channels_feedback_on"], Array)
-            global image_channels_feedback_on = string.(d["image_channels_feedback_on"])
-        end
+        d = TOML.tryparsefile(config_filepath)
+        if typeof(d) <: Dict
+            if haskey(d, "image_channels_feedback_on") && isa(d["image_channels_feedback_on"], Array)
+                global image_channels_feedback_on = string.(d["image_channels_feedback_on"])
+            end
 
-        if haskey(d, "image_channels_feedback_off") && isa(d["image_channels_feedback_off"], Array)
-            global image_channels_feedback_off = string.(d["image_channels_feedback_off"])
-        end
+            if haskey(d, "image_channels_feedback_off") && isa(d["image_channels_feedback_off"], Array)
+                global image_channels_feedback_off = string.(d["image_channels_feedback_off"])
+            end
 
-        if haskey(d, "spectrum_channels") && isa(d["spectrum_channels"], Dict)
-            global spectrum_channels = OrderedDict{String,Vector{String}}()
-            for (k,v) in d["spectrum_channels"]
-                if isa(v, Array)
-                    spectrum_channels[string(k)] = string.(v)
+            if haskey(d, "spectrum_channels") && isa(d["spectrum_channels"], Dict)
+                global spectrum_channels = OrderedDict{String,Vector{String}}()
+                for (k,v) in d["spectrum_channels"]
+                    if isa(v, Array)
+                        spectrum_channels[string(k)] = string.(v)
+                    end
                 end
             end
-        end
 
-        if haskey(d, "spectrum_channels") && isa(d["spectrum_channels_x"], Dict)
-            global spectrum_channels_x = OrderedDict{String,Vector{String}}()
-            for (k,v) in d["spectrum_channels_x"]
-                if isa(v, Array)
-                    spectrum_channels_x[string(k)] = string.(v)
+            if haskey(d, "spectrum_channels") && isa(d["spectrum_channels_x"], Dict)
+                global spectrum_channels_x = OrderedDict{String,Vector{String}}()
+                for (k,v) in d["spectrum_channels_x"]
+                    if isa(v, Array)
+                        spectrum_channels_x[string(k)] = string.(v)
+                    end
                 end
             end
-        end
-        
-        if haskey(d, "spectrum_channels_z_spectroscopy") && isa(d["spectrum_channels_z_spectroscopy"], Array)
-            global spectrum_channels_z_spectroscopy = string.(d["spectrum_channels_z_spectroscopy"])
-        end
+            
+            if haskey(d, "spectrum_channels_z_spectroscopy") && isa(d["spectrum_channels_z_spectroscopy"], Array)
+                global spectrum_channels_z_spectroscopy = string.(d["spectrum_channels_z_spectroscopy"])
+            end
 
-        if haskey(d, "auto_save_minutes") && isa(d["auto_save_minutes"], Real)
-            global auto_save_minutes = d["auto_save_minutes"]
-        end
+            if haskey(d, "auto_save_minutes") && isa(d["auto_save_minutes"], Real)
+                global auto_save_minutes = d["auto_save_minutes"]
+            end
 
-        if haskey(d, "overview_max_images") && isa(d["overview_max_images"], Real)
-            global overview_max_images = d["overview_max_images"]
-        end
+            if haskey(d, "overview_max_images") && isa(d["overview_max_images"], Real)
+                global overview_max_images = d["overview_max_images"]
+            end
 
-        if haskey(d, "last_directories") && isa(d["last_directories"], Array)
-            global last_directories = string.(d["last_directories"])
-        end
+            if haskey(d, "memcache_mb_spectra") && isa(d["memcache_mb_spectra"], Real)
+                global memcache_mb_spectra = d["memcache_mb_spectra"]
+            end
 
-        if haskey(d, "export")
-            if haskey(d["export"], "channel_names_short") && isa(d["export"]["channel_names_short"], Dict)
-                global odp_channel_names_short = OrderedDict{String,String}()
-                for (k,v) in d["export"]["channel_names_short"]
-                    odp_channel_names_short[string(k)] = string(v)
+            if haskey(d, "last_directories") && isa(d["last_directories"], Array)
+                global last_directories = string.(d["last_directories"])
+            end
+
+            if haskey(d, "export")
+                if haskey(d["export"], "channel_names_short") && isa(d["export"]["channel_names_short"], Dict)
+                    global odp_channel_names_short = OrderedDict{String,String}()
+                    for (k,v) in d["export"]["channel_names_short"]
+                        odp_channel_names_short[string(k)] = string(v)
+                    end
                 end
             end
         end
@@ -236,13 +244,14 @@ function save_config(new_directory::String="")
         "spectrum_channels_x" => spectrum_channels_x,
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
+        "memcache_mb_spectra" => memcache_mb_spectra,
         "export" => odp_channel_names_short,
         "last_directories" => last_directories
     )
 
     try
         open(config_filepath,"w") do f
-            JSON.print(f, d, 4)
+            TOML.print(f, d)
         end
     catch e
         println("Error: Could not write config file $config_filepath.")

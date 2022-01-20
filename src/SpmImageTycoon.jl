@@ -15,6 +15,7 @@ using NaturalSort
 using SpmImages
 using SpmSpectroscopy
 using StatsBase
+using TOML
 
 export SpmGridItem, tycoon
 
