@@ -1,3 +1,8 @@
+# for memory caching of spectra
+const spectrum_cache_order = Deque{String}()
+const spectrum_cache = Dict{String,SpmSpectrum}()
+
+
 """gets the default channel name for the y-axis and x-axis, as well as their units, 
 according to the lists spectrum_channels and spectrum_channels_x in config.jl
 and the type of the experiment."""
@@ -150,11 +155,49 @@ function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, ima
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = images_parsed[id].filename_original
-        spectrum = load_spectrum(joinpath(dir_data, images_parsed[id].filename_original), index_column=true, index_column_type=Float64)
+        spectrum = load_spectrum_cache(joinpath(dir_data, images_parsed[id].filename_original))
         images_parsed[id].channel_range_selected = range_selected
         create_spectrum!(images_parsed[id], spectrum, base_dir=dir_cache)
     end
     return nothing
+end
+
+"""
+    function load_spectrum_cache(filename::AbstractString)::SpmSpectrum
+
+Loads a spectrum from either the file or the memory cache.
+"""
+function load_spectrum_cache(filename::AbstractString)::SpmSpectrum
+    if haskey(spectrum_cache, filename)
+        push!(spectrum_cache_order, filename)
+
+        # we should make sure that `spectrum_cache_order` does not fill up too much
+        while length(spectrum_cache_order) > 100000
+            to_delete = popfirst!(spectrum_cache_order)
+            if haskey(spectrum_cache, to_delete)
+                delete!(spectrum_cache, to_delete)
+            end
+        end
+        
+        if haskey(spectrum_cache, filename)
+            return spectrum_cache[filename]
+        end
+    end
+
+    spectrum = load_spectrum(filename, index_column=true, index_column_type=Float64)
+
+    # keep cache size roughly within the limit set in the config
+    while Base.summarysize(spectrum_cache) > memcache_mb_spectra * 1e6 && length(spectrum_cache) > 0
+        to_delete = popfirst!(spectrum_cache_order)
+        if haskey(spectrum_cache, to_delete)
+            delete!(spectrum_cache, to_delete)
+        end
+    end
+
+    # add to cache
+    spectrum_cache[filename] = spectrum
+    push!(spectrum_cache_order, filename)
+    return spectrum
 end
 
 
@@ -244,7 +287,7 @@ end
 function get_spectrum_data_dict(griditem::SpmGridItem, dir_data::String)::Dict{String,Any}
     type = "line"
     zip_data = false
-    spectrum = load_spectrum(joinpath(dir_data, griditem.filename_original), index_column=true, index_column_type=Float64)
+    spectrum = load_spectrum_cache(joinpath(dir_data, griditem.filename_original))
     x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_asc=true)  # uplot needs ascending x_values
     
     i = 1
@@ -402,7 +445,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
-    spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)
+    spectrum = load_spectrum_cache(datafile)
 
     z_feedback_setpoint = 0.0
     z_feedback_setpoint_unit = ""

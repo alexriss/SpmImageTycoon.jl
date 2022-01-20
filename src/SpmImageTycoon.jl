@@ -217,7 +217,7 @@ function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{S
         if images_parsed[id].type == SpmGridImage
             item = load_image(filename_original_full, output_info=0)
         elseif images_parsed[id].type == SpmGridSpectrum
-            item = load_spectrum(filename_original_full, index_column=true, index_column_type=Float64)
+            item = load_spectrum_cache(filename_original_full)
         else
             println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
             continue
@@ -262,7 +262,7 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
         return im_spm.header, extra_info
     elseif griditem.type == SpmGridSpectrum
-        spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)
+        spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)  # no caching here
         extra_info["Channels"] = join(spectrum.channel_names, ", ")
         extra_info["Units"] = join(spectrum.channel_units, ", ")
         # we add this information to the header
