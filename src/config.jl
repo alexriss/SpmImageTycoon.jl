@@ -103,7 +103,15 @@ const svg_header_export = """<?xml version="1.0" encoding="utf-8"?>
             font-size:6px;
             fill:#909090;
         }
+        polyline {
+           clip-path: url(#graphArea);
+        }
     </style>
+    <defs>
+        <clipPath id="graphArea">
+            <rect x="0" y="0" width="100" height="100"/>
+        </clipPath>
+    </defs>
 """
 const svg_footer_export = """
 <text x="50" y="108" style="fill:#303030;" text-anchor="middle" alignment-baseline="top">{{ x_axis_label }}</text>

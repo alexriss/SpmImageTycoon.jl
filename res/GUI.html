@@ -121,21 +121,25 @@
           <div id="spectrumzoom_form_container" class="is-size-7">
             <table id="spectrumzoom_form_table" class="table is-size-7">
               <tr>
-                <th width="20%">x-axis</th>
+                <th width="16%">x-axis</th>
+                <td width="8%" class="px-0 mx-0 pt-1"><img id="spectrumzoom_x_inverted" style="opacity:0.3;height:100%;" src="swap.svg" /></td>
                 <td width="30%" class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_x_min"></td>
                 <td width="30%" class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_x_max"></td>
-                <td width="20%"><span id="spectrumzoom_x_unit"></span></td>
+                <td width="16%"><span id="spectrumzoom_x_unit"></span></td>
               </tr>
               <tr>
                 <th>y-axis</th>
+                <td class="px-0 mx-0 pt-1"><img id="spectrumzoom_y_inverted" style="opacity:0.3;;height:100%;" src="swap-vertical.svg" /></td>
                 <td class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_y_min"></td>
                 <td class="pr-1"><input type="number" step="0.1" class="input is-small has-text-right" type="text" id="spectrumzoom_y_max"></td>
                 <td><span id="spectrumzoom_y_unit"></span></td>
               </tr>
               <tr>
-                <td colspan="4" class="pt-3 pl-2 pr-2">
+                <td colspan="4" class="pt-3 pl-2 pr-4 has-text-right">
                   <p>
-                    <button id="spectrumzoom_save_zoom" class="button is-small">Save zoom</button>
+                    <button id="spectrumzoom_reset_zoom" type="reset" class="button is-small mr-2">reset</button>
+                    <button id="spectrumzoom_full_zoom" class="button is-small mr-2">full</button>
+                    <button id="spectrumzoom_save_zoom" class="button is-small">save</button>
                   </p>
                 </td>
               </tr>

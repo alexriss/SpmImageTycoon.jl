@@ -143,7 +143,7 @@ function colorize(data::Array{<:Number,2}, colorscheme::String)::Array{RGB{Float
     for j in 1:n, i in 1:m
         @views @inbounds res[i,j] = getindex(cs, round(Int, data[i,j] * (length(cs) - 1)) + 1)
     end
-    res
+    return res
 end
 
 
@@ -178,7 +178,7 @@ end
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
 The "filename_display" field of the SpmGridItem is updated (to the png filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="", use_existing::Bool=false)
+function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="", use_existing::Bool=false)::Nothing
     if use_existing
         f = joinpath(base_dir, griditem.filename_display)
         if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
@@ -208,7 +208,7 @@ end
 
 
 """sets selected range and recreates images"""
-function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, range_selected::Array{Float64}, full_resolution::Bool)
+function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, range_selected::Array{Float64}, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = images_parsed[id].filename_original
@@ -217,6 +217,7 @@ function set_range_selected!(ids::Vector{String}, dir_data::String, images_parse
         resize_to_ = full_resolution ? 0 : resize_to
         create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
     end
+    return nothing
 end
 
 

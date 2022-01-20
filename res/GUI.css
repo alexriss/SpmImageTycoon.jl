@@ -306,6 +306,14 @@ body {
   height: 3em;
 }
 
+/* remove up and down arrows */
+#spectrumzoom_form_table input::-webkit-outer-spin-button,
+#spectrumzoom_form_table input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
 
 /* sidebar */
 

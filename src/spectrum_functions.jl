@@ -145,6 +145,18 @@ function next_invert!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Nothing
 end
 
 
+"""sets selected range and recreates spectra"""
+function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, range_selected::Array{Float64})::Nothing
+    dir_cache = get_dir_cache(dir_data)
+    for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
+        filename_original = images_parsed[id].filename_original
+        spectrum = load_spectrum(joinpath(dir_data, images_parsed[id].filename_original), index_column=true, index_column_type=Float64)
+        images_parsed[id].channel_range_selected = range_selected
+        create_spectrum!(images_parsed[id], spectrum, base_dir=dir_cache)
+    end
+    return nothing
+end
+
 
 """Get, background correct and filter image data for a specific griditem.
 If `sort_x_asc` is `true` then the data is sorted by x_data in ascending direction.
@@ -158,39 +170,53 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_
     channel_name_bwd = griditem.channel_name * " [bwd]"
     channel2_name_bwd = griditem.channel2_name * " [bwd]"
 
+    # how to get the data from the dataframe, ! means by reference, : means copy
+    # we do not want any of the vectors to be a reference of any other
+    sel_fwd = !
+    sel_bwd = !
+    sel2_fwd = !
+    sel2_bwd = !
+
+    if channel_name == channel2_name
+        sel2_fwd = :;
+        sel2_bwd = :;
+    end
+
     bwd_available = findfirst(endswith(" [bwd]"), spectrum.channel_names) !== nothing
     if bwd_available
         # there is no bwd-channel for "Index", but for all others there should be
         if channel_name_bwd ∉ spectrum.channel_names
             channel_name_bwd = channel_name
+            sel_bwd = :;
         end
         if channel2_name_bwd ∉ spectrum.channel_names
             channel2_name_bwd = channel2_name
+            sel2_bwd = :;
         end
     end
 
     if griditem.scan_direction == 0  # only forward channel
         y_datas = [spectrum.data[!, channel_name]]
-        x_datas = [spectrum.data[!, channel2_name]]
+        x_datas = [spectrum.data[sel2_fwd, channel2_name]]
         colors = [color_spectrum_fwd]
     elseif griditem.scan_direction == 1  # only backward channel
         if bwd_available
             y_datas = [spectrum.data[!, channel_name_bwd]]
-            x_datas = [spectrum.data[!, channel2_name_bwd]]
+            x_datas = [spectrum.data[sel2_bwd, channel2_name_bwd]]
             colors = [color_spectrum_bwd]
         else
             y_datas = [spectrum.data[!, channel_name]]
-            x_datas = [spectrum.data[!, channel2_name]]
+            x_datas = [spectrum.data[sel2_fwd, channel2_name]]
             colors = [color_spectrum_fwd]
         end
     else  # both channels
         if bwd_available
-            y_datas = [spectrum.data[!, channel_name], spectrum.data[!, channel_name_bwd]]
-            x_datas = [spectrum.data[!, channel2_name], spectrum.data[!, channel2_name_bwd]]
+            y_datas = [spectrum.data[!, channel_name], spectrum.data[sel_bwd, channel_name_bwd]]
+            x_datas = [spectrum.data[sel2_fwd, channel2_name], spectrum.data[sel2_bwd, channel2_name_bwd]]
             colors = [color_spectrum_fwd, color_spectrum_bwd]
         else
             y_datas = [spectrum.data[!, channel_name]]
-            x_datas = [spectrum.data[!, channel2_name]]
+            x_datas = [spectrum.data[sel2_fwd, channel2_name]]
             colors = [color_spectrum_fwd]
         end
     end
@@ -308,39 +334,34 @@ function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:A
         end
         yxranges = [y_minmax[1], y_minmax[2], x_minmax[1], x_minmax[2]]
 
-        # extend axes by a few percent
-        x_delta = x_minmax[2] - x_minmax[1]
-        if x_delta == 0 
+
+        # absolute selected range-span in x and y, should always be != 0
+        yxranges_selected = [
+            yxranges[1] + (yxranges[2] - yxranges[1]) * range_selected[1],
+            yxranges[1] + (yxranges[2] - yxranges[1]) * range_selected[2],
+            yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[3],
+            yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[4]
+        ]
+        x_delta = yxranges_selected[4] - yxranges_selected[3]
+        if x_delta == 0. 
             x_delta += 1e16
         end
-        y_delta = y_minmax[2] - y_minmax[1]
-        if y_delta == 0 
+        y_delta = yxranges_selected[2] - yxranges_selected[1]
+        if y_delta == 0. 
             y_delta += 1e-16
         end
-        x_minmax[1] -= x_delta * 0.01
-        x_minmax[2] += x_delta * 0.01
-        y_minmax[1] -= y_delta * 0.01
-        y_minmax[2] += y_delta * 0.01
-        x_scale = 100 / (x_minmax[2] - x_minmax[1])
-        y_scale = 100 / (y_minmax[2] - y_minmax[1])
 
-        # adjust axis limits according to range_selected
-        x_range_scale = 1 / (range_selected[4] - range_selected[3])
-        y_range_scale = 1 / (range_selected[2] - range_selected[1])
-        x_scale *= x_range_scale
-        y_scale *= y_range_scale
-        x_range_translate = range_selected[3] * 100
-        y_range_translate = range_selected[1] * 100
-    
+        x_scale = 100. / x_delta
+        y_scale = 100. / y_delta
+
         @views @inbounds for i in 1:length(y_datas)
-            x_data_plot = @. round((x_datas[i] - x_minmax[1]) * x_scale + x_range_translate, digits=2)
-            y_data_plot = @. round(100 - ((y_datas[i] - y_minmax[1]) * y_scale + y_range_translate), digits=2)
+            x_data_plot = @. round((x_datas[i] - yxranges_selected[3]) * x_scale, digits=2)
+            y_data_plot = @. round(100 - ((y_datas[i] - yxranges_selected[1]) * y_scale), digits=2)
 
             points = ""
             @views @inbounds for j in 1:length(x_data_plot)
                 points *= "$(x_data_plot[j]),$(y_data_plot[j]) "
             end
-            scaling = 
             write(f, polyline_header_1 * colors[i] * polyline_header_2 * points * polyline_footer)
         end
         write(f, svg_footer)

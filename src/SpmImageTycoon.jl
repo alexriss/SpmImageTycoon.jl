@@ -515,6 +515,19 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 finally
                     unlock(l)
                 end
+            elseif what[5:end] == "range_selected_spectrum"
+                lock(l)
+                range_selected = float.(args[3])
+                try
+                    set_range_selected_spectrum!(ids, dir_data, images_parsed, range_selected)
+                    images_parsed_sub = get_subset(images_parsed, ids)
+                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    @js_ w update_images($json_compressed);
+                catch e
+                    error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
+                finally
+                    unlock(l)
+                end
             end
         elseif what == "get_line_profile"
             lock(l)  # might not be necessary here, as it is just a read operation - but images_parsed might change, so let's keep it

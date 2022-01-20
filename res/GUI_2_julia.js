@@ -504,6 +504,16 @@ function change_item_range(id, range_selected) {
     open_jobs(1);
 }
 
+function change_spectrum_range(id, range_selected) {
+    // sets channel_range_selected for respective spectrum
+    if (get_view() != "zoom" || id == "" || window.items[id].type != "SpmGridSpectrum") {
+        return;
+    }
+    console.log("set range_selected for spectrum.")
+    Blink.msg("grid_item", ["set_range_selected_spectrum", [id], range_selected]);
+    open_jobs(1);
+}
+
 
 function get_image_info(id="", zoomview=false) {
     // gets info (header data) for the current image
