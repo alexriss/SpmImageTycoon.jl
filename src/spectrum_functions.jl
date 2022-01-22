@@ -213,53 +213,40 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_
     channel_name_bwd = griditem.channel_name * " [bwd]"
     channel2_name_bwd = griditem.channel2_name * " [bwd]"
 
-    # how to get the data from the dataframe, ! means by reference, : means copy
-    # we do not want any of the vectors to be a reference of any other
-    sel_fwd = !
-    sel_bwd = !
-    sel2_fwd = !
-    sel2_bwd = !
-
-    if channel_name == channel2_name
-        sel2_fwd = :;
-        sel2_bwd = :;
-    end
-
     bwd_available = findfirst(endswith(" [bwd]"), spectrum.channel_names) !== nothing
     if bwd_available
         # there is no bwd-channel for "Index", but for all others there should be
         if channel_name_bwd ∉ spectrum.channel_names
             channel_name_bwd = channel_name
-            sel_bwd = :;
         end
         if channel2_name_bwd ∉ spectrum.channel_names
             channel2_name_bwd = channel2_name
-            sel2_bwd = :;
         end
     end
 
+    # we have to always get the data by copy (using `:`), because it will be manipulated (and then re-read from the cache)
     if griditem.scan_direction == 0  # only forward channel
-        y_datas = [spectrum.data[!, channel_name]]
-        x_datas = [spectrum.data[sel2_fwd, channel2_name]]
+        y_datas = [spectrum.data[:, channel_name]]
+        x_datas = [spectrum.data[:, channel2_name]]
         colors = [color_spectrum_fwd]
     elseif griditem.scan_direction == 1  # only backward channel
         if bwd_available
-            y_datas = [spectrum.data[!, channel_name_bwd]]
-            x_datas = [spectrum.data[sel2_bwd, channel2_name_bwd]]
+            y_datas = [spectrum.data[:, channel_name_bwd]]
+            x_datas = [spectrum.data[:, channel2_name_bwd]]
             colors = [color_spectrum_bwd]
         else
-            y_datas = [spectrum.data[!, channel_name]]
-            x_datas = [spectrum.data[sel2_fwd, channel2_name]]
+            y_datas = [spectrum.data[:, channel_name]]
+            x_datas = [spectrum.data[:, channel2_name]]
             colors = [color_spectrum_fwd]
         end
     else  # both channels
         if bwd_available
-            y_datas = [spectrum.data[!, channel_name], spectrum.data[sel_bwd, channel_name_bwd]]
-            x_datas = [spectrum.data[sel2_fwd, channel2_name], spectrum.data[sel2_bwd, channel2_name_bwd]]
+            y_datas = [spectrum.data[:, channel_name], spectrum.data[:, channel_name_bwd]]
+            x_datas = [spectrum.data[:, channel2_name], spectrum.data[:, channel2_name_bwd]]
             colors = [color_spectrum_fwd, color_spectrum_bwd]
         else
-            y_datas = [spectrum.data[!, channel_name]]
-            x_datas = [spectrum.data[sel2_fwd, channel2_name]]
+            y_datas = [spectrum.data[:, channel_name]]
+            x_datas = [spectrum.data[:, channel2_name]]
             colors = [color_spectrum_fwd]
         end
     end
