@@ -5,6 +5,7 @@ module SpmImageTycoon
 using Blink
 using CodecZlib
 using ColorSchemes
+using DataFrames
 using DataStructures
 using Dates
 using Images

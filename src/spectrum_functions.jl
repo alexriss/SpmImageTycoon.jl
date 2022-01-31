@@ -3,6 +3,25 @@ const spectrum_cache_order = Deque{String}()
 const spectrum_cache = Dict{String,SpmSpectrum}()
 
 
+"""expands a range between `start` and `stop` by symmetrically shifting `start` and `stop` apart"""
+function expand_range(start::Float64, stop::Float64)::Tuple{Float64,Float64}
+    reverse = false
+    if start > stop
+        start, stop = stop, start
+        reverse = true
+    end
+
+    start = prevfloat(start)
+    stop = nextfloat(stop)
+
+    if reverse 
+        return stop, start
+    else
+        return start, stop
+    end
+end
+
+
 """gets the default channel name for the y-axis and x-axis, as well as their units, 
 according to the lists spectrum_channels and spectrum_channels_x in config.jl
 and the type of the experiment."""
@@ -206,7 +225,7 @@ If `sort_x_asc` is `true` then the data is sorted by x_data in ascending directi
 If `sort_x_any` is `true``, then the data is sorted by x_data in ascending direction if it is not yet sorted in ascending or descending direction.
 Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors.
 """
-function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_asc::Bool=false, sort_x_any::Bool=false)::Tuple{Vector{Vector{Float64}},Vector{Vector{Float64}},Vector{String}}
+function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_asc::Bool=false, sort_x_any::Bool=false)::Tuple{Vector{DataFrame},Vector{String}}
     # TODO: implement average sweeps
     channel_name = griditem.channel_name
     channel2_name = griditem.channel2_name
@@ -224,88 +243,73 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_
         end
     end
 
-    # we have to always get the data by copy (using `:`), because it will be manipulated (and then re-read from the cache)
+    # if x and y channels are the same, we need to duplicate the column and rename it
+    if channel_name == channel2_name
+        channel2_name_new = "[duplicate]" * channel2_name
+        spectrum.data[!, channel2_name_new] = spectrum.data[:, channel2_name]
+        channel2_name = channel2_name_new
+    end
+    if bwd_available && channel_name_bwd == channel2_name_bwd
+        channel2_name_bwd_new = "[duplicate]" * channel2_name_bwd
+        spectrum.data[!, channel2_name_bwd_new] = spectrum.data[:, channel2_name_bwd]
+        channel2_name_bwd = channel2_name_bwd_new
+    end
+
+    # we have to always get the data by copy (using `:` or `dropmissing`), because it will be manipulated (and then re-read from the cache)
     if griditem.scan_direction == 0  # only forward channel
-        y_datas = [spectrum.data[:, channel_name]]
-        x_datas = [spectrum.data[:, channel2_name]]
+        xy_datas = [dropmissing(spectrum.data[!, [channel2_name, channel_name]])] 
         colors = [color_spectrum_fwd]
     elseif griditem.scan_direction == 1  # only backward channel
         if bwd_available
-            y_datas = [spectrum.data[:, channel_name_bwd]]
-            x_datas = [spectrum.data[:, channel2_name_bwd]]
+            xy_datas = [dropmissing(spectrum.data[!, [channel2_name_bwd, channel_name_bwd]])]
             colors = [color_spectrum_bwd]
         else
-            y_datas = [spectrum.data[:, channel_name]]
-            x_datas = [spectrum.data[:, channel2_name]]
+            xy_datas = dropmissing(spectrum.data[!, [channel2_name, channel_name]])
             colors = [color_spectrum_fwd]
         end
     else  # both channels
         if bwd_available
-            y_datas = [spectrum.data[:, channel_name], spectrum.data[:, channel_name_bwd]]
-            x_datas = [spectrum.data[:, channel2_name], spectrum.data[:, channel2_name_bwd]]
+            xy_datas = [dropmissing(spectrum.data[!, [channel2_name, channel_name]]), dropmissing(spectrum.data[!, [channel2_name_bwd, channel_name_bwd]])]
             colors = [color_spectrum_fwd, color_spectrum_bwd]
         else
-            y_datas = [spectrum.data[:, channel_name]]
-            x_datas = [spectrum.data[:, channel2_name]]
+            xy_datas = [dropmissing(spectrum.data[!, [channel2_name, channel_name]])]
             colors = [color_spectrum_fwd]
         end
     end
 
-    for (x_data, y_data) in zip(x_datas, y_datas)
+    for xy_data in xy_datas
+        x_data = xy_data[!, 1]
+        y_data = xy_data[!, 2]
         if sort_x_asc
-            if !issorted(x_data)
-                p = sortperm(x_data)
-                x_data .= x_data[p]
-                y_data .= y_data[p]
+            if !issorted(x_data)  # often it faster to check if it is sorted and only sort if necessary
+                sort!(xy_data, 1)
             end
         elseif sort_x_any && !issorted(x_data) && !issorted(x_data, rev=true)
-            p = sortperm(x_data)
-            x_data .= x_data[p]
-            y_data .= y_data[p]
+            sort!(xy_data, 1)
         end
         SpmSpectroscopy.correct_background!(x_data, y_data, background_correction_list_spectrum[griditem.background_correction])
     end
 
-    return x_datas, y_datas, colors
+    return xy_datas, colors
 end
 
 
 """gets spectrum data to be used in the js-plot function."""
 function get_spectrum_data_dict(griditem::SpmGridItem, dir_data::String)::Dict{String,Any}
-    type = "line"
-    zip_data = false
     spectrum = load_spectrum_cache(joinpath(dir_data, griditem.filename_original))
-    x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_asc=true)  # uplot needs ascending x_values
+    xy_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_asc=true)  # uplot needs ascending x_values
     
-    i = 1
-    for (x_data,y_data) in zip(x_datas,y_datas)
-        if i > 1 && x_data != x_datas[1]  # uplot.js needs tone common x-axis
-            zip_data = true
-            type = "scatter"
-        end
-        i += 1
+    # uplot.js wants one common x_data, so we join the data now
+    for xy_data in xy_datas
+        rename!(xy_data, 1 => :x)
     end
-
-    new_length = length(y_datas[1]) * length(y_datas)
-    x_data_new = Vector{Float64}(undef, new_length)
-    y_datas_new = [Vector{Float64}(undef, new_length) for _ in 1:length(y_datas)]
-    if zip_data  # uplot.js wants one common x_data, so we join the data now
-        idx = 1
-        for i_point = 1:length(y_datas[1])
-            x_datas_points = [x_data_curr[i_point] for x_data_curr in x_datas]
-            p = sortperm(x_datas_points)
-            for i_order in 1:length(p)
-                x_data_new[idx] = x_datas_points[p[i_order]]
-                for i_channel in 1:length(p)
-                    y_datas_new[i_channel][idx] = (p[i_order] == i_channel) ? y_datas[i_channel][i_point] : NaN
-                end
-                idx += 1
-            end
-        end
+    if length(xy_datas) > 1
+        xy_datas_comb = outerjoin(xy_datas..., on = :x)
     else
-        x_data_new = x_datas[1]
-        y_datas_new = y_datas
+        xy_datas_comb = xy_datas[1]
     end
+    x_data = xy_datas_comb[!, 1]
+    y_datas = [xy_datas_comb[!, i] for i in 2:size(xy_datas_comb, 2)]
 
     if length(griditem.channel_range_selected) != 4
         griditem.channel_range_selected = [0., 1., 0., 1.]
@@ -313,20 +317,20 @@ function get_spectrum_data_dict(griditem::SpmGridItem, dir_data::String)::Dict{S
     x_inverted = (griditem.channel_range_selected[3] > griditem.channel_range_selected[4]) ? true : false
     y_inverted = (griditem.channel_range_selected[1] > griditem.channel_range_selected[2]) ? true : false
     if x_inverted
-        reverse!(x_data_new)
-        x_data_new .*= -1.
+        reverse!(x_data)
+        x_data .*= -1.
     end
-    for y_data_new in y_datas_new
+    for y_data in y_datas
         if x_inverted
-            reverse!(y_data_new)
+            reverse!(y_data)
         end
         if y_inverted
-            y_data_new .*= -1.
+            y_data .*= -1.
         end
     end
 
     type = "line"  # let's always do a line for now
-    spectrum_data = Dict{String,Any}("x_data" => x_data_new, "y_datas" => y_datas_new, "colors" => colors, "type" => type, "x_inverted" => x_inverted, "y_inverted" => y_inverted)
+    spectrum_data = Dict{String,Any}("x_data" => x_data, "y_datas" => y_datas, "colors" => colors, "type" => type, "x_inverted" => x_inverted, "y_inverted" => y_inverted)
     return spectrum_data
 end
 
@@ -339,10 +343,9 @@ Saves a graph of multiple curves to a SVG file (`filename`). Each curve is repre
 A relative zoom can be specified in a four-element vector `range_selected`.
 Returns the ranges of y_datas and x_data.
 """
-function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:AbstractVector}, y_datas::AbstractVector{<:AbstractVector},
-        colors::AbstractVector{<:AbstractString}; range_selected::Vector{Float64}=[0.,1.,0.,1.])::Vector{Float64}
+function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{DataFrame}, colors::AbstractVector{<:AbstractString}; range_selected::Vector{Float64}=[0.,1.,0.,1.])::Vector{Float64}
 
-    @assert length(y_datas) == length(colors)
+    @assert length(xy_datas) == length(colors)
     if length(range_selected) != 4
         range_selected = [0., 1., 0., 1.]
     end
@@ -352,18 +355,31 @@ function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:A
         write(f, svg_header)
 
         # get minimum and maximum values for all data
-        x_minmax = [x_datas[1][1], x_datas[1][1]]
-        y_minmax = [y_datas[1][1], y_datas[1][1]]
-        for i in 1:length(y_datas)
-            x_minmaxi = extrema(x_datas[i])
-            x_minmax[1] = min(x_minmax[1], x_minmaxi[1])
-            x_minmax[2] = max(x_minmax[2], x_minmaxi[2])
-            y_minmaxi = extrema(y_datas[i])
-            y_minmax[1] = min(y_minmax[1], y_minmaxi[1])
-            y_minmax[2] = max(y_minmax[2], y_minmaxi[2])
-        end
-        yxranges = [y_minmax[1], y_minmax[2], x_minmax[1], x_minmax[2]]
+        extrema_x = extrema.([xy_data[!, 1] for xy_data in xy_datas if size(xy_data, 1) > 0])
+        extrema_y = extrema.([xy_data[!, 2] for xy_data in xy_datas if size(xy_data, 1) > 0])
 
+        min_x = 0.
+        max_x = 0.
+        min_y = 0.
+        max_y = 0.
+        if length(extrema_x) > 0
+            min_x = minimum(first.(extrema_x))
+            max_x = maximum(last.(extrema_x))
+        end
+        if length(extrema_y) > 0
+            min_y = minimum(first.(extrema_y))
+            max_y = maximum(last.(extrema_y))
+        end
+
+        # it causes problems if the span is zero, so we expand the range if that happens
+        if min_x ≈ max_x
+            min_x, max_x = expand_range(min_x, max_x)
+        end
+        if min_y ≈ max_y
+            min_y, max_y = expand_range(min_y, max_y)
+        end
+
+        yxranges = [min_y, max_y, min_x, max_x]
 
         # absolute selected range-span in x and y, should always be != 0
         yxranges_selected = [
@@ -372,27 +388,31 @@ function save_spectrum_svg(filename::AbstractString, x_datas::AbstractVector{<:A
             yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[3],
             yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[4]
         ]
-        x_delta = yxranges_selected[4] - yxranges_selected[3]
-        if x_delta == 0. 
-            x_delta += 1e16
-        end
-        y_delta = yxranges_selected[2] - yxranges_selected[1]
-        if y_delta == 0. 
-            y_delta += 1e-16
-        end
 
+        x_delta = yxranges_selected[4] - yxranges_selected[3]
+        y_delta = yxranges_selected[2] - yxranges_selected[1]
+        if abs(x_delta) < 1e-32
+            s = (x_delta < 0.) ? -1. : 1.
+            x_delta = s * 1e-32
+        end
+        if abs(y_delta) < 1e-32
+            s = (y_delta < 0.) ? -1. : 1.
+            y_delta = s * 1e-32
+        end
         x_scale = 100. / x_delta
         y_scale = 100. / y_delta
 
-        @views @inbounds for i in 1:length(y_datas)
-            x_data_plot = @. round((x_datas[i] - yxranges_selected[3]) * x_scale, digits=2)
-            y_data_plot = @. round(100 - ((y_datas[i] - yxranges_selected[1]) * y_scale), digits=2)
+        @views for (xy_data, color) in zip(xy_datas, colors)
+            x_data = xy_data[!, 1]
+            y_data = xy_data[!, 2]
+            x_data_plot = @. round((x_data - yxranges_selected[3]) * x_scale, digits=2)
+            y_data_plot = @. round(100 - ((y_data - yxranges_selected[1]) * y_scale), digits=2)
 
             points = ""
             @views @inbounds for j in 1:length(x_data_plot)
                 points *= "$(x_data_plot[j]),$(y_data_plot[j]) "
             end
-            write(f, polyline_header_1 * colors[i] * polyline_header_2 * points * polyline_footer)
+            write(f, polyline_header_1 * color * polyline_header_2 * points * polyline_footer)
         end
         write(f, svg_footer)
     end
@@ -409,12 +429,12 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     end
 
     # load spectrum
-    x_datas, y_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true)  # sort x_values (asc or desc is ok), so that we get a nice line plot
-    griditem.points = length(x_datas[1])
+    xy_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true)  # sort x_values (asc or desc is ok), so that we get a nice line plot
+    griditem.points = size(xy_datas[1], 1)
 
     filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).svg"
     f = joinpath(base_dir, filename_display)
-    yxranges = save_spectrum_svg(f, x_datas, y_datas, colors, range_selected=griditem.channel_range_selected)
+    yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
 
     griditem.channel_range = yxranges
 
