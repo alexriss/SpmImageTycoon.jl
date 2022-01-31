@@ -146,6 +146,14 @@ function afterDOMLoaded() {
     });
 }
 
+function clear_all_filters() {
+    if (window.filter_overview_selection_object != null) {
+        Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
+            el.click();
+        });
+    }
+}
+
 function event_handlers() {
     //extra event handlers, this functions is called form "load_page", when all elements are present
 
@@ -279,10 +287,7 @@ function event_handlers() {
     });
 
     document.getElementById('button_delete_all_filters').addEventListener('click', function() {
-        Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
-            el.click();
-        });
-
+        clear_all_filters();
         filter_items();
     });
 

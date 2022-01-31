@@ -151,10 +151,10 @@ SpectrumPlot.prototype = {
             if (channel_range_selected.length != 4) {
                 channel_range_selected = [0., 1., 0., 1.];
             }
-            this.x_min = griditem.channel_range[2] + (griditem.channel_range[3] - griditem.channel_range[2]) * griditem.channel_range_selected[2];
-            this.x_max = griditem.channel_range[2] + (griditem.channel_range[3] - griditem.channel_range[2]) * griditem.channel_range_selected[3];
-            this.y_min = griditem.channel_range[0] + (griditem.channel_range[1] - griditem.channel_range[0]) * griditem.channel_range_selected[0];
-            this.y_max = griditem.channel_range[0] + (griditem.channel_range[1] - griditem.channel_range[0]) * griditem.channel_range_selected[1];
+            this.x_min = griditem.channel_range[2] + (griditem.channel_range[3] - griditem.channel_range[2]) * channel_range_selected[2];
+            this.x_max = griditem.channel_range[2] + (griditem.channel_range[3] - griditem.channel_range[2]) * channel_range_selected[3];
+            this.y_min = griditem.channel_range[0] + (griditem.channel_range[1] - griditem.channel_range[0]) * channel_range_selected[0];
+            this.y_max = griditem.channel_range[0] + (griditem.channel_range[1] - griditem.channel_range[0]) * channel_range_selected[1];
             this.x_min *= this.x_factor; 
             this.x_max *= this.x_factor; 
             this.y_min *= this.y_factor; 
