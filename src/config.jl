@@ -9,7 +9,8 @@ image_channels_feedback_off = ["Frequency Shift", "Current"]
 spectrum_channels = OrderedDict{String,Vector{String}}(
     "bias spectroscopy" => ["LIX 1 omega", "Frequency Shift", "Current"],
     "Z spectroscopy" => ["Frequency Shift", "Current"],
-    "History Data" => ["Current", "Frequency Shift"]
+    "History Data" => ["Current", "Frequency Shift"],
+    "Frequency Sweep" => ["Amplitude", "Phase"]
 )
 spectrum_channels_x = OrderedDict{String,Vector{String}}(
     "History Data" => ["Index"]
@@ -170,7 +171,7 @@ function load_config()
             end
 
             if haskey(d, "spectrum_channels") && isa(d["spectrum_channels"], Dict)
-                global spectrum_channels = OrderedDict{String,Vector{String}}()
+                global spectrum_channels;  # don't overwrite base config
                 for (k,v) in d["spectrum_channels"]
                     if isa(v, Array)
                         spectrum_channels[string(k)] = string.(v)
@@ -179,7 +180,7 @@ function load_config()
             end
 
             if haskey(d, "spectrum_channels") && isa(d["spectrum_channels_x"], Dict)
-                global spectrum_channels_x = OrderedDict{String,Vector{String}}()
+                global spectrum_channels_x; 
                 for (k,v) in d["spectrum_channels_x"]
                     if isa(v, Array)
                         spectrum_channels_x[string(k)] = string.(v)
