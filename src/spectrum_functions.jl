@@ -404,11 +404,8 @@ end
 The "filename_display" field of the SpmGridItem is updated (to the svg filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
 function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir::String="", use_existing::Bool=false)
-    if use_existing
-        f = joinpath(base_dir, griditem.filename_display)
-        if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
-            return nothing  # image exists, nothing to do
-        end
+    if use_existing && griditem_cache_up_to_date(griditem, base_dir)
+        return nothing  # image exists, nothing to do
     end
 
     # load spectrum
@@ -432,7 +429,8 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
-    spectrum = load_spectrum_cache(datafile)
+    # spectrum = load_spectrum_cache(datafile)
+    spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
 
     z_feedback_setpoint = 0.0
     z_feedback_setpoint_unit = ""
@@ -448,11 +446,15 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     if isnan(spectrum.position[1])
         if "X" in spectrum.channel_names
             spectrum.position[1] = spectrum.data[1, "X"]
+        else
+            spectrum.position[1] = 0.
         end
     end
     if isnan(spectrum.position[2])
         if "Y" in spectrum.channel_names
             spectrum.position[2] = spectrum.data[1, "Y"]
+        else
+            spectrum.position[2] = 0.
         end
     end
 

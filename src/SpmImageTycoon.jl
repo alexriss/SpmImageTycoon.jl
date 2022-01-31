@@ -253,7 +253,6 @@ function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{S
 end
 
 
-
 """Loads the header data for an griditem and returns a tuple: the dictionary with all the header data, as well as some extra info"""
 function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{OrderedDict{String,String}, OrderedDict{String,String}}
     filename_original_full = joinpath(dir_data, griditem.filename_original)
@@ -270,6 +269,18 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
         spectrum.header["Units"] = extra_info["Units"]
 
         return spectrum.header, extra_info
+    end
+end
+
+
+"""Checks if a generated image/spectrum file exists and is up to date."""
+function griditem_cache_up_to_date(griditem::SpmGridItem, base_dir::String="")::Bool
+    f = joinpath(base_dir, griditem.filename_display)
+    lmod = unix2datetime(mtime(f))
+    if lmod == griditem.filename_display_last_modified  && lmod != 0  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
+        return true
+    else
+        return false
     end
 end
 
@@ -335,12 +346,17 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
             continue
         end
 
-        if endswith(filename_original, extension_image)
-            parse_image!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
-                dir_cache, datafile, id, filename_original, created, last_modified)
-        elseif endswith(filename_original, extension_spectrum)
-            parse_spectrum!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
-                dir_cache, datafile, id, filename_original, created, last_modified)
+        # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
+        if haskey(images_parsed, id) && !(images_parsed[id].created == created) && !(images_parsed[id].last_modified == last_modified) && !griditem_cache_up_to_date(images_parsed[id], dir_cache)
+            images_parsed[id].status = 0
+        else
+            if endswith(filename_original, extension_image)
+                parse_image!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
+                    dir_cache, datafile, id, filename_original, created, last_modified)
+            elseif endswith(filename_original, extension_spectrum)
+                parse_spectrum!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
+                    dir_cache, datafile, id, filename_original, created, last_modified)
+            end
         end
 
         num_parsed += 1
