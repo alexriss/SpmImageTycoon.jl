@@ -162,8 +162,8 @@ SpectrumPlot.prototype = {
 
             this.setPlotScale(this.x_min, this.x_max, this.y_min, this.y_max);
 
-            this.form_el_x_unit.innerText = this.unit_prefix +  griditem.channel_unit;
-            this.form_el_y_unit.innerText = this.unit2_prefix +  griditem.channel2_unit;
+            this.form_el_x_unit.innerText = this.unit2_prefix +  griditem.channel2_unit;
+            this.form_el_y_unit.innerText = this.unit_prefix +  griditem.channel_unit;
 
             if (this.x_inverted) {
                 document.getElementById("spectrumzoom_x_inverted").classList.remove("is-invisible");
