@@ -215,7 +215,7 @@ function set_range_selected!(ids::Vector{String}, dir_data::String, images_parse
         im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
         images_parsed[id].channel_range_selected = range_selected
         resize_to_ = full_resolution ? 0 : resize_to
-        create_image!(images_parsed[id], im_spm, resize_to=resize_to, base_dir=dir_cache)
+        create_image!(images_parsed[id], im_spm, resize_to=resize_to_, base_dir=dir_cache)
     end
     return nothing
 end
