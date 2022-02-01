@@ -476,6 +476,24 @@ function reset_item(what, message) {
     }
 }
 
+
+function paste_parameters(message) {
+    // paste parameters from one item to other items
+    console.log("paste parameters");
+    let ids = get_active_element_ids();
+
+    let full_resolution = false;
+    if (get_view() == "zoom") {
+        full_resolution = true;
+    }
+
+    if (ids.length > 0 && window.last_copy_from != "") {
+        Blink.msg("grid_item", ["paste_params", ids, window.last_copy_from, full_resolution]);
+        open_jobs(1);
+        show_message(message)
+    }
+}
+
 function virtual_copy(mode) {
     // creates or deletes virtual images
     console.log("virtual item: " + mode);

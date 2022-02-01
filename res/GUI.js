@@ -19,6 +19,8 @@ window.zoom_last_selected = "";  // last selected image for zoom
 window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
 window.grid_last_scrolltop = 0;  // last y-scroll position in grid view (does not seem to be properly restored when hiding/showing grid view)
 
+window.last_copy_from = "";  // last item that was selected as a source for copy/paste
+
 window.line_profile_object = null;  // hold the line profile object
 
 window.histogram_object = null;  // holds the histogram object
@@ -103,6 +105,7 @@ function reset_all() {
     // resets view and all selections etc
     window.last_selected = "";
     window.zoom_last_selected = "";
+    window.last_copy_from = "";
     if (window.timeout != null) {
         clearTimeout(window.timeout);
         window.timeout = null;
@@ -609,6 +612,33 @@ function get_active_element_ids(only_current=false, all_visible_if_none_selected
         els_id[i] = els[i].id;
     }
     return els_id;
+}
+
+function set_copyfrom_id(message, message_fail) {
+    // sets the copyfrom_id (properties of this id can be pasted to other items)
+    let ids = get_active_element_ids();
+    let id_curr = get_active_element_ids(only_current=true);
+    let id_copy = "";
+    if (ids.length == 1) {
+        id_copy = ids[0];
+    } else if (ids.length > 1 && id_curr.length == 1) {
+        if (ids.indexOf(id_curr[0]) >= 0) {
+            id_copy = id_curr[0];
+        } else {
+            id_copy = "";
+        }
+    } else if (id_curr.length == 1) {
+        id_copy = id_curr[0];
+    } else {
+        id_copy = "";
+    }
+    window.last_copy_from = id_copy;
+
+    if (id_copy == "") {
+        show_message(message_fail);
+    } else {
+        show_message(message);
+    }
 }
 
 function check_hover_enabled() {

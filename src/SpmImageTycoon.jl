@@ -285,6 +285,53 @@ function reset_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{St
 end
 
 
+"""Paste image/spectrum parameters from `id_from` to `ids`."""
+function paste_params!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, id_from::String, dir_data::String, full_resolution::Bool)::Nothing
+    dir_cache = get_dir_cache(dir_data)
+    type_from = images_parsed[id_from].type
+    Threads.@threads for id in ids
+        griditem = images_parsed[id]
+
+        griditem.type == type_from || continue
+        id != id_from || continue
+
+        filename_original_full = joinpath(dir_data, griditem.filename_original)
+        if griditem.type == SpmGridImage
+            item = load_image(filename_original_full, output_info=0)
+            properties = [:channel_name, :background_correction, :filters, :colorscheme, :channel_range_selected]
+        elseif griditem.type == SpmGridSpectrum
+            item = load_spectrum_cache(filename_original_full)
+            properties = [:channel_name, :channel_unit, :channel2_name, :channel2_unit, :scan_direction, :background_correction, :filters, :channel_range_selected]
+        end
+
+        changed = false
+        for p in properties
+            v = getfield(images_parsed[id_from], p)
+
+            if p in [:channel_name, :channel2_name]  # for channels we have to make sure that these channels exist
+                v in item.channel_names || continue
+            end
+
+            if v != getfield(griditem, p)
+                setfield!(griditem, p, v)
+                changed = true
+            end
+        end
+
+        # update the image or spectrum
+        if changed
+            if griditem.type == SpmGridImage
+                resize_to_ = full_resolution ? 0 : resize_to
+                create_image!(griditem, item, resize_to=resize_to_, base_dir=dir_cache)    
+            elseif griditem.type == SpmGridSpectrum
+                create_spectrum!(griditem, item, base_dir=dir_cache)
+            end
+        end
+    end
+    return nothing
+end
+
+
 """Loads the header data for an griditem and returns a tuple: the dictionary with all the header data, as well as some extra info"""
 function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{OrderedDict{String,String}, OrderedDict{String,String}}
     filename_original_full = joinpath(dir_data, griditem.filename_original)
@@ -598,6 +645,20 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             full_resolution = args[3]
             try
                 reset_griditem!(images_parsed, ids, dir_data, full_resolution)
+                images_parsed_sub = get_subset(images_parsed, ids)
+                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                @js_ w update_images($json_compressed);
+            catch e
+                error(e, w)
+            finally
+                unlock(l)
+            end
+        elseif what == "paste_params"
+            lock(l)
+            id_from = args[3]
+            full_resolution = args[4]
+            try
+                paste_params!(images_parsed, ids, id_from, dir_data, full_resolution)
                 images_parsed_sub = get_subset(images_parsed, ids)
                 json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
                 @js_ w update_images($json_compressed);

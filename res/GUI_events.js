@@ -58,6 +58,8 @@ let alt_key_commands = {
 let ctrl_key_commands = {
     a: { command: toggle_all_active, args: [true] },
     s: { command: save_all, args: [] },
+    c: { command: set_copyfrom_id, args: ["set copy.", "can't set copy - select one item."] },
+    v: { command: paste_parameters, args: ["paste parameters."] },
     e: { command: export_to, args: ["odp"] },
     f: { command: image_info_search_parameter, args: [] },
     w: { command: toggle_start_project, args: ["start", true] },
