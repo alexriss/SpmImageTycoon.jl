@@ -483,6 +483,10 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
 
     # spectrum = load_spectrum_cache(datafile)
     spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
+    start_time = spectrum.start_time
+    if start_time <= DateTime(2)
+        start_time = created
+    end
 
     z_feedback_setpoint = 0.0
     z_feedback_setpoint_unit = ""
@@ -517,7 +521,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         griditem.filename_original = filename_original
         griditem.created = created
         griditem.last_modified = last_modified
-        griditem.recorded = spectrum.start_time
+        # griditem.recorded = start_time  # dont re-set; the first time it was set was probably the most accurate
         griditem.center = spectrum.position .* 1e9  # convert to nm
         griditem.bias = spectrum.bias
         griditem.z_feedback = spectrum.z_feedback
@@ -530,7 +534,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name, channel_unit, channel2_name, channel2_unit = default_channel_names_units(spectrum)
         images_parsed[id] = SpmGridItem(
-            id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=spectrum.start_time,
+            id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=start_time,
             channel_name=channel_name, channel_unit=channel_unit, channel2_name=channel2_name, channel2_unit=channel2_unit,
             center=spectrum.position .* 1e9, scan_direction=2, 
             bias=spectrum.bias, z_feedback=spectrum.z_feedback,
@@ -553,7 +557,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
             griditem.filename_original = filename_original
             griditem.created = created
             griditem.last_modified = last_modified
-            griditem.recorded = spectrum.start_time
+            # griditem.recorded = start_time  # dont re-set; the first time it was set was probably the most accurate
             griditem.center = spectrum.position .* 1e9  # convert to nm
             griditem.bias = spectrum.bias
             griditem.z_feedback = spectrum.z_feedback

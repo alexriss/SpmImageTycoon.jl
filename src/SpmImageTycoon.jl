@@ -530,8 +530,8 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             # get header data
             try
                 image_header, extra_info = get_griditem_header(images_parsed[id], dir_data)
-                k = replace.(collect(keys(image_header)), ">" => "><wbr>")[3:end]  # replace for for word wrap in tables
-                v = replace.(collect(values(image_header)), "\n" => "<br />")[3:end]  # the first two rows are not useful to display, so cut them off
+                k = replace.(collect(keys(image_header)), ">" => "><wbr>")  # replace for for word wrap in tables
+                v = replace.(collect(values(image_header)), "\n" => "<br />") 
                 v = utf8ify.(v)
                 image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
                 json_compressed = transcode(GzipCompressor, image_header_json)
