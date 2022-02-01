@@ -211,7 +211,7 @@ for the images/spectra specified by ids. The type of change is specified by the 
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
 Modifies the images_parsed array."""
-function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)
+function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
         filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
@@ -248,6 +248,37 @@ function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{S
             create_image!(images_parsed[id], item, resize_to=resize_to, base_dir=dir_cache)    
         elseif images_parsed[id].type == SpmGridSpectrum
             create_spectrum!(images_parsed[id], item, base_dir=dir_cache)
+        end
+    end
+    return nothing
+end
+
+
+"""Resets basic image/spectrum parameters to their default values"""
+function reset_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, full_resolution::Bool)::Nothing
+    dir_cache = get_dir_cache(dir_data)
+    Threads.@threads for id in ids
+        filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
+
+        if images_parsed[id].type == SpmGridImage
+            item = load_image(filename_original_full, output_info=0)
+        elseif images_parsed[id].type == SpmGridSpectrum
+            item = load_spectrum_cache(filename_original_full)
+        else
+            println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
+            continue
+        end
+    
+        changed = reset_default!(images_parsed[id], item)
+
+        # update the image or spectrum
+        if changed
+            if images_parsed[id].type == SpmGridImage
+                resize_to_ = full_resolution ? 0 : resize_to
+                create_image!(images_parsed[id], item, resize_to=resize_to, base_dir=dir_cache)    
+            elseif images_parsed[id].type == SpmGridSpectrum
+                create_spectrum!(images_parsed[id], item, base_dir=dir_cache)
+            end
         end
     end
     return nothing
@@ -559,6 +590,19 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 @js_ w show_line_profile($id, $distances, $values, $start_point_value, $end_point_value)
             catch e
                 error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
+            finally
+                unlock(l)
+            end
+        elseif what == "reset"
+            lock(l)
+            full_resolution = args[3]
+            try
+                reset_griditem!(images_parsed, ids, dir_data, full_resolution)
+                images_parsed_sub = get_subset(images_parsed, ids)
+                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                @js_ w update_images($json_compressed);
+            catch e
+                error(e, w)
             finally
                 unlock(l)
             end

@@ -221,6 +221,35 @@ function set_range_selected!(ids::Vector{String}, dir_data::String, images_parse
 end
 
 
+"""Reverts a spectrum to its default settings, returns `true` if anything was changed."""
+function reset_default!(griditem::SpmGridItem, im_spm::SpmImage)::Bool
+    channel_name= default_channel_name(im_spm)
+    if griditem.channel_name != channel_name
+        griditem.channel_name = channel_name
+        # unit will be set in the create_image! function
+        changed = true
+    end
+    if griditem.background_correction != "none"
+        griditem.background_correction = "none"
+        changed = true
+    end
+    if griditem.colorscheme != "gray"
+        griditem.colorscheme = "gray"
+        changed = true
+    end
+    if griditem.channel_range_selected != [0, 1] || length(griditem.channel_range_selected) != 0
+        griditem.channel_range_selected = Float64[]
+        changed = true
+    end
+    if griditem.filters != String[]
+        griditem.filters = String[]
+        changed = true
+    end
+
+    return changed
+end
+
+
 """calcuates a line profile"""
 function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
     filename_original = images_parsed[id].filename_original

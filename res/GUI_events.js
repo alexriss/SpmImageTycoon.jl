@@ -16,6 +16,7 @@ let key_commands = {
     P: { command: change_item, args: ["colorscheme", "change colorscheme.", -1] },
     I: { command: change_item, args: ["inverted", "invert."] },
     "&": { command: virtual_copy, args: ["create"] },
+    R: { command: reset_item, args: ["reset", "reset."] },
     a: { command: toggle_all_active, args: [] },
     A: { command: toggle_all_active, args: [true] },
     n: { command: clear_all_active, args: []},

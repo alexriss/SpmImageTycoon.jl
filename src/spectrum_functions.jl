@@ -181,6 +181,38 @@ function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, ima
     return nothing
 end
 
+
+"""Reverts a spectrum to its default settings, returns `true` if anything was changed."""
+function reset_default!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Bool
+    channel_name, channel_unit, channel2_name, channel2_unit = default_channel_names_units(spectrum)
+    if griditem.channel_name != channel_name || griditem.channel_unit != channel_unit || griditem.channel2_name != channel2_name || griditem.channel2_unit != channel2_unit
+        griditem.channel_name = channel_name
+        griditem.channel_unit = channel_unit
+        griditem.channel2_name = channel2_name
+        griditem.channel2_unit = channel2_unit
+        changed = true
+    end
+    if griditem.background_correction != "none"
+        griditem.background_correction = "none"
+        changed = true
+    end
+    if griditem.scan_direction != 2
+        griditem.scan_direction = 2
+        changed = true
+    end
+    if griditem.channel_range_selected != [0, 1, 0, 1] || length(griditem.channel_range_selected) != 0
+        griditem.channel_range_selected = Float64[]
+        changed = true
+    end
+    if griditem.filters != String[]
+        griditem.filters = String[]
+        changed = true
+    end
+
+    return changed
+end
+
+
 """
     function load_spectrum_cache(filename::AbstractString)::SpmSpectrum
 

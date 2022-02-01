@@ -460,6 +460,22 @@ function change_item(what, message, jump=1) {
     }
 }
 
+function reset_item(what, message) {
+    console.log(what);
+    let ids = get_active_element_ids();
+
+    let full_resolution = false;
+    if (get_view() == "zoom") {
+        full_resolution = true;
+    }
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", [what, ids, full_resolution]);
+        open_jobs(1);
+        show_message(message)
+    }
+}
+
 function virtual_copy(mode) {
     // creates or deletes virtual images
     console.log("virtual item: " + mode);
@@ -513,7 +529,6 @@ function change_spectrum_range(id, range_selected) {
     Blink.msg("grid_item", ["set_range_selected_spectrum", [id], range_selected]);
     open_jobs(1);
 }
-
 
 function get_image_info(id="", zoomview=false) {
     // gets info (header data) for the current image
