@@ -484,8 +484,10 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     # spectrum = load_spectrum_cache(datafile)
     spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
     start_time = spectrum.start_time
+
+    # if no time given in the header, we use the last_modified time of the file (this is better than the created time)
     if start_time <= DateTime(2)
-        start_time = created
+        start_time = last_modified
     end
 
     z_feedback_setpoint = 0.0
