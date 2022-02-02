@@ -102,6 +102,7 @@ The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://
 The program relies on
 
 - [SpmImages.jl](https://github.com/alexriss/SpmImages.jl): Julia library to read and display SPM images.
+- [SpmSpectroscopy.jl](https://github.com/alexriss/SpmSpectroscopy.jl): Julia library to read and analyze SPM spectra.
 
 
 #### Third party libraries (included)
@@ -117,5 +118,6 @@ The following javascript and css libraries are included in the app:
 ## Related projects
 
 - [SpmImages.jl](https://github.com/alexriss/SpmImages.jl): Julia library to read and display SPM images.
+- [SpmSpectroscopy.jl](https://github.com/alexriss/SpmSpectroscopy.jl): Julia library to read and analyze SPM spectra.
 - [imag*ex*](https://github.com/alexriss/imagex): Python scripts to analyze scanning probe images.
 - [grid*ex*](https://github.com/alexriss/gridex): Python scripts to analyze 3D grid data.
