@@ -792,7 +792,7 @@ end
 
 """sets basic event handlers"""
 function set_event_handlers_basic(w::Window)
-    l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
+    l = ReentrantLock()  # not sure if it is necessary to do it here, but it should be safer this way
 
     handle(w, "load_directory") do arg
         lock(l)
@@ -894,7 +894,7 @@ end
 
 """Start the main GUI and loads images from dir_data (if specified)"""
 function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool=true)::Union{Window,Nothing}
-    file_logo = path_asset("logo_diamond.png")
+    file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
         "title" => "SpmImage Tycoon",
@@ -915,9 +915,11 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 
     # load all .css and .js asset files
     dir_asset = path_asset("");
-    asset_files = filter!(
+    dir_asset_external = path_asset("external/");
+    asset_files = vcat(readdir(dir_asset, join=true), readdir(dir_asset_external, join=true))
+    filter!(
         x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
-        readdir(dir_asset, join=true)
+        asset_files
     )
     for asset_file in asset_files
         load!(w, asset_file)

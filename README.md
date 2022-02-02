@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="100" height="100" src="res/logo_diamond_animated.svg?raw=true" />
+  <img width="100" height="100" src="res/media/logo_diamond_animated.svg?raw=true" />
 </p>
 
 # SpmImage Tycoon
