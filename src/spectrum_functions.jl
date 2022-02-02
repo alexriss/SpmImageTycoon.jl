@@ -516,6 +516,11 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         end
     end
 
+    comment = ""
+    if haskey(spectrum.header, "Comment01")
+        comment = utf8ify(spectrum.header["Comment01"])    # TODO: check if there could be more lines
+    end
+
     if haskey(images_parsed, id)
         griditem = images_parsed[id]
         # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
@@ -530,7 +535,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         griditem.z_feedback_setpoint = z_feedback_setpoint
         griditem.z_feedback_setpoint_unit = z_feedback_setpoint_unit
         griditem.z = spectrum.position[3]
-        griditem.comment = utf8ify(spectrum.header["User"])  # TODO: check if this is correct
+        griditem.comment = comment
         griditem.status = 0
     else
         # get the respective image channel (depending on whether the feedback was on or not)
@@ -541,7 +546,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
             center=spectrum.position .* 1e9, scan_direction=2, 
             bias=spectrum.bias, z_feedback=spectrum.z_feedback,
             z_feedback_setpoint=z_feedback_setpoint, z_feedback_setpoint_unit=z_feedback_setpoint_unit, z=spectrum.position[3],
-            comment=utf8ify(spectrum.header["User"])
+            comment=comment
         )
         if only_new
             push!(images_parsed_new, id)
@@ -566,7 +571,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
             griditem.z_feedback_setpoint = z_feedback_setpoint
             griditem.z_feedback_setpoint_unit = z_feedback_setpoint_unit
             griditem.z = spectrum.position[3]
-            griditem.comment = utf8ify(spectrum.header["User"])  # TODO: check if this is correct
+            griditem.comment = comment
             griditem.status = 0
 
             Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)

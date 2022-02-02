@@ -161,6 +161,10 @@ end
 
 """Returns the scan range of all images. Returns bottom left and top right corner coordinates."""
 function get_scan_range(images_parsed::Dict{String, SpmGridItem})::Tuple{Vector{Float64},Vector{Float64}}
+    if length(images_parsed) == 0
+        return [0.,0.], [0.,0.]
+    end
+
     c = first(values(images_parsed)).center
     min_max_corners_x = [c[1], c[1]]
     min_max_corners_y = [c[2], c[2]]
@@ -354,9 +358,13 @@ end
 
 """Checks if a generated image/spectrum file exists and is up to date."""
 function griditem_cache_up_to_date(griditem::SpmGridItem, base_dir::String="")::Bool
+    if griditem.filename_display == ""
+        return false
+    end
+    
     f = joinpath(base_dir, griditem.filename_display)
-    lmod = unix2datetime(mtime(f))
-    if lmod == griditem.filename_display_last_modified  && lmod != 0  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
+    lmod = mtime(f)
+    if unix2datetime(lmod) == griditem.filename_display_last_modified  && lmod != 0  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
         return true
     else
         return false
@@ -393,6 +401,9 @@ end
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
 function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Array{String}}
     dir_cache = get_dir_cache(dir_data)
+    if !isdir(dir_cache)
+        mkpath(dir_cache)
+    end
 
     # load saved data - if available
     images_parsed = load_all(dir_data, w)
@@ -426,7 +437,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         end
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
-        if haskey(images_parsed, id) && !(images_parsed[id].created == created) && !(images_parsed[id].last_modified == last_modified) && !griditem_cache_up_to_date(images_parsed[id], dir_cache)
+        if haskey(images_parsed, id) && images_parsed[id].created == created && images_parsed[id].last_modified == last_modified && griditem_cache_up_to_date(images_parsed[id], dir_cache)
             images_parsed[id].status = 0
         else
             if endswith(filename_original, extension_image)
@@ -521,7 +532,6 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
     # change channel
     l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
-        # @show args
         what = args[1]
         ids = string.(args[2])  # for some reason its type is "Any" and not String
         if what == "get_info"
@@ -750,11 +760,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                         if im.id in images_parsed_new
                             images_parsed_sub[im.id] = im
                             push!(ids_after, prev_id)
-                            @show im.id, prev_id
                         end
                         prev_id = im.id
                     end
-                    @show images_parsed_sub, ids_after
                     @js_ w insert_images($images_parsed_sub, $ids_after)  # insert images after positions of ids
                 end
             end

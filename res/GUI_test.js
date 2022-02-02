@@ -1,5 +1,5 @@
 
-function test_press_key(k, modifiers, el=document) {
+function test_press_key(k, modifiers=[], el=document) {
     // simulates keypress (for testing purposes)
     let props = { key: k };
 
@@ -21,4 +21,8 @@ function test_click_mouse(selector) {
     document.querySelectorAll(selector).forEach(el => {
         el.click();
     });
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

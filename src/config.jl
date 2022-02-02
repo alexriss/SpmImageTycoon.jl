@@ -132,7 +132,7 @@ const svg_footer_export = """
 
 """converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
 The resulting schemes are stored in the OrderedDict dict_colorschemes."""
-function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})
+function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})::Nothing
     for (k,v) in dict_colorschemes_pre
         dict_colorschemes[k] = loadcolorscheme(
             Symbol(k * "_256"),
@@ -149,11 +149,14 @@ function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorSch
             getfield(v, :notes)
         )
     end
+    return nothing
 end
 
 
 """loads config and sets global variables"""
-function load_config()
+function load_config()::Nothing
+    isdefined(Main, :Test) && return nothing  # we do not load config in test environment
+
     if !isdir(joinpath(homedir(), config_dir))
         mkpath(joinpath(homedir(), config_dir))
     end
@@ -220,11 +223,14 @@ function load_config()
     else  # we create the file
         save_config()
     end
+    return nothing
 end
 
 
 """saves config to file"""
-function save_config(new_directory::String="")
+function save_config(new_directory::String="")::Nothing
+    isdefined(Main, :Test) && return nothing  # we do not save config in test environment
+
     if !isdir(joinpath(homedir(), config_dir))
         mkpath(joinpath(homedir(), config_dir))
     end
@@ -258,4 +264,5 @@ function save_config(new_directory::String="")
         println("Error: Could not write config file $config_filepath.")
         println(e)
     end
+    return nothing
 end
