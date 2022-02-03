@@ -594,10 +594,11 @@ function set_keywords() {
     console.log("set keywords.")
 
     window.keywords_input.DOM.input.blur();  // so that the last typed keyword is transformed into a keyword, too
-    let ids = get_active_element_ids(window.keywords_only_current);
+    const ids = get_active_element_ids(window.keywords_only_current);
 
+    const keywords_mode = (ids.length == 1) ? "set" : window.keywords_mode;  // if only one is select_directory, mode is always "set"
     if (ids.length > 0) {
-        Blink.msg("grid_item", ["set_keywords", ids, window.keywords_mode, window.keywords_input.value.map(a => a.value)]);
+        Blink.msg("grid_item", ["set_keywords", ids, keywords_mode, window.keywords_input.value.map(a => a.value)]);
         open_jobs(1);  // julia will then set the radiobox
     }
 }
@@ -687,7 +688,7 @@ function load_directory(directory) {
     document.getElementById("page_start_load_error").classList.add("is-hidden");
     document.getElementById("page_start_progress_bar").value = 0;
     document.getElementById("page_start_progress_num_files").innerText = "";
-    document.getElementById("page_start_progress_directory").innerText = directory;
+    document.getElementById("page_start_progress_directory").innerText = directory;  // "/home/riss/awesome projects/2022/project 51/";
     document.getElementById("page_start_progress").classList.remove("is-hidden");
     
     Blink.msg("load_directory", directory);

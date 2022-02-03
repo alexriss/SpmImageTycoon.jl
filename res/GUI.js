@@ -422,6 +422,15 @@ function get_view() {
     }
 }
 
+function get_view_zoom_grid() {
+    // returns zoom or grid view
+    if (document.getElementById('imagegrid_container').classList.contains("is-hidden")) {
+        return "zoom";
+    } else {
+        return "grid";
+    }
+}
+
 function toggle_imagezoom_mouse(event) {
     // switches to imagezoom mode via a mouse event (only if no modifier is pressed)
     if (!event.ctrlKey && !event.shiftKey) {
@@ -570,12 +579,13 @@ function get_active_element_ids(only_current=false, all_visible_if_none_selected
     // otherwise an empty array is returned
     // if all_visible_if_none_selected is true, then all not-hidden will be returned (if none are selected)
 
-    // help view
-    if (get_view() == "help") {
+    // only certain views are allowed
+    if (["zoom", "grid", "keywords"].indexOf(get_view()) == -1) {
         return [];
     }
-    // zoom view
-    if (get_view() == "zoom") {
+
+    // zoom view (this might also work for keywords view, thats why we use get_view_zoom_grid)
+    if (get_view_zoom_grid() == "zoom") {
         return [window.image_info_id];
     }
 
