@@ -26,6 +26,10 @@ body {
   text-align: center;
 }
 
+sup {
+  vertical-align: super;
+}
+
 /* start page */
 
 #page_start_last_dir_container li {
@@ -533,7 +537,7 @@ body {
 
 #sidebar_filter_table .rating{
   font-size: var(--ratingSizeFilter, 1rem);
-  padding:0.38em 0 0 0;
+  padding:0.74em 0 0 0;
 }
 
 
@@ -541,7 +545,7 @@ body {
   margin-top:0.0rem;
 }
 
-#sidebar_filter_table input {
+#sidebar_filter_table input, #sidebar_filter_table select {
   margin-top:0.3rem;
   margin-bottom:0.3rem;
 }
@@ -554,6 +558,13 @@ body {
 #filter_overview_info, #filter_overview_num_selected_container {
   font-style: italic;
   color:#909090;
+}
+
+/* remove up and down arrows */
+#sidebar_filter_table input::-webkit-outer-spin-button,
+#sidebar_filter_table input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* overview in filter sidebar */

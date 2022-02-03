@@ -52,7 +52,7 @@ end
     @test length(fnames_spectra_generated) == length(fnames_spectra)
 end
 
-@testset "Images" begin
+@testset "Manipulating" begin
     @show "Loading images"
     @show fnames_images
     select_images = fnames_images[1:3]
@@ -66,12 +66,16 @@ end
     @test active == select_images
 end
 
-@testset "export" begin
+@testset "Filtering" begin
+    # todo check filters
+end
+
+@testset "Export" begin
     # export openoffice presentation (odp)
     @js w console.log(1)
 end
 
-@testset "close" begin
+@testset "Close" begin
     # close(w)
     # delete_files()
 end

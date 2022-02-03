@@ -54,6 +54,7 @@ function filter_items(ids=[], random_id=-1) {
 
     const filter_rating = document.querySelector('#sidebar_filter input[name=filter_rating]:checked').value;
     const filter_rating_comparator = document.getElementById('filter_rating_comparator').value;
+    const filter_scansize_comparator = document.getElementById('filter_scansize_comparator').value;
     const filter_type = document.getElementById('filter_type').value;
     const filter_keywords_raw = document.getElementById('filter_keywords').value;
     let filter_keywords = null;
@@ -66,6 +67,14 @@ function filter_items(ids=[], random_id=-1) {
         }
     } else {
         document.getElementById('warning_filter_keywords').classList.add("is-invisible");
+    }
+
+    let filter_scansize = "";
+    if (document.getElementById("filter_scansize").validity.valid) {
+        filter_scansize = document.getElementById("filter_scansize").value;
+        document.getElementById('warning_filter_scansize').classList.add("is-invisible");
+    } else {
+        document.getElementById('warning_filter_scansize').classList.remove("is-invisible");
     }
 
     const filter_selected = document.getElementById('filter_selected').checked;
@@ -101,12 +110,12 @@ function filter_items(ids=[], random_id=-1) {
     let item = null;
     let filtered_out = false;
     let id = "";
-    for (let i=0, imax=ids.length; i<imax; i++) {  // for-loop, so we can do the continue
+    for (let i=0; i<ids.length; i++) {  // for-loop, so we can do `continue`
         id = ids[i];
         item = window.items[id];
 
         if (i % 20 == 0) {
-            progressbar.value = 100 * i / imax;
+            progressbar.value = 100 * i / ids.length;
         }
 
         if (filter_selected) {  // we do this first because it might limit the number of items a lot
@@ -124,6 +133,11 @@ function filter_items(ids=[], random_id=-1) {
         }
         if (filter_items__type(id, item, filter_type)) {
             continue;
+        }
+        if (filter_scansize !== "") {
+            if (filter_items__scansize(id, item, filter_scansize, filter_scansize_comparator)) {
+                continue;
+            }
         }
         if (filter_keywords != null) {
             if (filter_items__keywords(id, item, filter_keywords)) {
@@ -178,43 +192,40 @@ function filter_items__selected_overview(id) {
     }
 }
 
+function filter_comparator(a, b, comparator) {
+    // compares two numbers using the comparator
+    if (comparator == "=") {
+        return a == b;
+    } else if (comparator == ">") {
+        return a > b;
+    } else if (comparator == "<") {
+        return a < b;
+    } else if (comparator == ">=") {
+        return a >= b;
+    } else if (comparator == "<=") {
+        return a <= b;
+    } else {
+        return false;
+    }
+}
+
 function filter_items__rating(id, item, filter_rating, filter_rating_comparator) {
     // filters items by rating
-    if (filter_rating_comparator == ">=") {
-        if (item.rating >= filter_rating) {
-            return false;
-        } else {
-            filter_showhide(id, false);
-            return true;
-        }
-    } else if (filter_rating_comparator == ">") {
-        if (item.rating > filter_rating) {
-            return false;
-        } else {
-            filter_showhide(id, false);
-            return true;
-        }
-    } else if (filter_rating_comparator == "=") {
-        if (item.rating == filter_rating) {
-            return false;
-        } else {
-            filter_showhide(id, false);
-            return true;
-        }
-    } else if (filter_rating_comparator == "<") {
-        if (item.rating < filter_rating) {
-            return false;
-        } else {
-            filter_showhide(id, false);
-            return true;
-        }
-    } else if (filter_rating_comparator == "<=") {
-        if (item.rating <= filter_rating) {
-            return false;
-        } else {
-            filter_showhide(id, false);
-            return true;
-        }
+    if (filter_comparator(item.rating, filter_rating, filter_rating_comparator)) {
+        return false;
+    } else {
+        filter_showhide(id, false);
+        return true;
+    }
+}
+
+function filter_items__scansize(id, item, filter_scansize, filter_scansize_comparator) {
+    const scansize = (item.scansize.length == 2) ? item.scansize[0] * item.scansize[1] : 0.0;
+    if (filter_comparator(scansize, filter_scansize, filter_scansize_comparator)) {
+        return false;
+    } else {
+        filter_showhide(id, false);
+        return true;
     }
 }
 

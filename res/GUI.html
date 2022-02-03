@@ -498,6 +498,30 @@
             <td class="px-0"><button id="button_delete_filter_channel_name" class="delete"></button></td>
           </tr>
           <tr>
+            <th>Scan size</th>
+            <td class="pr-1">
+              <div class="columns">
+                <div class="column is-narrow pr-1">
+                  <div class="select is-multiple">  <!-- the is-multiple removes the caret etc -->
+                  <select class="pl-3 pr-3 is-small" id="filter_scansize_comparator">
+                    <option value=">">&gt;</option>
+                    <option value="=">=</option>
+                    <option value="<">&lt;</option>
+                  </select>
+                  </div>
+                </div>
+                <div class="column pl-0 pr-1">
+                  <input class="input is-small" type="number" id="filter_scansize">
+                </div>
+                <div class="column is-narrow pl-0 pr-3" style="margin-top:0.6em;">
+                  nm<sup>2</sup>
+                </div>
+              </div>
+            </td>
+            <td class="px-0"><img class="warning is-invisible" id="warning_filter_scansize" src="media/alert-circle.svg" /></td>
+            <td class="px-0"><button id="button_delete_filter_scansize" class="delete"></button></td>
+          </tr>
+          <tr>
             <th>Selected Only</th>
             <td><input class="checkbox" type="checkbox" id="filter_selected"></td>
             <td></td>
