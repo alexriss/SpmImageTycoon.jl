@@ -594,7 +594,7 @@ function set_keywords() {
     console.log("set keywords.")
 
     window.keywords_input.DOM.input.blur();  // so that the last typed keyword is transformed into a keyword, too
-    const ids = get_active_element_ids(window.keywords_only_current);
+    const ids = get_active_element_ids(window.keywords_only_current, false, any_view=true);  // current view is "keywords", so we have to add the any_view parameter to get ids
 
     const keywords_mode = (ids.length == 1) ? "set" : window.keywords_mode;  // if only one is select_directory, mode is always "set"
     if (ids.length > 0) {

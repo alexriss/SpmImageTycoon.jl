@@ -570,8 +570,9 @@ function toggle_all_active(ignore_filter_status=false) {
     check_hover_enabled();
 }
 
-function get_active_element_ids(only_current=false, all_visible_if_none_selected=false) {
+function get_active_element_ids(only_current=false, all_visible_if_none_selected=false, any_view=false) {
     // returns all active element ids
+    // only for grid and zoom views (unless overridden by any_view)
     // for zoom view, an array with this one element is returned
     // for grid view, if any are selected (i.e active), then these are returned (irrespective of filter/hidden status)
     //    .. unless only_current is true, then only this is returned
@@ -580,7 +581,8 @@ function get_active_element_ids(only_current=false, all_visible_if_none_selected
     // if all_visible_if_none_selected is true, then all not-hidden will be returned (if none are selected)
 
     // only certain views are allowed
-    if (["zoom", "grid", "keywords"].indexOf(get_view()) == -1) {
+    let allowed_views = ["zoom", "grid"];
+    if (allowed_views.indexOf(get_view()) == -1 && !any_view) {
         return [];
     }
 
