@@ -296,7 +296,7 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_
             xy_datas = [dropmissing(spectrum.data[!, [channel2_name_bwd, channel_name_bwd]])]
             colors = [color_spectrum_bwd]
         else
-            xy_datas = dropmissing(spectrum.data[!, [channel2_name, channel_name]])
+            xy_datas = [dropmissing(spectrum.data[!, [channel2_name, channel_name]])]
             colors = [color_spectrum_fwd]
         end
     else  # both channels
