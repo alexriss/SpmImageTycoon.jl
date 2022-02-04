@@ -3,35 +3,147 @@ using Test
 
 import SpmImageTycoon.Blink.@js
 
+include("results.jl")
 
-function delete_files()::Nothing
-    if isdir("data/_spmimages_cache")
-        rm("data/_spmimages_cache", recursive=true)
-    end
-    if isfile("test_presentation.odp")
-        rm("test_presentation.odp")
+
+"""Delete old files."""
+function delete_files(i = 1)::Nothing
+    try
+        if isdir("data/_spmimages_cache")
+            rm("data/_spmimages_cache", recursive=true)
+        end
+        if isfile("test_presentation.odp")
+            rm("test_presentation.odp")
+        end
+        if i > 1
+            println(" ok.")
+        end
+    catch e
+        if isa(e, Base.IOError)
+            if i == 1 
+                print("Can't delete old files. Retrying.")
+            else
+                print(".")
+            end
+            if i > 5
+                throw(e)
+            end
+            sleep(1)
+            delete_files(i+1)
+        else
+            throw(e)
+        end
     end
     return nothing
 end
 
-function escape_id(id::String)::String
-    return replace(id, "." => "\\.")
+"""Compare two dictionaries of items."""
+function compare_dicts(dict1, dict2, tol=1e-6)
+    for (k,v1) in dict1
+        if k in ["created", "filename_display_last_modified"]  # these won't be the same
+            continue
+        end
+
+        if !haskey(dict2, k)
+            return false
+        end
+        v2 = dict2[k]
+
+        if v1 == v2
+            continue
+        end
+        if isa(v1, Dict)
+            if !compare_dicts(v1, v2)
+                return false
+            end
+        elseif isa(v1, AbstractArray)
+            if !(length(v1) == length(v2))
+                println("Not equal $(k):\n $(v1)\n $(v2)")
+                return false
+            end
+            if !all(abs.(v1 .- v2) .< tol)
+                println("Not equal $(k):\n $(v1)\n $(v2)")
+                return false
+            end
+        elseif isa(v1, String)
+            if v1 != v2
+                println("Not equal $(k):\n $(v1)\n $(v2)")
+                return false
+            end
+        elseif isnan(v1)
+            if !isnan(v2)
+                println("Not equal $(k):\n $(v1)\n $(v2)")
+                return false
+            end
+        elseif isa(v1, Number)
+            if !(abs(v1 - v2) < tol)
+                println("Not equal $(k):\n $(v1)\n $(v2)")
+                return false
+            end
+        else
+            if v1 != v2
+                println("Not equal $(k):\n $(v1)\n $(v2)")
+                return false
+            end
+        end
+    end
+    return true
 end
 
+
+"""Escape dots in a HTML-id, so it can be used in querySelectorAll."""
+function escape_id(id::String)::String
+    id = replace(id, "." => "\\.")
+    id = replace(id, " " => "\\ ")
+    return id
+end
+
+
+"""Escape dots in HTML-ids, so it can be used in querySelectorAll."""
 function selector(ids::Vector{String})::String
     ids_ = ["#" * escape_id(id) for id in ids]
     return join(ids_, ",") 
 end
 
+"""Construct querySelector from id."""
 function selector(id::String)::String
     return "#" * escape_id(id)
+end
+
+"""Get window.items from js."""
+function get_items(sleeptime=1)
+    sleep(sleeptime)
+    return @js w window.items
+end
+
+"""Sends a key-press to js. Also modifiers can be included. E.g. `ctrl-a` or `ctrl-shift-a`."""
+function send_key(k::String)
+    s = split(k, "-")
+    k = s[end]
+    modifiers = s[1:end-1]
+    @js w test_press_key($k, $modifiers)
+    sleep(0.05)
+end
+
+"""Sends a key-press to js. Also modifiers can be included. E.g. `ctrl-a` or `ctrl-shift-a`."""
+function send_key(k::AbstractArray)
+    for k_ in k
+        send_key(k_)
+    end
+end
+
+
+"""Sends a mouse click to all elements set by the css selector."""
+function send_click(sel::String)
+    @js w test_click_mouse($sel)
+    sleep(0.05)
 end
 
 
 @testset "Loading" begin
     delete_files()
 
-    dir_data = abspath("data/")
+    global dir_data = abspath("data/")
     dir_cache = abspath("data/_spmimages_cache")
 
     global w = tycoon(keep_alive=false, return_window=true)  # in the test environment config is not loaded and saved
@@ -41,7 +153,8 @@ end
 
     @js w load_directory($dir_data)
 
-    items = @js w window.items
+    items = get_items()
+    @test compare_dicts(items, items1)
 
     @test length(items) == length(fnames_images) + length(fnames_spectra)
     @test isdir(dir_cache)
@@ -53,26 +166,88 @@ end
 end
 
 @testset "Manipulating" begin
-    @show "Loading images"
-    @show fnames_images
-    select_images = fnames_images[1:3]
-    sel = selector(select_images)
-    @js w test_click_mouse($sel)
-    @js w test_press_key("c")
-    @js w test_press_key("c")
-    @js w test_press_key("C")
-    items = @js w window.items
+    selected = ["Image_002.sxm", "Image_004.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["b","b","B"])
+    send_key(["i","p","p","P", "x"])  # "x" should have no effect
+
+    send_key(["n"])
+
+    selected = [f for f in fnames_spectra if startswith(f, "STS") || startswith(f, "Follow")]
+    sel = selector(selected)
+    send_click(sel)
     active = @js w get_active_element_ids()
-    @test active == select_images
+    @test sort(active) == sort(selected)
+
+    send_key(["x", "X", "c", "c", "Y", "y", "C", "c", "i", "i", "i", "i"])
+
+    items = get_items()
+    @test compare_dicts(items, items2)
+
+    send_key("n")  # deselect all
+    selected = ["Image_110.sxm", "Image_661.sxm", "Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+
+    send_key(["b", "d", "d", "p", "p", "P", "b", "p"])
+
+    items = get_items()
+    @test compare_dicts(items, items3)
+    
+    send_key(["a", "p"])
+    send_key(["a"])
+    selected = ["Image_110.sxm", "Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["R"])
+
+    items = get_items()
+    @test compare_dicts(items, items4)
+end
+
+@testset "Reloading" begin
+    send_key(["ctrl-w"])
+    sleep(1)
+    @js w load_directory($dir_data)
+    items = get_items()
+    @test compare_dicts(items, items4)
+end
+
+@testset "Keywords" begin
+    # todo
+end
+
+@testset "Rating" begin
+    # todo
+end
+
+@testset "Virtual Copy" begin
+    # todo
 end
 
 @testset "Filtering" begin
-    # todo check filters
+    # todo
+end
+
+@testset "Zoom view Image" begin
+    # todo 
+end
+
+@testset "Line profiles" begin
+    # todo 
+end
+
+@testset "Zoom view Spectrum" begin
+    # todo 
+end
+
+@testset "Saving" begin
+    # todo
 end
 
 @testset "Export" begin
-    # export openoffice presentation (odp)
-    @js w console.log(1)
+    # todo: export openoffice presentation (odp)
 end
 
 @testset "Close" begin
