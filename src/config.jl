@@ -38,7 +38,7 @@ odp_channel_names_short = OrderedDict{String,String}(  # channel names to be rep
 const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
 auto_save_minutes = 10  # auto-save every n minutes
 
-overview_max_images = 100  # maximum number of images displayed in the filter_overview
+overview_max_images = 1000  # maximum number of images displayed in the filter_overview
 
 memcache_mb_spectra = 50  # size of memory cache for spectra (in mb)
 

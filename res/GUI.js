@@ -29,6 +29,9 @@ window.spectrum_plot_object = null;  // hold the spectrum plot object
 
 window.filter_overview_selection_object = null;  // holds the selection object for overview filter
 window.filter_overview_selecting = false;  // user is currently making a selection
+window.filter_overview_max_scale = 800.0; // max zoom of filter_overview
+window.filter_overview_min_scale = 1.0;   // min zoom of filter_overview
+window.filter_overview_scale = 1.0;  // current zoom of filter_overview
 
 window.num_open_jobs = 0;  // how many julia jobs are open
 window.timeout = null;  // timeout reference
@@ -689,6 +692,7 @@ function check_hover_enabled() {
             els_with_background[i].firstElementChild.style.backgroundImage = "none";
             els_with_background[i].classList.remove("with_background");
         }
+        document.getElementById("filter_overview_selected_zoom").classList.add("notactive");
     } else {  // update images
         // remove all other images
         const prefix = "filter_overview_item_";
@@ -709,7 +713,8 @@ function check_hover_enabled() {
                 el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
             }
             el.classList.add("with_background");
-        }        
+        }
+        document.getElementById("filter_overview_selected_zoom").classList.remove("notactive");
     }
 }
 

@@ -686,10 +686,13 @@ sup {
   opacity: 0.2;
 }
 
-#filter_overview_reset_zoom {
+#filter_overview_zoom_controls {
   opacity: 0.5;
 }
 
+#filter_overview_zoom_controls .notactive {
+  opacity: 0.5;
+}
 
 /* sidebar imagezoomtools */
 

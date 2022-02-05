@@ -248,6 +248,10 @@ function event_handlers() {
         zoom_drag_filter_overview_reset(document.getElementById('filter_overview_container'));
     });
 
+    document.getElementById('filter_overview_selected_zoom').addEventListener('click', function() {
+        zoom_drag_filter_overview_to_selected(document.getElementById('filter_overview_container'));
+    });
+
     Array.from(document.getElementById('sidebar_filter_table').getElementsByClassName('delete')).forEach(el => {
         if (el.id == "button_delete_filter_rating") {
             el.addEventListener('click', function(e) {

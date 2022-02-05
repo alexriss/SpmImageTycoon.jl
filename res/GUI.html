@@ -566,7 +566,11 @@
 
         <div id="image_info_title" class="columns is-mobile title is-size-6 mb-0 pb-0 unselectable">
           <div class="column abbreviate m-0 pb-1">
-            <span>Overview</span><a id="filter_overview_reset_zoom" class="ml-2 is-hidden is-size-7">reset zoom</a>
+            <span>Overview</span>
+            <span id="filter_overview_zoom_controls" class="is-size-7 ml-1">
+              <a id="filter_overview_reset_zoom" class="ml-1 is-size-7 notactive">all</a> | 
+              <a id="filter_overview_selected_zoom" class="mr-1 is-size-7 notactive">selected</a>
+            </span>
           </div>
           <div class="column has-text-right m-0 pb-0 pt-4 is-size-7">
             <span id="filter_overview_position" class="is-invisible">
