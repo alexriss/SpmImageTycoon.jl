@@ -98,7 +98,6 @@ function escape_id(id::String)::String
     return id
 end
 
-
 """Escape dots in HTML-ids, so it can be used in querySelectorAll."""
 function selector(ids::Vector{String})::String
     ids_ = ["#" * escape_id(id) for id in ids]
@@ -132,12 +131,25 @@ function send_key(k::AbstractArray)
     end
 end
 
-
 """Sends a mouse click to all elements set by the css selector."""
 function send_click(sel::String)
     @js w test_click_mouse($sel)
-    sleep(0.05)
+    sleep(0.1)
 end
+
+"""Sends a double-click to all elements set by the css selector.
+Does not seem to work so well."""
+function send_double_click(sel::String)
+    @js w test_dblclick_mouse($sel)
+    sleep(0.1)
+end
+
+"""Hovers the mouse over all elements set by the css selector."""
+function send_hover_mouse(sel::String)
+    @js w test_hover_mouse($sel)
+    sleep(0.1)
+end
+
 
 
 @testset "Loading" begin
@@ -206,12 +218,71 @@ end
     @test compare_dicts(items, items4)
 end
 
+@testset "Copying and pasting" begin
+    # copy and paste parameters
+    send_key(["n"])
+    selected = ["Image_002.sxm", "Image_004.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["ctrl-c"])
+    send_key("n")  # deselect all
+    selected = ["Image_110.sxm", "Image_661.sxm", "Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["ctrl-v"])
+
+    # nothing should happen because the initial selection were two images (copy only workls from one image)
+    items = get_items()
+    @test compare_dicts(items, items4)
+
+    send_key(["n"])
+    selected = ["Image_004.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["ctrl-c"])
+    send_key("n")  # deselect all
+    selected = ["Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["ctrl-v"])
+
+    items = get_items()
+    @test compare_dicts(items, items5)
+
+    # revert
+    send_key(["R"])
+    items = get_items()
+    @test compare_dicts(items, items4)
+
+
+    send_key("n")  # deselect all
+    selected = ["Image_002.sxm", "Image_004.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+
+    # go into zoom view - copy should work in zoom view (despite two selected in grid view)
+    selected = ["Image_004.sxm"]
+    sel = selector(selected)
+    send_hover_mouse(sel)
+    send_key("z")  # back to grid view
+    sleep(0.3)
+    send_key(["ctrl-c"])
+    send_key("z")  # back to grid view
+    send_key("n")  # deselect all
+    selected = ["Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["ctrl-v"])
+    items = get_items()
+    @test compare_dicts(items, items5)
+end
+
 @testset "Reloading" begin
     send_key(["ctrl-w"])
     sleep(1)
     @js w load_directory($dir_data)
     items = get_items()
-    @test compare_dicts(items, items4)
+    @test compare_dicts(items, items5)
 end
 
 @testset "Keywords" begin
@@ -230,7 +301,7 @@ end
     # todo
 end
 
-@testset "Zoom view Image" begin
+@testset "Zoom view image" begin
     # todo 
 end
 
@@ -238,7 +309,7 @@ end
     # todo 
 end
 
-@testset "Zoom view Spectrum" begin
+@testset "Zoom view spectrum" begin
     # todo 
 end
 
