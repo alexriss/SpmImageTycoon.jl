@@ -628,6 +628,12 @@ function get_active_element_ids(only_current=false, all_visible_if_none_selected
 
 function set_copyfrom_id(message, message_fail) {
     // sets the copyfrom_id (properties of this id can be pasted to other items)
+
+    const v = get_view();
+    if (v != "zoom" && v != "grid") {  // we use copy&paste also for keywords
+        return;
+    }
+
     let ids = get_active_element_ids();
     let id_curr = get_active_element_ids(only_current=true);
     let id_copy = "";
