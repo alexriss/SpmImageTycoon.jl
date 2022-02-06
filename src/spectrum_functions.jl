@@ -336,7 +336,7 @@ function get_spectrum_data_dict(griditem::SpmGridItem, dir_data::String)::Dict{S
         rename!(xy_data, 1 => :x)
     end
     if length(xy_datas) > 1
-        xy_datas_comb = outerjoin(xy_datas..., on = :x)
+        xy_datas_comb = outerjoin(xy_datas..., on = :x, makeunique=true)
     else
         xy_datas_comb = xy_datas[1]
     end
