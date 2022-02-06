@@ -97,7 +97,7 @@ The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://
 - To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 
-### Automatic tests
+### Automated tests
 
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 
