@@ -81,13 +81,17 @@ SpectrumPlot.prototype = {
         this.plot_object.setSize(this.getContainerSize());
     },
 
-    getLabel(suffix = "") {
+    getLabel(idx = 0) {
         const griditem = window.items[window.zoom_last_selected];
+        const dir = griditem.scan_direction;
+        const suffix = (idx == 1 || dir == 1) ? "bwd" : "";  // backwards scan if second index, or if scan direction == 1
         return griditem.channel_name + " " + suffix + " [" + this.unit_prefix +  griditem.channel_unit + "]"
     },
 
-    getLabel2(suffix = "") {
+    getLabel2(idx = 0) {
         const griditem = window.items[window.zoom_last_selected];
+        const dir = griditem.scan_direction;
+        const suffix = (idx == 1 || dir == 1) ? "bwd" : "";  // backwards scan if second index, or if scan direction == 1
         return griditem.channel2_name + " " + suffix + " [" + this.unit2_prefix +  griditem.channel2_unit + "]"
     },
 
@@ -119,7 +123,7 @@ SpectrumPlot.prototype = {
             let xSeries = this.xSeries;
             xSeries.label = this.getLabel2()
             this.plot_object.addSeries(this.xSeries, 0);
-            let ySeries, suffix;
+            let ySeries;
             for (let i=0; i<y_datas.length; i++) {
                 if (spectrum_data["type"] == "line") {
                     ySeries = this.ySeries;
@@ -128,8 +132,7 @@ SpectrumPlot.prototype = {
                     ySeries.points.fill = colors[i];
                 }
     
-                suffix = (i == 1) ? "bwd" : "";
-                ySeries.label = this.getLabel(suffix);
+                ySeries.label = this.getLabel(i);
                 ySeries.stroke = colors[i];
                 this.plot_object.addSeries(ySeries, i+1);
             }
