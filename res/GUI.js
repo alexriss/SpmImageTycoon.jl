@@ -48,6 +48,7 @@ window.keywords_input_initial_value = "";  // balue that is set when opening the
 window.keywords_mode = "set";  // current mode for editing keywords
 window.keywords_modes = ["set", "add", "remove"];   // different modes for editing keywords - warning: any change needs to be also done in the js code below and in Julia
 window.keywords_modes_display = ["set", "add", "remove"];  // these descriptions are shown to the user
+window.keywords_modes_display_css_classes = ["is-success", "is-info", "is-danger"];  // tcss classes for the respective modes
 
 window.timeout_filter = null;  // timeout refrence for filter function
 window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
@@ -224,111 +225,6 @@ function toggle_start_project(target="project", save=false) {
         document.getElementById("page_start").classList.remove("is-hidden");
         start_page_logo_spin(true);
     }
-}
-
-function toggle_keywords_dialog(only_current=false) {
-    // toggle keywords dialog
-    if (document.getElementById("modal_keywords").classList.contains("is-active")) {
-        document.getElementById("modal_keywords").classList.remove("is-active");
-    } else {
-        window.keywords_only_current = only_current;
-        let ids = get_active_element_ids(only_current);
-
-        if (ids.length > 0) {
-            if (window.keywords_input === null) {
-                window.keywords_input = new Tagify(document.getElementById("modal_keywords_input"), {
-                    whitelist: [],
-                    placeholder: "Add keywords",
-                    dropdown: {
-                        maxItems: 16,                 // maximum number of suggestions
-                        classname: "tags-look",       // custom classname for dropdown
-                        enabled: 1,                   // show suggestions after 1 character
-                        // enabled: 0,                // show suggestions on focus
-                        closeOnSelect: false          // do not hide suggestion dropdown after an item has been selected
-                    }
-                });
-            }
-
-            if (ids.length > 1) {  // show different modes
-                document.getElementById("modal_keywords_mode_container").classList.remove("is-hidden");
-            } else {
-                document.getElementById("modal_keywords_mode_container").classList.add("is-hidden");
-            }
-            toggle_keywords_mode(jump=0, initial=true);  // also sets the inital keywords
-
-            let whitelist =  Array.from(window.keywords_all).sort();
-            window.keywords_input.settings.whitelist.splice(0, whitelist.length, ...whitelist);
-
-            if (ids.length == 1) {
-                filename_original = window.items[ids[0]].filename_original;
-                document.getElementById("modal_keywords_files").innerText = filename_original.substring(0, filename_original.length - 4);
-            } else {
-                document.getElementById("modal_keywords_files").innerText = ids.length.toString() + ' files';
-            }
-            document.getElementById("modal_keywords").classList.add("is-active");
-            window.keywords_input.DOM.input.focus();
-        }
-    }
-}
-
-function toggle_keywords_mode(jump=1, initial=false) {
-    // toggles the keywords mode (and sets the keywords if initial=true or the user hasn't changed anything)
-    const el = document.getElementById("modal_keywords_mode");
-    let index = window.keywords_modes.indexOf(window.keywords_mode) + jump;
-    index = index % window.keywords_modes.length;
-    if (index < 0) {
-        index = 0;
-    }
-
-    window.keywords_mode = window.keywords_modes[index];
-    el.innerText = window.keywords_modes_display[index];
-
-    if (initial || window.keywords_input_initial_value == JSON.stringify(window.keywords_input.value)) {  // user has not changed anything
-        window.keywords_input.removeAllTags();
-        window.keywords_input.addTags(keywords_initial_value());
-        window.keywords_input_initial_value = JSON.stringify(window.keywords_input.value);  // need to copy
-    }
-
-    if (el.innerText == "remove") {
-        document.getElementById("modal_keywords_mode").classList.add("is-danger");
-    } else {
-        document.getElementById("modal_keywords_mode").classList.remove("is-danger");
-    }
-}
-
-function keywords_initial_value() {
-    // depending on the mode, we will put a different set of keywords into the text-input
-    let ids = get_active_element_ids(window.keywords_only_current);
-    let keywords_result = [];
-    let mode = window.keywords_mode;
-    if (ids.length <= 1) {
-        mode = "set";
-    }
-    if (mode == "add") {
-        keywords_result = [];
-        // // put the intersection of all keywords
-        // keywords_result = window.items[ids[0]].keywords;
-        // ids.forEach(id => {
-        //     keywords_result = keywords_result.filter(k => window.items[id].keywords.includes(k));
-        // });
-    } else if (mode == "remove") {  // put empty list
-        keywords_result = [];
-    } else {  // "set", put the union of all keywords
-        let keywords_with_duplicates = [];
-        ids.forEach(id => {
-            keywords_with_duplicates = keywords_with_duplicates.concat(window.items[id].keywords);
-        });
-        keywords_result = Array.from(new Set(keywords_with_duplicates));
-    }
-    keywords_result.sort();
-    return keywords_result;
-}
-
-function keywords_copy_to_clipboard(event) {
-    // copies all keywords to the clipboard
-    const {clipboard} = require('electron');
-    let text = window.keywords_input.value.map(a => a.value).join(",");
-    clipboard.writeText(text);
 }
 
 function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
