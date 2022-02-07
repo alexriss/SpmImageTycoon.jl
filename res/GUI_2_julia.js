@@ -58,6 +58,7 @@ function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_p
 
         // delete saved items
         window.items = {};
+        window.keywords_all = new Set();
     }
 
     // make sure that the project page is visible
