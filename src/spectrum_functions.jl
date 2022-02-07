@@ -258,7 +258,6 @@ If `sort_x_any` is `true``, then the data is sorted by x_data in ascending direc
 Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors.
 """
 function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_asc::Bool=false, sort_x_any::Bool=false)::Tuple{Vector{DataFrame},Vector{String}}
-    # TODO: implement average sweeps
     channel_name = griditem.channel_name
     channel2_name = griditem.channel2_name
     channel_name_bwd = griditem.channel_name * " [bwd]"
@@ -517,8 +516,16 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     end
 
     comment = ""
-    if haskey(spectrum.header, "Comment01")
-        comment = utf8ify(spectrum.header["Comment01"])    # TODO: check if there could be more lines
+    for i in 1:99
+        comment_key = (i < 10) ? "Comment0$(i)" : "Comment$(i)"
+        if haskey(spectrum.header, comment_key)
+            if i > 1
+                comment *= "\n"
+            end
+            comment *= utf8ify(spectrum.header[comment_key])
+        else
+            break
+        end
     end
 
     if haskey(images_parsed, id)
