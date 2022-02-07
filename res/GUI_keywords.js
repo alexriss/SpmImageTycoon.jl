@@ -34,11 +34,27 @@ function toggle_keywords_dialog(only_current=false) {
             if (ids.length == 1) {
                 filename_original = window.items[ids[0]].filename_original;
                 document.getElementById("modal_keywords_files").innerText = filename_original.substring(0, filename_original.length - 4);
+                keywords_mode_set_css("set");  // for one element it is always "set"
             } else {
                 document.getElementById("modal_keywords_files").innerText = ids.length.toString() + ' files';
             }
+
             document.getElementById("modal_keywords").classList.add("is-active");
             window.keywords_input.DOM.input.focus();
+        }
+    }
+}
+
+function keywords_mode_set_css(keywords_mode) {
+    // sets css classes according to the mode (set, add, remove)
+    // color mode button and save button
+    for (let i=0; i<window.keywords_modes_display_css_classes.length; i++) {
+        if (keywords_mode == window.keywords_modes[i]) {
+            document.getElementById("modal_keywords_mode").classList.add(window.keywords_modes_display_css_classes[i]);
+            document.getElementById("modal_keywords_button_save").classList.add(window.keywords_modes_display_css_classes[i]);
+        } else {
+            document.getElementById("modal_keywords_mode").classList.remove(window.keywords_modes_display_css_classes[i]);
+            document.getElementById("modal_keywords_button_save").classList.remove(window.keywords_modes_display_css_classes[i]);
         }
     }
 }
@@ -60,17 +76,7 @@ function toggle_keywords_mode(jump=1, initial=false) {
         window.keywords_input.addTags(keywords_initial_value());
         window.keywords_input_initial_value = JSON.stringify(window.keywords_input.value);  // need to copy
     }
-
-    // color mode button and save button
-    for (let i=0; i<window.keywords_modes_display_css_classes.length; i++) {
-        if (window.keywords_mode == window.keywords_modes[i]) {
-            document.getElementById("modal_keywords_mode").classList.add(window.keywords_modes_display_css_classes[i]);
-            document.getElementById("modal_keywords_button_save").classList.add(window.keywords_modes_display_css_classes[i]);
-        } else {
-            document.getElementById("modal_keywords_mode").classList.remove(window.keywords_modes_display_css_classes[i]);
-            document.getElementById("modal_keywords_button_save").classList.remove(window.keywords_modes_display_css_classes[i]);
-        }
-    }
+    keywords_mode_set_css(window.keywords_mode);
 }
 
 function keywords_initial_value() {
