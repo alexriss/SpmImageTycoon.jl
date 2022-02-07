@@ -187,19 +187,12 @@ function event_handlers() {
         els[i].addEventListener('click', toggle_error);
     }
 
-    els = document.getElementById("modal_keywords").getElementsByTagName("button");   // the "forEach" method does not work here
-    for (let i = 0; i < els.length; i++) {
-        if (els[i].classList.contains("is-success")) {
-            els[i].addEventListener('click', (e) => {
-                set_keywords();
-                toggle_keywords_dialog();
-            });
-        } else if (els[i].id == "modal_keywords_mode") {
-            els[i].addEventListener('click', (e) => { toggle_keywords_mode(); });  // we have to make sure that the event object is not passed as an argument
-        } else {
-            els[i].addEventListener('click', toggle_keywords_dialog);
-        }
-    }
+    document.getElementById("modal_keywords_button_save").addEventListener('click', (e) => {
+        set_keywords();
+        toggle_keywords_dialog();
+    });
+    document.getElementById("modal_keywords_mode").addEventListener('click', (e) => { toggle_keywords_mode(); });  // we have to make sure that the event object is not passed as an argument
+    document.getElementById("modal_keywords_button_cancel").addEventListener('click', toggle_keywords_dialog);
     // make keywords modal draggable
     dragElement(document.getElementById("modal_keywords"), document.getElementById("modal_keywords_header"));
 
