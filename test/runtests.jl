@@ -264,7 +264,7 @@ end
     selected = ["Image_004.sxm"]
     sel = selector(selected)
     send_hover_mouse(sel)
-    send_key("z")  # back to grid view
+    send_key("z")  # switch to zoom view
     sleep(0.3)
     send_key(["ctrl-c"])
     send_key("z")  # back to grid view

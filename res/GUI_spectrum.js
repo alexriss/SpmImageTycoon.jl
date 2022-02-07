@@ -297,8 +297,7 @@ SpectrumPlot.prototype = {
             });
 
             document.getElementById('spectrumzoom_save_zoom').addEventListener('click', function() {
-
-                /// todo: convert to relative ranges, also take into account inversion
+                // convert to relative ranges, also take into account inversion
                 that.form_el_x_min.value, that.form_el_x_max.value, that.form_el_y_min.value, that.form_el_y_max.value
                 const range_selected_abs = [
                     that.plot_object.scales.y.min,
