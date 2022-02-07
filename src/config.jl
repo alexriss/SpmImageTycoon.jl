@@ -7,8 +7,8 @@ const config_dir = ".spmimagetycoon"  # will be in home directory
 image_channels_feedback_on = ["Z"]
 image_channels_feedback_off = ["Frequency Shift", "Current"]
 spectrum_channels = OrderedDict{String,Vector{String}}(
-    "bias spectroscopy" => ["LIX 1 omega", "Frequency Shift", "Current"],
-    "Z spectroscopy" => ["Frequency Shift", "Current"],
+    "bias spectroscopy" => ["LIX 1 omega [AVG]", "Frequency Shift [AVG]", "Current [AVG]", "LIX 1 omega", "Frequency Shift", "Current"],
+    "Z spectroscopy" => ["Frequency Shift [AVG]", "Current [AVG]", "Frequency Shift", "Current"],
     "History Data" => ["Current", "Frequency Shift"],
     "Frequency Sweep" => ["Amplitude", "Phase"]
 )
@@ -27,7 +27,7 @@ const dir_res = "../res/"  # relative to module directory
 const show_load_progress_every = 20  # show load progress every n files
 
 const dir_template_odp = abspath(joinpath(@__DIR__, dir_res, "template_odp"))  # template for openoffice document
-const odp_ignore_comment_lines = ["User"]   # comment lines starting with these words are ignored
+odp_ignore_comment_lines = ["User"]   # comment lines starting with these words are ignored
 odp_channel_names_short = OrderedDict{String,String}(  # channel names to be replaced for shorter versions
     "Frequency Shift" => "Δf",
     "Frequency Shift bwd" => "Δf<",
@@ -212,8 +212,11 @@ function load_config()::Nothing
             end
 
             if haskey(d, "export")
+                if haskey(d["export"], "ignore_comment_lines") && isa(d["export"]["ignore_comment_lines"], Array)
+                    global odp_ignore_comment_lines = string.(d["export"]["ignore_comment_lines"])
+                end
                 if haskey(d["export"], "channel_names_short") && isa(d["export"]["channel_names_short"], Dict)
-                    global odp_channel_names_short = OrderedDict{String,String}()
+                    global odp_channel_names_short
                     for (k,v) in d["export"]["channel_names_short"]
                         odp_channel_names_short[string(k)] = string(v)
                     end
@@ -252,7 +255,11 @@ function save_config(new_directory::String="")::Nothing
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
         "memcache_mb_spectra" => memcache_mb_spectra,
-        "export" => odp_channel_names_short,
+        "export" => OrderedDict{String,Any}(
+            "channel_names_short" => odp_channel_names_short,
+            "ignore_comment_lines" => odp_ignore_comment_lines,
+        ),
+        "odp_ignore_comment_lines" => odp_ignore_comment_lines,
         "last_directories" => last_directories
     )
 
