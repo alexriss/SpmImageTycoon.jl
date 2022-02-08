@@ -221,7 +221,7 @@ function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{S
     Threads.@threads for id in ids
         filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
         if images_parsed[id].type == SpmGridImage
-            item = load_image(filename_original_full, output_info=0)
+            item = load_image_memcache(filename_original_full)
         elseif images_parsed[id].type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
         else
@@ -266,7 +266,7 @@ function reset_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{St
         filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
 
         if images_parsed[id].type == SpmGridImage
-            item = load_image(filename_original_full, output_info=0)
+            item = load_image_memcache(filename_original_full)
         elseif images_parsed[id].type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
         else
@@ -302,7 +302,7 @@ function paste_params!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{Stri
 
         filename_original_full = joinpath(dir_data, griditem.filename_original)
         if griditem.type == SpmGridImage
-            item = load_image(filename_original_full, output_info=0)
+            item = load_image_memcache(filename_original_full)
             properties = [:channel_name, :background_correction, :filters, :colorscheme, :channel_range_selected]
         elseif griditem.type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
@@ -866,6 +866,11 @@ end
 function load_directory(dir_data::String, w::Window)
     # parse images etc
     global cancel_sent = false  # user might send cancel during the next step
+
+    # remove old cache
+    global memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
+    global memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
+
     images_parsed, _ = parse_files(dir_data, w)
     bottomleft, topright = get_scan_range(images_parsed)
     if cancel_sent
