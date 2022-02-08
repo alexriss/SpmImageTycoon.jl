@@ -12,7 +12,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Demo](#demo)  
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
-[Technical comments](#technical-comments)  
+[Technical comments and tips](#technical-comments)  
 [Dependencies](#dependencies)  
 [Third party libraries](#third-party-libraries-included)  
 [Related projects](#related-projects)  
@@ -90,7 +90,7 @@ Pkg.update()
 ### You can stop reading here and start using the program now.
 
 
-## Technical comments
+## Technical comments, tips and tricks
 
 The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
 
@@ -98,6 +98,7 @@ The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://
 - The first startup after installation (or update) can be slow - it is due to initial compilations.
 - To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
+- Extra settings  (such as default channels) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
 
 ### Automated tests
 
