@@ -95,6 +95,7 @@ Pkg.update()
 The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
 
 - Fast access to the file system is crucial - do not use this app on a slow networked file system.
+- The first startup after installation (or update) can be slow - it is due to initial compilations.
 - To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 
