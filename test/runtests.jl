@@ -293,10 +293,17 @@ end
     sel = selector(selected)
     send_click(sel)
     send_key(["b", "b", "b", "b", "b", "b", "b", "d", "d", "c", "c", "p", "p", "i", "R"])
+
+    send_hover_mouse(sel)
+    send_key("z")  # switch to zoom view
+    send_key(["p"])
+    sleep(0.3)
+    send_key("z")  # back to grid view
+
     items = get_items()
     @test compare_dicts(items, items5)
 
-    #todo: empty spectrum
+    # todo: empty spectrum
 end
 
 @testset "Keywords" begin
