@@ -358,71 +358,88 @@ function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{Da
     end
     yxranges = Float64[]
 
-    open(filename, "w") do f
-        write(f, svg_header)
-
-        # get minimum and maximum values for all data
-        extrema_x = extrema.([xy_data[!, 1] for xy_data in xy_datas if size(xy_data, 1) > 0])
-        extrema_y = extrema.([xy_data[!, 2] for xy_data in xy_datas if size(xy_data, 1) > 0])
-
-        min_x = 0.
-        max_x = 0.
-        min_y = 0.
-        max_y = 0.
-        if length(extrema_x) > 0
-            min_x = minimum(first.(extrema_x))
-            max_x = maximum(last.(extrema_x))
-        end
-        if length(extrema_y) > 0
-            min_y = minimum(first.(extrema_y))
-            max_y = maximum(last.(extrema_y))
-        end
-
-        # it causes problems if the span is zero, so we expand the range if that happens
-        if min_x ≈ max_x
-            min_x, max_x = expand_range(min_x, max_x)
-        end
-        if min_y ≈ max_y
-            min_y, max_y = expand_range(min_y, max_y)
-        end
-
-        yxranges = [min_y, max_y, min_x, max_x]
-
-        # absolute selected range-span in x and y, should always be != 0
-        yxranges_selected = [
-            yxranges[1] + (yxranges[2] - yxranges[1]) * range_selected[1],
-            yxranges[1] + (yxranges[2] - yxranges[1]) * range_selected[2],
-            yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[3],
-            yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[4]
-        ]
-
-        x_delta = yxranges_selected[4] - yxranges_selected[3]
-        y_delta = yxranges_selected[2] - yxranges_selected[1]
-        if abs(x_delta) < 1e-32
-            s = (x_delta < 0.) ? -1. : 1.
-            x_delta = s * 1e-32
-        end
-        if abs(y_delta) < 1e-32
-            s = (y_delta < 0.) ? -1. : 1.
-            y_delta = s * 1e-32
-        end
-        x_scale = 100. / x_delta
-        y_scale = 100. / y_delta
-
-        @views for (xy_data, color) in zip(xy_datas, colors)
-            x_data = xy_data[!, 1]
-            y_data = xy_data[!, 2]
-            x_data_plot = @. round((x_data - yxranges_selected[3]) * x_scale, digits=2)
-            y_data_plot = @. round(100 - ((y_data - yxranges_selected[1]) * y_scale), digits=2)
-
-            points = ""
-            @views @inbounds for j in 1:length(x_data_plot)
-                points *= "$(x_data_plot[j]),$(y_data_plot[j]) "
+    # sometimes the file is blocked, in that case we sleep for 5ms and try again
+    f = nothing
+    err = nothing
+    for _ in 1:10
+        try 
+            f = open(filename, "w")
+            break
+        catch e
+            err = e
+            if isa(e, Base.IOError)
+                sleep(0.005)
             end
-            write(f, polyline_header_1 * color * polyline_header_2 * points * polyline_footer)
         end
-        write(f, svg_footer)
     end
+    if f === nothing
+        throw(err)
+    end
+
+    write(f, svg_header)
+
+    # get minimum and maximum values for all data
+    extrema_x = extrema.([xy_data[!, 1] for xy_data in xy_datas if size(xy_data, 1) > 0])
+    extrema_y = extrema.([xy_data[!, 2] for xy_data in xy_datas if size(xy_data, 1) > 0])
+
+    min_x = 0.
+    max_x = 0.
+    min_y = 0.
+    max_y = 0.
+    if length(extrema_x) > 0
+        min_x = minimum(first.(extrema_x))
+        max_x = maximum(last.(extrema_x))
+    end
+    if length(extrema_y) > 0
+        min_y = minimum(first.(extrema_y))
+        max_y = maximum(last.(extrema_y))
+    end
+
+    # it causes problems if the span is zero, so we expand the range if that happens
+    if min_x ≈ max_x
+        min_x, max_x = expand_range(min_x, max_x)
+    end
+    if min_y ≈ max_y
+        min_y, max_y = expand_range(min_y, max_y)
+    end
+
+    yxranges = [min_y, max_y, min_x, max_x]
+
+    # absolute selected range-span in x and y, should always be != 0
+    yxranges_selected = [
+        yxranges[1] + (yxranges[2] - yxranges[1]) * range_selected[1],
+        yxranges[1] + (yxranges[2] - yxranges[1]) * range_selected[2],
+        yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[3],
+        yxranges[3] + (yxranges[4] - yxranges[3]) * range_selected[4]
+    ]
+
+    x_delta = yxranges_selected[4] - yxranges_selected[3]
+    y_delta = yxranges_selected[2] - yxranges_selected[1]
+    if abs(x_delta) < 1e-32
+        s = (x_delta < 0.) ? -1. : 1.
+        x_delta = s * 1e-32
+    end
+    if abs(y_delta) < 1e-32
+        s = (y_delta < 0.) ? -1. : 1.
+        y_delta = s * 1e-32
+    end
+    x_scale = 100. / x_delta
+    y_scale = 100. / y_delta
+
+    @views for (xy_data, color) in zip(xy_datas, colors)
+        x_data = xy_data[!, 1]
+        y_data = xy_data[!, 2]
+        x_data_plot = @. round((x_data - yxranges_selected[3]) * x_scale, digits=2)
+        y_data_plot = @. round(100 - ((y_data - yxranges_selected[1]) * y_scale), digits=2)
+
+        points = ""
+        @views @inbounds for j in 1:length(x_data_plot)
+            points *= "$(x_data_plot[j]),$(y_data_plot[j]) "
+        end
+        write(f, polyline_header_1 * color * polyline_header_2 * points * polyline_footer)
+    end
+    write(f, svg_footer)
+    close(f)
     return yxranges
 end
 
