@@ -54,3 +54,24 @@ function test_hover_mouse(selector) {
 function test_sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+
+function test_export_to(filename) {
+    // extra function here, to avoid the save-dialog
+
+    // export as a presentation; opens dialog to choose filename
+    if (get_view() != "grid") {
+        return;
+    }
+
+    console.log("Export (test) to odp");
+    let ids = get_active_element_ids(only_current=false, all_visible_if_none_selected=true);
+
+    if (ids.length > 0) {
+        if (filename !== undefined) {
+            Blink.msg("grid_item", ["export_odp", ids, filename]);
+            open_jobs(1);
+            show_message("export (test): " + ids.length + " items to " + filename);
+        }
+    }
+}

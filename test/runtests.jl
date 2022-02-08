@@ -5,6 +5,7 @@ import SpmImageTycoon.Blink.@js
 
 include("results.jl")
 
+FNAME_odp = "test_presentation.odp"
 
 """Delete old files."""
 function delete_files(i = 1)::Nothing
@@ -12,8 +13,8 @@ function delete_files(i = 1)::Nothing
         if isdir("data/_spmimages_cache")
             rm("data/_spmimages_cache", recursive=true)
         end
-        if isfile("test_presentation.odp")
-            rm("test_presentation.odp")
+        if isfile(FNAME_odp)
+            rm(FNAME_odp)
         end
         if i > 1
             println(" ok.")
@@ -318,7 +319,9 @@ end
 end
 
 @testset "Export" begin
-    # todo: export openoffice presentation (odp)
+    send_key("n")  # deselect all, should then export all images
+    @js w test_export_to($FNAME_odp)
+    @test filesize(FNAME_odp) > 300e3  # for now, we just make sure that there is a reasonable filesize
 end
 
 @testset "Close" begin
