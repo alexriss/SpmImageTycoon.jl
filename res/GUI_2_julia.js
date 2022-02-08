@@ -612,6 +612,11 @@ function get_line_profile(id, start_point, end_point, width) {
     if (get_view() != "zoom" || id == "") {
         return;
     }
+    
+    // sometimes there seems to be a race condition where this function is called from a spectrum
+    if (window.items[id].type != "SpmGridImage") {
+        return;
+    }
     Blink.msg("grid_item", ["get_line_profile", [id], [start_point.x, start_point.y], [end_point.x, end_point.y], width]);
     open_jobs(1);
 }

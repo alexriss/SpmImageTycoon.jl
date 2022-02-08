@@ -262,10 +262,10 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
 
 function toggle_sidebar_imagezoomtools(restore_previous=false) {
     // toggles sidebar in imagezoom mode
-    let sidebar = document.getElementById('sidebar_imagezoomtools');
+    const sidebar = document.getElementById('sidebar_imagezoomtools');
+    const griditem = window.items[window.zoom_last_selected];
 
     if (restore_previous && get_view() == "zoom") {
-        const griditem = window.items[window.zoom_last_selected];
         if (window.sidebar_imagezoomtools && griditem.type == "SpmGridImage") {
             if (sidebar.classList.contains("is-hidden")) {
                 sidebar.classList.remove("is-hidden");
@@ -275,7 +275,7 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
                 sidebar.classList.add("is-hidden");
             }
         }
-    } else if (get_view() == "zoom") {
+    } else if (get_view() == "zoom" && griditem.type == "SpmGridImage") {
         if (sidebar.classList.contains("is-hidden")) {
             sidebar.classList.remove("is-hidden");
             window.sidebar_imagezoomtools = true;
