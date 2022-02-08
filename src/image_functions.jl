@@ -1,3 +1,7 @@
+# initialize cache variable
+memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
+
+
 """saves all colorbars as pngs in the cache directory.
 Returns a dictionary that associates each colorscheme name with a png file"""
 function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::Dict{String,String}
@@ -18,7 +22,7 @@ end
 """calculates the histogram for the image specified by id.
 Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
 function get_histogram(griditem::SpmGridItem, dir_data::String)::Tuple{Float32,Vector{Float32}}
-    im_spm = load_image(joinpath(dir_data, griditem.filename_original), output_info=0)
+    im_spm = load_image_memcache(joinpath(dir_data, griditem.filename_original))
     d = vec(get_image_data(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
@@ -212,7 +216,7 @@ function set_range_selected!(ids::Vector{String}, dir_data::String, images_parse
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = images_parsed[id].filename_original
-        im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
+        im_spm = load_image_memcache(joinpath(dir_data, filename_original))
         images_parsed[id].channel_range_selected = range_selected
         resize_to_ = full_resolution ? 0 : resize_to
         create_image!(images_parsed[id], im_spm, resize_to=resize_to_, base_dir=dir_cache)
@@ -253,11 +257,27 @@ end
 """calcuates a line profile"""
 function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
     filename_original = images_parsed[id].filename_original
-    im_spm = load_image(joinpath(dir_data, filename_original), output_info=0)
+    im_spm = load_image_memcache(joinpath(dir_data, filename_original))
     bg = background_correction_list_image[images_parsed[id].background_correction]
     coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, images_parsed[id].channel_name, start_point, end_point, width, background=bg)
 
     return coords, distances, values, start_point_value, end_point_value
+end
+
+
+"""
+    function load_image_memcache(filename::AbstractString)::SpmImage
+
+Loads an image from either the file or the memory cache.
+"""
+function load_image_memcache(filename::AbstractString)::SpmImage
+    im_spm = get_cache(memcache_images, filename)
+    if im_spm === missing
+        im_spm = load_image(filename, output_info=0)
+        set_cache(memcache_images, filename, im_spm)
+    end
+
+    return im_spm
 end
 
 
@@ -266,7 +286,7 @@ function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_d
     images_parsed_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
-    im_spm = load_image(datafile, output_info=0)
+    im_spm = load_image(datafile, output_info=0)  # we dont use the cache here
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
 
     if haskey(images_parsed, id)

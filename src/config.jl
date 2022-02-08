@@ -41,6 +41,7 @@ auto_save_minutes = 10  # auto-save every n minutes
 overview_max_images = 1000  # maximum number of images displayed in the filter_overview
 
 memcache_mb_spectra = 50  # size of memory cache for spectra (in mb)
+memcache_mb_images = 50 # size of memory cache for images (in mb)
 
 last_directories = []  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
@@ -207,6 +208,10 @@ function load_config()::Nothing
                 global memcache_mb_spectra = d["memcache_mb_spectra"]
             end
 
+            if haskey(d, "memcache_mb_images") && isa(d["memcache_mb_images"], Real)
+                global memcache_mb_images = d["memcache_mb_images"]
+            end
+
             if haskey(d, "last_directories") && isa(d["last_directories"], Array)
                 global last_directories = string.(d["last_directories"])
             end
@@ -255,6 +260,7 @@ function save_config(new_directory::String="")::Nothing
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
         "memcache_mb_spectra" => memcache_mb_spectra,
+        "memcache_mb_images" => memcache_mb_images,
         "export" => OrderedDict{String,Any}(
             "channel_names_short" => odp_channel_names_short,
             "ignore_comment_lines" => odp_ignore_comment_lines,

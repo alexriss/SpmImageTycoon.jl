@@ -6,7 +6,7 @@ using Blink
 using CodecZlib
 using ColorSchemes
 using DataFrames
-using DataStructures
+using DataStructures: OrderedDict
 using Dates
 using Images
 using ImageIO
@@ -80,6 +80,7 @@ SpmGridItem = SpmGridItem_v129
 
 
 include("config.jl")
+include("cache.jl")
 include("helper_functions.jl")
 include("image_functions.jl")
 include("spectrum_functions.jl")

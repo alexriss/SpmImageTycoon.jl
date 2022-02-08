@@ -1,6 +1,5 @@
-# for memory caching of spectra
-const spectrum_memcache_order = Deque{String}()
-const spectrum_memcache = Dict{String,SpmSpectrum}()
+# initialize cache variable
+memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
 
 
 """expands a range between `start` and `stop` by symmetrically shifting `start` and `stop` apart"""
@@ -219,35 +218,12 @@ end
 Loads a spectrum from either the file or the memory cache.
 """
 function load_spectrum_memcache(filename::AbstractString)::SpmSpectrum
-    if haskey(spectrum_memcache, filename)
-        push!(spectrum_memcache_order, filename)
-
-        # we should make sure that `spectrum_memcache_order` does not fill up too much
-        while length(spectrum_memcache_order) > 100000
-            to_delete = popfirst!(spectrum_memcache_order)
-            if haskey(spectrum_memcache, to_delete)
-                delete!(spectrum_memcache, to_delete)
-            end
-        end
-        
-        if haskey(spectrum_memcache, filename)
-            return spectrum_memcache[filename]
-        end
+    spectrum = get_cache(memcache_spectra, filename)
+    if spectrum === missing
+        spectrum = load_spectrum(filename, index_column=true, index_column_type=Float64)
+        set_cache(memcache_spectra, filename, spectrum)
     end
 
-    spectrum = load_spectrum(filename, index_column=true, index_column_type=Float64)
-
-    # keep cache size roughly within the limit set in the config
-    while Base.summarysize(spectrum_memcache) > memcache_mb_spectra * 1e6 && length(spectrum_memcache) > 0
-        to_delete = popfirst!(spectrum_memcache_order)
-        if haskey(spectrum_memcache, to_delete)
-            delete!(spectrum_memcache, to_delete)
-        end
-    end
-
-    # add to cache
-    spectrum_memcache[filename] = spectrum
-    push!(spectrum_memcache_order, filename)
     return spectrum
 end
 
