@@ -967,6 +967,17 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 end
 
 
+"""Used to force some precompilations - quite hacky"""
+function __init__()::Nothing
+    fname = joinpath(@__DIR__ , "../test/data/Z-Spectroscopy420.dat")
+    load_spectrum(fname);
+    fname = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
+    load_image(fname, output_info=0);
+    return nothing
+end
+precompile(__init__, ())
+
+
 """Entry point for sysimage/binary created by PackageCompiler.jl"""
 function julia_main()::Cint
     tycoon()
