@@ -278,12 +278,25 @@ end
     @test compare_dicts(items, items5)
 end
 
-@testset "Reloading" begin
+@testset "Saving and Reloading" begin
     send_key(["ctrl-w"])
     sleep(1)
     @js w load_directory($dir_data)
     items = get_items()
     @test compare_dicts(items, items5)
+end
+
+@testset "Edge cases" begin
+    # empty image
+    send_key("n")  # deselect all
+    selected = ["empty.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["b", "b", "b", "b", "b", "b", "b", "d", "d", "c", "c", "p", "p", "i", "R"])
+    items = get_items()
+    @test compare_dicts(items, items5)
+
+    #todo: empty spectrum
 end
 
 @testset "Keywords" begin
@@ -314,17 +327,14 @@ end
     # todo 
 end
 
-@testset "Saving" begin
-    # todo
-end
-
 @testset "Export" begin
     send_key("n")  # deselect all, should then export all images
     @js w test_export_to($FNAME_odp)
-    @test filesize(FNAME_odp) > 300e3  # for now, we just make sure that there is a reasonable filesize
+    @test filesize(FNAME_odp) > 300e3  # for now we just make sure that there is a reasonable filesize
 end
 
 @testset "Close" begin
+    send_key(["ctrl-w"])
     # close(w)
     # delete_files()
 end
