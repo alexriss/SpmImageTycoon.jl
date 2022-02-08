@@ -12,8 +12,8 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Demo](#demo)  
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
-[Technical comments and tips](#technical-comments)  
-[Dependencies](#dependencies)  
+[Tips and tricks](#tips-and-tricks)  
+[Technical background](#technical-background)  
 [Third party libraries](#third-party-libraries-included)  
 [Related projects](#related-projects)  
 
@@ -90,9 +90,7 @@ Pkg.update()
 ### You can stop reading here and start using the program now.
 
 
-## Technical comments, tips and tricks
-
-The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
+## Tips and tricks
 
 - Fast access to the file system is crucial - do not use this app on a slow networked file system.
 - The first startup after installation (or update) can be slow - it is due to initial compilations.
@@ -100,11 +98,15 @@ The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 - Extra settings  (such as default channels) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
 
+## Technical background
+
+The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
+
 ### Automated tests
 
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 
-## Dependencies
+### Dependencies
 
 The program relies on
 
