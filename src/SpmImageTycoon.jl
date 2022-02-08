@@ -222,7 +222,7 @@ function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{S
         if images_parsed[id].type == SpmGridImage
             item = load_image(filename_original_full, output_info=0)
         elseif images_parsed[id].type == SpmGridSpectrum
-            item = load_spectrum_cache(filename_original_full)
+            item = load_spectrum_memcache(filename_original_full)
         else
             println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
             continue
@@ -267,7 +267,7 @@ function reset_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{St
         if images_parsed[id].type == SpmGridImage
             item = load_image(filename_original_full, output_info=0)
         elseif images_parsed[id].type == SpmGridSpectrum
-            item = load_spectrum_cache(filename_original_full)
+            item = load_spectrum_memcache(filename_original_full)
         else
             println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
             continue
@@ -304,7 +304,7 @@ function paste_params!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{Stri
             item = load_image(filename_original_full, output_info=0)
             properties = [:channel_name, :background_correction, :filters, :colorscheme, :channel_range_selected]
         elseif griditem.type == SpmGridSpectrum
-            item = load_spectrum_cache(filename_original_full)
+            item = load_spectrum_memcache(filename_original_full)
             properties = [:channel_name, :channel_unit, :channel2_name, :channel2_unit, :scan_direction, :background_correction, :filters, :channel_range_selected]
         end
 
