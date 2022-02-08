@@ -26,9 +26,12 @@ function get_histogram(griditem::SpmGridItem, dir_data::String)::Tuple{Float32,V
     d = vec(get_image_data(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
+    N = length(d)
+    if N == 0
+        return 0, []
+    end
     normalize01!(d)  # we normalize here, otherwise the hist generation does not seem to be robust
     # clamp01nan!(d)
-    N = length(d)
     # nbins = min(ceil(Int, sqrt(N)), 256)
     nbins = 256
     hist = StatsBase.fit(StatsBase.Histogram, d, nbins=nbins)  # the function will give "approximate" number of bins
