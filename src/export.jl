@@ -203,11 +203,16 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
         griditem = images_parsed[id]
         
         # get comments
-        comment_lines = get_comment_lines(griditem.comment)
-        if comment_lines != comment_lines_old
-            count = 1  # will force new page
+        # for now, we only use the comments in the images
+        if griditem.type == SpmGridImage
+            comment_lines = get_comment_lines(griditem.comment)
+            if comment_lines != comment_lines_old
+                count = 1  # will force new page
+            end
+        else
+            comment_lines = [""]
         end
-        
+
         if count % (odp_num_per_row * odp_num_per_col) == 1  # new page
             push!(dict_template["pages"], Dict{String, Any}())
             dict_template["pages"][end]["images"] = Vector{Dict{String, Any}}(undef, 0)
