@@ -2,7 +2,7 @@
 .VSCodeCounter/
 todo.txt
 dev/
-media/
+/media/
 old/
 SpmImageTycoonCompiled/
 test/data/_spmimages_cache/

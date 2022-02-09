@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:osb="http://www.openswatchbook.org/uri/2009/osb"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="36.0mm"
+   height="36.0mm"
+   viewBox="0 0 36.0 36.0"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   >
+
+  <style type="text/css" >
+      <![CDATA[
+
+      ]]>
+  </style>
+   
+
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2905">
+      <stop
+         style="stop-color:#c5c520;stop-opacity:1"
+         offset="0"
+         id="stop2901" />
+      <stop
+         style="stop-color:#f4ff85;stop-opacity:1"
+         offset="1"
+         id="stop2903" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient2889"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#e2ef63;stop-opacity:1;"
+         offset="0"
+         id="stop2887" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient853">
+      <stop
+         style="stop-color:#75eaff;stop-opacity:1"
+         offset="0"
+         id="stop849" />
+      <stop
+         style="stop-color:#26b2e5;stop-opacity:1"
+         offset="1"
+         id="stop851" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient853"
+       id="linearGradient864"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-24.802611,-23.840443)"
+       x1="41.092693"
+       y1="-162.96759"
+       x2="47.373524"
+       y2="-171.52022" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient853"
+       id="linearGradient864-7"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-11.126202,-37.516859)"
+       x1="41.092693"
+       y1="-162.96759"
+       x2="47.373524"
+       y2="-171.52022" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient853"
+       id="linearGradient864-7-3"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-24.802608,-37.516851)"
+       x1="41.092693"
+       y1="-162.96759"
+       x2="47.373524"
+       y2="-171.52022" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient853"
+       id="linearGradient864-7-3-1"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-11.1262,-23.840441)"
+       x1="41.092693"
+       y1="-162.96759"
+       x2="47.373524"
+       y2="-171.52022" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2905"
+       id="linearGradient2909"
+       x1="123.64547"
+       y1="161.09741"
+       x2="120.1492"
+       y2="155.29549"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-103.70834,-140.08855)">
+
+    <circle
+       style="opacity:0.998;fill:#356184;fill-opacity:1;stroke-width:0.1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+       id="path938"
+       cx="121.70834"
+       cy="158.08855"
+       r="11.43378" />
+    <rect
+       style="opacity:0.998;fill:url(#linearGradient864);fill-opacity:1;stroke-width:0.131524;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+       id="rect847"
+       width="12.179701"
+       height="12.179701"
+       x="12.605658"
+       y="-197.10741"
+       ry="2.2370877"
+       transform="rotate(135)"
+       inkscape:transform-center-x="-22.743727"
+       inkscape:transform-center-y="-5.095587" />
+    <rect
+       style="opacity:0.998;fill:url(#linearGradient864-7);fill-opacity:1;stroke-width:0.131524;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+       id="rect847-3"
+       width="12.179701"
+       height="12.179701"
+       x="26.282068"
+       y="-210.78381"
+       ry="2.2370877"
+       transform="rotate(135)"
+       inkscape:transform-center-x="-22.743727"
+       inkscape:transform-center-y="-5.095587" />
+    <rect
+       style="opacity:0.998;fill:url(#linearGradient864-7-3);fill-opacity:1;stroke-width:0.131524;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+       id="rect847-3-0"
+       width="12.179701"
+       height="12.179701"
+       x="12.605659"
+       y="-210.78381"
+       ry="2.2370877"
+       transform="rotate(135)"
+       inkscape:transform-center-x="-22.743727"
+       inkscape:transform-center-y="-5.095587" />
+    <rect
+       style="opacity:0.998;fill:url(#linearGradient864-7-3-1);fill-opacity:1;stroke-width:0.131524;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+       id="rect847-3-0-3"
+       width="12.179701"
+       height="12.179701"
+       x="26.282068"
+       y="-197.10741"
+       ry="2.2370877"
+       transform="rotate(135)"
+       inkscape:transform-center-x="-22.743727"
+       inkscape:transform-center-y="-5.095587" />
+    <circle
+       style="opacity:0.998;fill:url(#linearGradient2909);fill-opacity:1;stroke:#356184;stroke-width:2.721;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       id="path938-1"
+       cx="121.70834"
+       cy="158.08855"
+       r="2.4568453" />
+  </g>
+
+   <animateTransform attributeName="transform"
+      type="rotate"
+      from="0 18 18"
+      to="360 18 18"
+      begin="2s"
+      dur="69s"
+      repeatCount="indefinite"
+   />
+  </g>
+</svg>

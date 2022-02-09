@@ -49,6 +49,18 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
     <td>Feature demo (YouTube)</td>
     <td>Global scan frame filter (YouTube)</td>
   </tr>
+  <tr>
+    <td>
+      <a href="demo/screenshot_gridview.jpg" target="_blank"><img src="demo/screenshot_gridview.jpg" width="250" /></a>
+    </td>
+    <td>
+      <a href="demo/screenshot_spectrum.jpg" target="_blank"><img src="demo/screenshot_spectrum.jpg" width="250" /></a>
+    </td>
+  </tr>
+  <tr>
+    <td>Grid view: images and spectra (Screenshot)</td>
+    <td>Spectrum display (Screenshot)</td>
+  </tr>
 </table>
 
 ## Disclaimer
@@ -96,7 +108,7 @@ Pkg.update()
 - The first startup after installation (or update) can be slow - it is due to initial compilations. I am working on a solution to this.
 - To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
-- Extra settings  (such as default channels) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
+- Extra settings (such as default channels and the default color scheme) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
 
 ## Technical background
 
