@@ -575,7 +575,7 @@ function check_hover_enabled() {
 
     document.getElementById('footer_num_images').innerText = els.length;
 
-    if (els.length > 1) {
+    if (els.length >= 1) {
         document.getElementById('footer_num_images_container').classList.add("has-text-weight-bold");
     } else {
         document.getElementById('footer_num_images_container').classList.remove("has-text-weight-bold");
@@ -763,11 +763,16 @@ function image_info_quick(id="") {
         }
     }
     if (id != "") {
-        let str_footer = window.items[id]["filename_original"] + ': ' + window.items[id]["channel_name"];
+        document.getElementById('image_info_footer').classList.remove('is-hidden');
+        document.getElementById('image_info_footer_filename').innerText = window.items[id]["filename_original"];
+        document.getElementById('image_info_footer_channel').innerText = window.items[id]["channel_name"];
         if (window.items[id]["channel2_name"].length > 0) {
-            str_footer += " vs. " + window.items[id]["channel2_name"];
+            document.getElementById('image_info_footer_channel2').innerText = window.items[id]["channel2_name"];
+            document.getElementById('image_info_footer_vs').classList.remove('is-hidden');
+        } else {
+            document.getElementById('image_info_footer_channel2').innerText = "";
+            document.getElementById('image_info_footer_vs').classList.add('is-hidden');
         }
-        document.getElementById('image_info_footer').innerText = str_footer;
 
         // hover in filter overview (highlight will be disabled in image_info_quick_timeout_clear)
         const highlighted = document.getElementById("filter_overview").getElementsByClassName("highlight");
@@ -813,7 +818,7 @@ function image_info_quick_timeout_clear() {
     // clear quick info (if no hover anymore)
     window.setTimeout(function () {
         if (document.getElementById('imagegrid').querySelector('div.item:hover') == null) {
-            document.getElementById('image_info_footer').innerText = "";
+            document.getElementById('image_info_footer').classList.add('is-hidden');
             const highlighted = document.getElementById("filter_overview").getElementsByClassName("highlight");
             for (let i=0; i<highlighted.length; i++) {
                 highlighted[i].classList.remove('highlight');
