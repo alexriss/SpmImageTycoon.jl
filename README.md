@@ -51,15 +51,15 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
   </tr>
   <tr>
     <td>
-      <a href="demo/screenshot_gridview.jpg" target="_blank"><img src="demo/screenshot_gridview.jpg" width="250" /></a>
+      <a href="demo/screenshot_gridview.jpg?raw=true" target="_blank"><img src="demo/screenshot_gridview.jpg?raw=true" width="250" /></a>
     </td>
     <td>
-      <a href="demo/screenshot_spectrum.jpg" target="_blank"><img src="demo/screenshot_spectrum.jpg" width="250" /></a>
+      <a href="demo/screenshot_spectrum.jpg?raw=true" target="_blank"><img src="demo/screenshot_spectrum.jpg?raw=true" width="250" /></a>
     </td>
   </tr>
   <tr>
-    <td>Grid view: images and spectra (Screenshot)</td>
-    <td>Spectrum display (Screenshot)</td>
+    <td>Grid view: images and spectra<br />(Screenshot)</td>
+    <td>Spectrum display<br />(Screenshot)</td>
   </tr>
 </table>
 
