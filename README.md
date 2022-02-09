@@ -101,7 +101,6 @@ Pkg.update()
 
 ### You can stop reading here and start using the program now.
 
-
 ## Tips and tricks
 
 - Fast access to the file system is crucial - do not use this app on a slow networked file system.
@@ -109,6 +108,8 @@ Pkg.update()
 - To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 - Extra settings (such as default channels and the default color scheme) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
+
+### Ok, now you really can stop reading.
 
 ## Technical background
 
