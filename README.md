@@ -99,7 +99,7 @@ Pkg.update()
 ```
 2. done
 
-### You can stop reading here and start using the program now.
+> ### _You can stop reading here and start using the app now._
 
 ## Tips and tricks
 
@@ -109,7 +109,7 @@ Pkg.update()
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 - Extra settings (such as default channels and the default color scheme) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
 
-### Ok, now you really can stop reading.
+> ### _Ok, now you really can stop reading._
 
 ## Technical background
 
