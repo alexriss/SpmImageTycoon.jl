@@ -810,7 +810,7 @@ function set_event_handlers_basic(w::Window)
         try
             dir = abspath(arg)
             if !isdir(dir)
-                msg = "Can not open directory $dir"
+                msg = "Cannot open directory $dir"
                 @js_ w page_start_load_error($msg)
             else
                 load_directory(dir, w)
