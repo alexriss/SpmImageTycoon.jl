@@ -1,11 +1,16 @@
 // called from julia
 
-function load_page() {
+function load_page(versions) {
     // loads the page contents
     const nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
     const link = nodes[nodes.length - 1];
     document.body.innerHTML = link.import.querySelector('body').innerHTML;
     link.remove();  // remove this node, we wont need it anymore
+
+    // set version numbers in about-modal
+    document.getElementById("about_version_spmimagetycoon").innerText = versions["SpmImageTycoon"];
+    document.getElementById("about_version_spmimages").innerText = versions["SpmImages"];
+    document.getElementById("about_version_spmspectroscopy").innerText = versions["SpmSpectroscopy"];
 
     // set-up extra event handlers
     event_handlers();
@@ -612,7 +617,7 @@ function get_line_profile(id, start_point, end_point, width) {
     if (get_view() != "zoom" || id == "") {
         return;
     }
-    
+
     // sometimes there seems to be a race condition where this function is called from a spectrum
     if (window.items[id].type != "SpmGridImage") {
         return;

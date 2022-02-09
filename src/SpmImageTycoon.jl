@@ -20,6 +20,8 @@ using TOML
 
 export SpmGridItem, tycoon
 
+const VERSION = VersionNumber(TOML.parsefile(joinpath(@__DIR__, "../Project.toml"))["version"]) 
+
 
 @enum SpmGridItemType SpmGridImage SpmGridSpectrum
 
@@ -939,10 +941,17 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
         load!(w, asset_file)
     end
 
-    @js_ w set_params($dir_asset, $auto_save_minutes, $overview_max_images)
-    @js_ w set_last_directories($last_directories)
-    @js_ w load_page()
-    @js_ w show_start()
+    # get versions
+    versions = Dict{String,String}(
+        "SpmImageTycoon" => string(VERSION),
+        "SpmImages" => string(SpmImages.VERSION),
+        "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
+    )
+
+    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images)
+    @js w set_last_directories($last_directories)
+    @js w load_page($versions)
+    @js w show_start()
 
     set_event_handlers_basic(w)
 
