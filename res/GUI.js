@@ -935,3 +935,17 @@ function open_in_explorer(what="") {
         shell.showItemInFolder(file_path);
     }
 }
+
+function copy_to_clipboard() {
+    // copies the filesnames of the items to the clipboard
+    const ids = get_active_element_ids(only_current=false, all_visible_if_none_selected=true);
+    if (ids.length > 0) {
+        let text = '';
+        for (let i=0; i<ids.length; i++) {
+            text += '"' + window.items[ids[i]].filename_original + '", ';
+        }
+        text = text.slice(0, -2);  // remove last comma
+        const { clipboard } = require('electron')
+        clipboard.writeText(text)
+    }
+}

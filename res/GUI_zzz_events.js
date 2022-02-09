@@ -61,6 +61,7 @@ let ctrl_key_commands = {
     c: { command: set_copyfrom_id, args: ["set copy.", "can't set copy - select one item."] },
     v: { command: paste_parameters, args: ["paste parameters."] },
     e: { command: export_to, args: ["odp"] },
+    E: { command: copy_to_clipboard, args: [] },
     f: { command: image_info_search_parameter, args: [] },
     w: { command: toggle_start_project, args: ["start", true] },
     q: { command: toggle_start_project, args: ["re-project"] },

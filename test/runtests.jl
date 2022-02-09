@@ -338,6 +338,14 @@ end
     send_key("n")  # deselect all, should then export all images
     @js w test_export_to($FNAME_odp)
     @test filesize(FNAME_odp) > 300e3  # for now we just make sure that there is a reasonable filesize
+
+    # copy to clipboard
+    selected = ["Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key("ctrl-E")
+    sleep(0.2)
+    @test clipboard() == "\"Image_695.sxm\", \"Z-Spectroscopy507.dat\""
 end
 
 @testset "Close" begin
