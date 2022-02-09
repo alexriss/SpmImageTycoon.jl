@@ -36,6 +36,8 @@ odp_channel_names_short = OrderedDict{String,String}(  # channel names to be rep
 )
 
 const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
+
+default_color_scheme = "gray"
 auto_save_minutes = 10  # auto-save every n minutes
 
 overview_max_images = 1000  # maximum number of images displayed in the filter_overview
@@ -196,6 +198,12 @@ function load_config()::Nothing
                 global spectrum_channels_z_spectroscopy = string.(d["spectrum_channels_z_spectroscopy"])
             end
 
+            if haskey(d, "default_color_scheme") && isa(d["default_color_scheme"], String)
+                if haskey(colorscheme_list_pre, d["default_color_scheme"])
+                    global default_color_scheme = d["default_color_scheme"]
+                end
+            end
+
             if haskey(d, "auto_save_minutes") && isa(d["auto_save_minutes"], Real)
                 global auto_save_minutes = d["auto_save_minutes"]
             end
@@ -253,6 +261,7 @@ function save_config(new_directory::String="")::Nothing
 
     config_filepath = joinpath(homedir(), config_dir, config_filename)
     d = OrderedDict{String,Any}(
+        "default_color_scheme" => default_color_scheme,
         "image_channels_feedback_on" => image_channels_feedback_on,
         "image_channels_feedback_off" => image_channels_feedback_off,
         "spectrum_channels" => spectrum_channels,

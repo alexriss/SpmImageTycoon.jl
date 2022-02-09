@@ -240,8 +240,8 @@ function reset_default!(griditem::SpmGridItem, im_spm::SpmImage)::Bool
         griditem.background_correction = "none"
         changed = true
     end
-    if griditem.colorscheme != "gray"
-        griditem.colorscheme = "gray"
+    if griditem.colorscheme != default_color_scheme
+        griditem.colorscheme = default_color_scheme
         changed = true
     end
     if griditem.channel_range_selected != [0, 1] || length(griditem.channel_range_selected) != 0
@@ -320,6 +320,7 @@ function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_d
             channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
             center=im_spm.center, angle=im_spm.angle, scan_direction=scan_direction,
             bias=im_spm.bias, z_feedback=im_spm.z_feedback, z_feedback_setpoint=im_spm.z_feedback_setpoint, z_feedback_setpoint_unit=im_spm.z_feedback_setpoint_unit, z=im_spm.z,
+            colorscheme=default_color_scheme,
             comment=utf8ify(im_spm.header["Comment"])
         )
         if only_new
