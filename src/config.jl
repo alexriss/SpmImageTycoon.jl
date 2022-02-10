@@ -274,7 +274,6 @@ function save_config(new_directory::String="")::Nothing
             "channel_names_short" => odp_channel_names_short,
             "ignore_comment_lines" => odp_ignore_comment_lines,
         ),
-        "odp_ignore_comment_lines" => odp_ignore_comment_lines,
         "last_directories" => last_directories
     )
 
