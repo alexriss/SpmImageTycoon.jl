@@ -8,6 +8,7 @@ function load_page(versions) {
     link.remove();  // remove this node, we wont need it anymore
 
     // set version numbers in about-modal
+    window.versions = versions;
     document.getElementById("about_version_spmimagetycoon").innerText = versions["SpmImageTycoon"];
     document.getElementById("about_version_spmimages").innerText = versions["SpmImages"];
     document.getElementById("about_version_spmspectroscopy").innerText = versions["SpmSpectroscopy"];

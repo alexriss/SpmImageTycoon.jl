@@ -180,7 +180,11 @@ function event_handlers() {
 
     els = document.getElementById("modal_about").getElementsByTagName("button");   // the "forEach" method does not work here
     for (let i = 0; i < els.length; i++) {
-        els[i].addEventListener('click', toggle_about);
+        if (els[i].id == "modal_about_check_update") {
+            els[i].addEventListener('click', check_update);
+        } else {
+            els[i].addEventListener('click', toggle_about);
+        }
     }
 
     els = document.getElementById("modal_error").getElementsByTagName("button");   // the "forEach" method does not work here

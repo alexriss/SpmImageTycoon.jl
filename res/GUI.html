@@ -819,7 +819,7 @@
         scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra are supported.
       </p>
       <p class="mb-3">
-        Developed by Alex Riss. For more information visit the <a class="external" href="https://github.com/alexriss/SpmImageTycoon.jl">project page on github.</a>
+        Developed by Alex Riss under the GPL-3.0 License. For more information visit the <a class="external" href="https://github.com/alexriss/SpmImageTycoon.jl">project page on github.</a>
       </p>
       <p class="is-size-6 has-text-grey-light is-italic">
         <b class="">Version information</b>
@@ -828,9 +828,16 @@
         SpmImages: <span id="about_version_spmimages"></span>,
         SpmSpectroscopy: <span id="about_version_spmspectroscopy"></span>
       </p>
-    </section>
+     </section>
     <footer class="modal-card-foot">
       <button class="button is-success">Ok, groovy!</button>
+      <button class="button is-success is-light" id="modal_about_check_update">Check for updates</button>
+      <span class="mlauto is-italic is-hidden" id="modal_about_no_new_version">No new version available.</span>
+      <span class="mlauto is-italic is-hidden" id="modal_about_unreleased_version">You are using a future version.</span>
+      <span class="mlauto is-italic is-hidden" id="modal_about_unknown_version">Check failed.</span>
+      <span class="mlauto is-italic is-hidden" id="modal_about_new_version">
+        <a class="external" href="https://github.com/alexriss/SpmImageTycoon.jl#update-an-existing-installation">Get new version.</a>
+      </span>
     </footer>
   </div>
 </div>

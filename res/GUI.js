@@ -1,3 +1,5 @@
+window.versions = {}  // versions for julia packages, set by julia
+
 window.dir_res = "";  // resources directory. sey by julia
 window.dir_cache = "";  // cache directory, set by julia
 window.dir_data = "";  // directory with all data
@@ -152,6 +154,10 @@ function toggle_help() {
 
 function toggle_about() {
     // toggle help modal
+    document.getElementById("modal_about_no_new_version").classList.add("is-hidden");
+    document.getElementById("modal_about_unknown_version").classList.add("is-hidden");
+    document.getElementById("modal_about_unreleased_version").classList.add("is-hidden");
+
     if (document.getElementById("modal_about").classList.contains("is-active")) {
         document.getElementById("modal_about").classList.remove("is-active");
     } else {
@@ -948,4 +954,59 @@ function copy_to_clipboard() {
         const { clipboard } = require('electron')
         clipboard.writeText(text)
     }
+}
+
+function check_update() {
+    // check if a new version is available
+    document.getElementById("modal_about_check_update").classList.add("is-loading");
+    document.getElementById("modal_about_no_new_version").classList.add("is-hidden");
+    document.getElementById("modal_about_new_version").classList.add("is-hidden");
+    document.getElementById("modal_about_unreleased_version").classList.add("is-hidden");
+    document.getElementById("modal_about_unknown_version").classList.add("is-hidden");
+    
+    fetch('https://raw.githubusercontent.com/JuliaRegistries/General/master/S/SpmImageTycoon/Versions.toml')
+    .then(function (response) {
+        document.getElementById("modal_about_check_update").classList.remove("is-loading");
+        switch (response.status) {
+            // status "OK"
+            case 200:
+                return response.text();
+            // status "Not Found"
+            case 404:
+                throw response;
+        }
+    })
+    .then(function (template) {
+        let pos = template.lastIndexOf('["');
+        if (pos == -1) {
+            document.getElementById("modal_about_unknown_version").classList.remove("is-hidden");
+            console.log("Can't find version information.")
+            return;
+        }
+        let pos2 = template.lastIndexOf('"]');
+        let version = template.substring(pos+2, pos2);
+        if (version.length < 5) {
+            document.getElementById("modal_about_unknown_version").classList.remove("is-hidden");
+            console.log("Can't find version information.")
+            return;
+        }
+
+        const comp = version.localeCompare(window.versions["SpmImageTycoon"], undefined, { numeric: true, sensitivity: 'base' })  
+
+        if (comp == 1) {
+            document.getElementById("modal_about_new_version").classList.remove("is-hidden");
+            console.log("New version available: " + version);
+        } else if (comp == -1) {
+            document.getElementById("modal_about_unreleased_version").classList.remove("is-hidden");
+            console.log("Using unreleased version.");
+        } else {
+            document.getElementById("modal_about_no_new_version").classList.remove("is-hidden");
+            console.log("No new version available.");
+        }
+    })
+    .catch(function (response) {
+        // "Not Found"
+        document.getElementById("modal_about_unknown_version").classList.remove("is-hidden");
+        console.log(response.statusText);
+    });
 }

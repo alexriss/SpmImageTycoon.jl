@@ -334,6 +334,15 @@ end
     # todo 
 end
 
+@testset "Check update" begin
+    send_click("#modal_about_check_update")
+    sleep(0.5)
+    no_new_version_hidden = @js w document.getElementById("modal_about_no_new_version").classList.contains("is-hidden")
+    new_version_hidden = @js w document.getElementById("modal_about_new_version").classList.contains("is-hidden")
+    unreleased_version_hidden = @js w document.getElementById("modal_about_unreleased_version").classList.contains("is-hidden")
+    @test !(no_new_version_hidden && new_version_hidden && unreleased_version_hidden)
+end
+
 @testset "Export" begin
     send_key("n")  # deselect all, should then export all images
     @js w test_export_to($FNAME_odp)

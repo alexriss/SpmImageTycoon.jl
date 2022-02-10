@@ -32,6 +32,10 @@ sup {
   font-size:80%;
 }
 
+.mlauto {
+  margin-left:auto;  /* new bulma versions should have a ml-auto, then this can be removed */
+}
+
 /* start page */
 
 #page_start_last_dir_container li {
