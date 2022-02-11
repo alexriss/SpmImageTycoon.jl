@@ -922,7 +922,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 
     load_config()
     if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
-        colorscheme_list_to_256!(colorscheme_list, colorscheme_list_pre)  # so we have 256 steps in each colorscheme - also automatically create the inverted colorschemes
+        generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
     end
 
     # load main html file

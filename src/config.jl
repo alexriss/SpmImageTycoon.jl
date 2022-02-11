@@ -85,7 +85,7 @@ const colorscheme_list_pre = OrderedDict{String,ColorScheme}(
     "fuchsia" => ColorSchemes.fuchsia,
     "deepsea" => ColorSchemes.deepsea
 )
-colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "colorscheme_list_to_256!"
+colorscheme_list = OrderedDict{String,ColorScheme}()  # will be populated by "generate_colorscheme_list!"
 
 const color_spectrum_fwd = "#241571"
 const color_spectrum_bwd = "#B80F0A"
@@ -133,21 +133,24 @@ const svg_footer_export = """
 </svg>"""
 
 
-"""converts all the colorschemes in dict_colorschemes_pre to 256-step colorschemes (this will help performance), also generates inverse schemes.
+"""converts all the colorschemes in dict_colorschemes_pre to 1024-step-colorschemes (this will help performance), also generates inverse schemes.
 The resulting schemes are stored in the OrderedDict dict_colorschemes."""
-function colorscheme_list_to_256!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme})::Nothing
+function generate_colorscheme_list!(dict_colorschemes::OrderedDict{String,ColorScheme}, dict_colorschemes_pre::OrderedDict{String,ColorScheme}; steps::Int=1024)::Nothing
+    stepsize = 1.0 / (steps - 1)
+    suffix = "_$(steps)"
+    suffix_inv = "_inv_$(steps)"
     for (k,v) in dict_colorschemes_pre
         dict_colorschemes[k] = loadcolorscheme(
-            Symbol(k * "_256"),
-            [get(v, i) for i in 0.0:1/255:1.0],
+            Symbol(k * suffix),
+            [get(v, i) for i in 0.0:stepsize:1.0],
             getfield(v, :category),
             getfield(v, :notes)
         )
 
         # inverted color scheme
         dict_colorschemes[k * " inv"] = loadcolorscheme(
-            Symbol(k * "_inv_256"),
-            [get(v, i) for i in 1.0:-1/255:0.0],
+            Symbol(k * suffix_inv),
+            [get(v, i) for i in 1.0:-stepsize:0.0],
             getfield(v, :category),
             getfield(v, :notes)
         )
