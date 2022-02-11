@@ -6,6 +6,8 @@ import SpmImageTycoon.Blink.@js
 include("results.jl")
 
 FNAME_odp = "test_presentation.odp"
+DIR_db_old = "old_db/"
+
 
 """Delete old files."""
 function delete_files(i = 1)::Nothing
@@ -153,7 +155,7 @@ end
 
 
 
-@testset "Loading" begin
+@testset "Parse directory" begin
     delete_files()
 
     global dir_data = abspath("data/")
@@ -178,7 +180,20 @@ end
     @test length(fnames_spectra_generated) == length(fnames_spectra)
 end
 
-@testset "Manipulating" begin
+@testset "Conversion of old database" begin
+    griditems = SpmImageTycoon.load_all(DIR_db_old, nothing)
+    items_loaded = Dict{String,Any}()
+    for item in griditems
+        # item is stored as a Pair{String,SpmGridItem}
+        k = item[1]
+        griditem = item[2]
+        d = Dict(string(key) => getfield(griditem, key) for key in propertynames(griditem))
+        items_loaded[k] = d
+    end
+    @test compare_dicts(items_loaded, items_old_db)
+end
+
+@testset "Manipulation" begin
     selected = ["Image_002.sxm", "Image_004.sxm"]
     sel = selector(selected)
     send_click(sel)
@@ -219,7 +234,7 @@ end
     @test compare_dicts(items, items4)
 end
 
-@testset "Copying and pasting" begin
+@testset "Copy and paste" begin
     # copy and paste parameters
     send_key(["n"])
     selected = ["Image_002.sxm", "Image_004.sxm"]
@@ -278,7 +293,7 @@ end
     @test compare_dicts(items, items5)
 end
 
-@testset "Saving and Reloading" begin
+@testset "Save and reload" begin
     send_key(["ctrl-w"])
     sleep(1)
     @js w load_directory($dir_data)
