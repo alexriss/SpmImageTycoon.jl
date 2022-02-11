@@ -481,7 +481,15 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmG
     
     f = joinpath(get_dir_cache(dir_data), filename_db)
     if isfile(f)
-        JLD2.@load f griditems_save
+        loaded = JLD2.load(f)
+        if haskey(loaded, "griditems")
+            griditems_save = loaded["griditems"]
+        elseif haskey(loaded, "images_parsed_save")  # legacy, for versions before 0.3.0
+            griditems_save = loaded["images_parsed_save"]
+        else
+            println("Warning: Empty database found.")  # this should not happen
+            return griditems
+        end
 
         if length(griditems_save) == 0
             return griditems
@@ -525,7 +533,7 @@ end
 """saves the griditems dictionary to file"""
 function save_all(dir_data::String, griditems::Dict{String, SpmGridItem})
     f = joinpath(get_dir_cache(dir_data), filename_db)
-    JLD2.@save f griditems_save=griditems
+    JLD2.save(f, Dict("griditems" => griditems))
     return nothing
 end
 
