@@ -169,13 +169,13 @@ end
 
 
 """sets selected range and recreates spectra"""
-function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, range_selected::Array{Float64})::Nothing
+function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, range_selected::Array{Float64})::Nothing
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
-        filename_original = images_parsed[id].filename_original
-        spectrum = load_spectrum_memcache(joinpath(dir_data, images_parsed[id].filename_original))
-        images_parsed[id].channel_range_selected = range_selected
-        create_spectrum!(images_parsed[id], spectrum, base_dir=dir_cache)
+        filename_original = griditems[id].filename_original
+        spectrum = load_spectrum_memcache(joinpath(dir_data, griditems[id].filename_original))
+        griditems[id].channel_range_selected = range_selected
+        create_spectrum!(griditems[id], spectrum, base_dir=dir_cache)
     end
     return nothing
 end
@@ -469,8 +469,8 @@ end
 
 
 """Parses a spectrum file and creates the preview in the cache directory if necessary."""
-function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
-    images_parsed_new::Vector{String}, only_new::Bool,
+function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
+    griditems_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
     # spectrum = load_spectrum_memcache(datafile)
@@ -521,8 +521,8 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
         end
     end
 
-    if haskey(images_parsed, id)
-        griditem = images_parsed[id]
+    if haskey(griditems, id)
+        griditem = griditems[id]
         # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
         griditem.type = SpmGridSpectrum
         griditem.filename_original = filename_original
@@ -540,7 +540,7 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
     else
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name, channel_unit, channel2_name, channel2_unit = default_channel_names_units(spectrum)
-        images_parsed[id] = SpmGridItem(
+        griditems[id] = SpmGridItem(
             id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=start_time,
             channel_name=channel_name, channel_unit=channel_unit, channel2_name=channel2_name, channel2_unit=channel2_unit,
             center=spectrum.position .* 1e9, scan_direction=2, 
@@ -549,16 +549,16 @@ function parse_spectrum!(images_parsed::Dict{String, SpmGridItem}, virtual_copie
             comment=comment
         )
         if only_new
-            push!(images_parsed_new, id)
+            push!(griditems_new, id)
         end
-        griditem = images_parsed[id]
+        griditem = griditems[id]
     end
     Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
     
     # virtual copies
     if haskey(virtual_copies_dict, id)
         for virtual_copy in virtual_copies_dict[id]
-            griditem = images_parsed[virtual_copy.id]
+            griditem = griditems[virtual_copy.id]
             # update fields here, too - however, most of these fields should stay unchanged
             griditem.type = SpmGridSpectrum
             griditem.filename_original = filename_original

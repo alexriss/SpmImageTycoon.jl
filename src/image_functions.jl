@@ -215,14 +215,14 @@ end
 
 
 """sets selected range and recreates images"""
-function set_range_selected!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, range_selected::Array{Float64}, full_resolution::Bool)::Nothing
+function set_range_selected!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, range_selected::Array{Float64}, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
-        filename_original = images_parsed[id].filename_original
+        filename_original = griditems[id].filename_original
         im_spm = load_image_memcache(joinpath(dir_data, filename_original))
-        images_parsed[id].channel_range_selected = range_selected
+        griditems[id].channel_range_selected = range_selected
         resize_to_ = full_resolution ? 0 : resize_to
-        create_image!(images_parsed[id], im_spm, resize_to=resize_to_, base_dir=dir_cache)
+        create_image!(griditems[id], im_spm, resize_to=resize_to_, base_dir=dir_cache)
     end
     return nothing
 end
@@ -258,11 +258,11 @@ end
 
 
 """calcuates a line profile"""
-function get_line_profile(id::String, dir_data::String, images_parsed::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
-    filename_original = images_parsed[id].filename_original
+function get_line_profile(id::String, dir_data::String, griditems::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
+    filename_original = griditems[id].filename_original
     im_spm = load_image_memcache(joinpath(dir_data, filename_original))
-    bg = background_correction_list_image[images_parsed[id].background_correction]
-    coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, images_parsed[id].channel_name, start_point, end_point, width, background=bg)
+    bg = background_correction_list_image[griditems[id].background_correction]
+    coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, griditems[id].channel_name, start_point, end_point, width, background=bg)
 
     return coords, distances, values, start_point_value, end_point_value
 end
@@ -285,15 +285,15 @@ end
 
 
 """Parses an image file and creates the images in the cache directory if necessary."""
-function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
-    images_parsed_new::Vector{String}, only_new::Bool,
+function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
+    griditems_new::Vector{String}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
 
     im_spm = load_image(datafile, output_info=0)  # we dont use the cache here
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
 
-    if haskey(images_parsed, id)
-        griditem = images_parsed[id]
+    if haskey(griditems, id)
+        griditem = griditems[id]
         # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
         griditem.type = SpmGridImage
         griditem.filename_original = filename_original
@@ -315,7 +315,7 @@ function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_d
     else
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name = default_channel_name(im_spm)
-        images_parsed[id] = SpmGridItem(
+        griditems[id] = SpmGridItem(
             id=id, type=SpmGridImage, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
             channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
             center=im_spm.center, angle=im_spm.angle, scan_direction=scan_direction,
@@ -324,16 +324,16 @@ function parse_image!(images_parsed::Dict{String, SpmGridItem}, virtual_copies_d
             comment=utf8ify(im_spm.header["Comment"])
         )
         if only_new
-            push!(images_parsed_new, id)
+            push!(griditems_new, id)
         end
-        griditem = images_parsed[id]
+        griditem = griditems[id]
     end
     Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
     
     # virtual copies
     if haskey(virtual_copies_dict, id)
         for virtual_copy in virtual_copies_dict[id]
-            griditem = images_parsed[virtual_copy.id]
+            griditem = griditems[virtual_copy.id]
             # update fields here, too - however, most of these fields should stay unchanged
             griditem.type = SpmGridImage
             griditem.filename_original = filename_original

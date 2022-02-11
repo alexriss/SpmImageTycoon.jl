@@ -95,38 +95,38 @@ cancel_sent = false  # user can cancel load-directory operation
 
 
 """sets keywords"""
-function set_keywords!(ids::Vector{String}, dir_data::String, images_parsed::Dict{String,SpmGridItem}, mode::String, keywords::Vector{String})
+function set_keywords!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, mode::String, keywords::Vector{String})
     for id in ids
         if mode == "add"
             for keyword in keywords
-                if keyword ∉ images_parsed[id].keywords
-                    push!(images_parsed[id].keywords, keyword)
+                if keyword ∉ griditems[id].keywords
+                    push!(griditems[id].keywords, keyword)
                 end
             end
         elseif mode == "remove"
-            filter!(k -> k ∉ keywords, images_parsed[id].keywords)
+            filter!(k -> k ∉ keywords, griditems[id].keywords)
         else  # set
-            images_parsed[id].keywords = keywords
+            griditems[id].keywords = keywords
         end
-        sort!(images_parsed[id].keywords)
+        sort!(griditems[id].keywords)
     end
     return nothing
 end
 
 
 """returns a subset of the dictionary parsed_images. this can then be passed to the js"""
-function get_subset(images_parsed::Dict{String, SpmGridItem}, ids::Vector{String})::OrderedDict{String, SpmGridItem}
-    images_parsed_sub = OrderedDict{String, SpmGridItem}()
+function get_subset(griditems::Dict{String, SpmGridItem}, ids::Vector{String})::OrderedDict{String, SpmGridItem}
+    griditems_sub = OrderedDict{String, SpmGridItem}()
     map(ids) do id
-        images_parsed_sub[id] = images_parsed[id]
+        griditems_sub[id] = griditems[id]
     end
-    return images_parsed_sub
+    return griditems_sub
 end
 
 
-"""gets a dictionary "original_id" => (array of virtual copies) with all virtual copies in images_parsed"""
-function get_virtual_copies_dict(images_parsed::Dict{String, SpmGridItem})::Dict{String,Array{SpmGridItem}}
-    virtual_copies = filter(x -> last(x).virtual_copy > 0, images_parsed)
+"""gets a dictionary "original_id" => (array of virtual copies) with all virtual copies in griditems"""
+function get_virtual_copies_dict(griditems::Dict{String, SpmGridItem})::Dict{String,Array{SpmGridItem}}
+    virtual_copies = filter(x -> last(x).virtual_copy > 0, griditems)
     virtual_copies_dict = Dict{String, Array{SpmGridItem}}()  # create a dict for quick lookup
     for virtual_copy in values(virtual_copies)
         id_original = virtual_copy.filename_original
@@ -141,19 +141,19 @@ end
 
 
 """gets the virtual copies that have been created for id. Returns an array of SpmGridItem"""
-function get_virtual_copies(images_parsed::Dict{String, SpmGridItem}, id::String)::Array{SpmGridItem}
-    virtual_copies = filter(x -> last(x).filename_original==id && last(x).virtual_copy > 0, images_parsed)
+function get_virtual_copies(griditems::Dict{String, SpmGridItem}, id::String)::Array{SpmGridItem}
+    virtual_copies = filter(x -> last(x).filename_original==id && last(x).virtual_copy > 0, griditems)
     return collect(values(virtual_copies))
 end
 
 
-"""Generates a new unique id that is not yet present in images_parsed by appending numbers to the given id"""
-function get_new_id(images_parsed::Dict{String, SpmGridItem},id_original::String)::String
+"""Generates a new unique id that is not yet present in griditems by appending numbers to the given id"""
+function get_new_id(griditems::Dict{String, SpmGridItem},id_original::String)::String
     id = id_original
     i = 1
     while true
         id = "$(id_original)_$i"
-        if !haskey(images_parsed, id)
+        if !haskey(griditems, id)
             break
         end
         i += 1
@@ -163,15 +163,15 @@ end
 
 
 """Returns the scan range of all images. Returns bottom left and top right corner coordinates."""
-function get_scan_range(images_parsed::Dict{String, SpmGridItem})::Tuple{Vector{Float64},Vector{Float64}}
-    if length(images_parsed) == 0
+function get_scan_range(griditems::Dict{String, SpmGridItem})::Tuple{Vector{Float64},Vector{Float64}}
+    if length(griditems) == 0
         return [0.,0.], [0.,0.]
     end
 
-    c = first(values(images_parsed)).center
+    c = first(values(griditems)).center
     min_max_corners_x = [c[1], c[1]]
     min_max_corners_y = [c[2], c[2]]
-    for img in values(images_parsed)
+    for img in values(griditems)
         if img.virtual_copy > 0 || img.status < 0
             continue
         end
@@ -217,44 +217,44 @@ end
 for the images/spectra specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
-Modifies the images_parsed array."""
-function change_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)::Nothing
+Modifies the griditems array."""
+function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
-        filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
-        if images_parsed[id].type == SpmGridImage
+        filename_original_full = joinpath(dir_data, griditems[id].filename_original)
+        if griditems[id].type == SpmGridImage
             item = load_image_memcache(filename_original_full)
-        elseif images_parsed[id].type == SpmGridSpectrum
+        elseif griditems[id].type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
         else
-            println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
+            println("Unknown type: ", griditems[id].type)  # this should never happen, though
             continue
         end
 
         # multiple dispatch for update functions
         if what == "channel"
-            next_channel_name!(images_parsed[id], item, jump)
+            next_channel_name!(griditems[id], item, jump)
         elseif what == "channel2"
-            next_channel2_name!(images_parsed[id], item, jump)
+            next_channel2_name!(griditems[id], item, jump)
         elseif what == "direction"
-            next_direction!(images_parsed[id], item)
+            next_direction!(griditems[id], item)
         elseif what == "background_correction"
-            next_background_correction!(images_parsed[id], item, jump)
+            next_background_correction!(griditems[id], item, jump)
         elseif what == "colorscheme"
-            next_colorscheme!(images_parsed[id], item, jump)
+            next_colorscheme!(griditems[id], item, jump)
         elseif what == "inverted"
-            next_invert!(images_parsed[id], item)
+            next_invert!(griditems[id], item)
         else
             println("Unknown property to change: ", what)  # this should never happen, though
             return nothing
         end
 
         # update the image or spectrum
-        if images_parsed[id].type == SpmGridImage
+        if griditems[id].type == SpmGridImage
             resize_to_ = full_resolution ? 0 : resize_to
-            create_image!(images_parsed[id], item, resize_to=resize_to, base_dir=dir_cache)    
-        elseif images_parsed[id].type == SpmGridSpectrum
-            create_spectrum!(images_parsed[id], item, base_dir=dir_cache)
+            create_image!(griditems[id], item, resize_to=resize_to, base_dir=dir_cache)    
+        elseif griditems[id].type == SpmGridSpectrum
+            create_spectrum!(griditems[id], item, base_dir=dir_cache)
         end
     end
     return nothing
@@ -262,29 +262,29 @@ end
 
 
 """Resets basic image/spectrum parameters to their default values"""
-function reset_griditem!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, full_resolution::Bool)::Nothing
+function reset_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
-        filename_original_full = joinpath(dir_data, images_parsed[id].filename_original)
+        filename_original_full = joinpath(dir_data, griditems[id].filename_original)
 
-        if images_parsed[id].type == SpmGridImage
+        if griditems[id].type == SpmGridImage
             item = load_image_memcache(filename_original_full)
-        elseif images_parsed[id].type == SpmGridSpectrum
+        elseif griditems[id].type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
         else
-            println("Unknown type: ", images_parsed[id].type)  # this should never happen, though
+            println("Unknown type: ", griditems[id].type)  # this should never happen, though
             continue
         end
     
-        changed = reset_default!(images_parsed[id], item)
+        changed = reset_default!(griditems[id], item)
 
         # update the image or spectrum
         if changed
-            if images_parsed[id].type == SpmGridImage
+            if griditems[id].type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(images_parsed[id], item, resize_to=resize_to, base_dir=dir_cache)    
-            elseif images_parsed[id].type == SpmGridSpectrum
-                create_spectrum!(images_parsed[id], item, base_dir=dir_cache)
+                create_image!(griditems[id], item, resize_to=resize_to, base_dir=dir_cache)    
+            elseif griditems[id].type == SpmGridSpectrum
+                create_spectrum!(griditems[id], item, base_dir=dir_cache)
             end
         end
     end
@@ -293,11 +293,11 @@ end
 
 
 """Paste image/spectrum parameters from `id_from` to `ids`."""
-function paste_params!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{String}, id_from::String, dir_data::String, full_resolution::Bool)::Nothing
+function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, id_from::String, dir_data::String, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
-    type_from = images_parsed[id_from].type
+    type_from = griditems[id_from].type
     Threads.@threads for id in ids
-        griditem = images_parsed[id]
+        griditem = griditems[id]
 
         griditem.type == type_from || continue
         id != id_from || continue
@@ -313,7 +313,7 @@ function paste_params!(images_parsed::Dict{String,SpmGridItem}, ids::Vector{Stri
 
         changed = false
         for p in properties
-            v = getfield(images_parsed[id_from], p)
+            v = getfield(griditems[id_from], p)
 
             if p in [:channel_name, :channel2_name]  # for channels we have to make sure that these channels exist
                 v in item.channel_names || continue
@@ -409,16 +409,16 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
     end
 
     # load saved data - if available
-    images_parsed = load_all(dir_data, w)
+    griditems = load_all(dir_data, w)
 
-    images_parsed_new = String[]
+    griditems_new = String[]
     virtual_copies_dict = Dict{String, Array{SpmGridItem}}()
     if !only_new
         # get all virtual copies that are saved
-        virtual_copies_dict = get_virtual_copies_dict(images_parsed)
+        virtual_copies_dict = get_virtual_copies_dict(griditems)
         
         # set all status to -2 (will be then re-set to 0 when the file is found in the directory)
-        map(x -> x.status=-2, values(images_parsed))  # we do not need to use "map! (we even cant use it)
+        map(x -> x.status=-2, values(griditems))  # we do not need to use "map! (we even cant use it)
     end
 
     datafiles = filter!(x -> isfile(x) && (endswith(x, extension_image) || endswith(x, extension_spectrum)), readdir(dir_data, join=true))
@@ -435,19 +435,19 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         last_modified = unix2datetime(s.mtime)
 
         id = filename_original
-        if only_new && haskey(images_parsed, id)
+        if only_new && haskey(griditems, id)
             continue
         end
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
-        if haskey(images_parsed, id) && images_parsed[id].created == created && images_parsed[id].last_modified == last_modified && griditem_cache_up_to_date(images_parsed[id], dir_cache)
-            images_parsed[id].status = 0
+        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified && griditem_cache_up_to_date(griditems[id], dir_cache)
+            griditems[id].status = 0
         else
             if endswith(filename_original, extension_image)
-                parse_image!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
+                parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
             elseif endswith(filename_original, extension_spectrum)
-                parse_spectrum!(images_parsed, virtual_copies_dict, images_parsed_new, only_new,
+                parse_spectrum!(griditems, virtual_copies_dict, griditems_new, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
             end
         end
@@ -468,26 +468,26 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        msg = "Parsed $(num_parsed) files and created $(length(images_parsed)) items in $elapsed_time."
+        msg = "Parsed $(num_parsed) files and created $(length(griditems)) items in $elapsed_time."
         log(msg, w)
     end
-    return images_parsed, images_parsed_new
+    return griditems, griditems_new
 end
 
 
 """load data from saved file"""
 function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmGridItem}
-    images_parsed = Dict{String, SpmGridItem}()
+    griditems = Dict{String, SpmGridItem}()
     
     f = joinpath(get_dir_cache(dir_data), filename_db)
     if isfile(f)
-        JLD2.@load f images_parsed_save
+        JLD2.@load f griditems_save
 
-        if length(images_parsed_save) == 0
-            return images_parsed
+        if length(griditems_save) == 0
+            return griditems
         end
 
-        first_value = first(values(images_parsed_save))
+        first_value = first(values(griditems_save))
         t_save = typeof(first_value)
         if t_save <: Pair # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
             t_save = typeof(first_value[2])
@@ -499,39 +499,39 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmG
             fieldnames_save = fieldnames(t_save)
             fieldnames_common = filter(x -> x in fieldnames_save, fieldnames(SpmGridItem))
 
-            for pair in images_parsed_save  # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
+            for pair in griditems_save  # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
                 id = pair[1]
                 griditem = pair[2]
-                images_parsed[id] = SpmGridItem()
+                griditems[id] = SpmGridItem()
                 for f in fieldnames_common
                     val = getfield(griditem, f)
                     if fieldtype(SpmGridItem, f) != typeof(val)  # this can happen; we changed "scan_direction" from bool to int in v129
                         val = convert(fieldtype(SpmGridItem, f), val)
                     end
-                    setfield!(images_parsed[id], f, val)
+                    setfield!(griditems[id], f, val)
                 end
             end
 
             log("ok.", w)
         else
-            images_parsed = images_parsed_save
+            griditems = griditems_save
         end
     end
 
-    return images_parsed
+    return griditems
 end
 
 
-"""saves the images_parsed dictionary to file"""
-function save_all(dir_data::String, images_parsed::Dict{String, SpmGridItem})
+"""saves the griditems dictionary to file"""
+function save_all(dir_data::String, griditems::Dict{String, SpmGridItem})
     f = joinpath(get_dir_cache(dir_data), filename_db)
-    JLD2.@save f images_parsed_save=images_parsed
+    JLD2.@save f griditems_save=griditems
     return nothing
 end
 
 
 """sets the julia handlers that are triggered by javascript events"""
-function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{String,SpmGridItem})
+function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,SpmGridItem})
     # change channel
     l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
@@ -542,7 +542,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             zoomview = args[3]
             # get header data
             try
-                image_header, extra_info = get_griditem_header(images_parsed[id], dir_data)
+                image_header, extra_info = get_griditem_header(griditems[id], dir_data)
                 k = replace.(collect(keys(image_header)), ">" => "><wbr>")  # replace for for word wrap in tables
                 v = replace.(collect(values(image_header)), "\n" => "<br />") 
                 v = utf8ify.(v)
@@ -550,12 +550,12 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 json_compressed = transcode(GzipCompressor, image_header_json)
                 @js_ w show_info($id, $json_compressed, $extra_info);
                 if zoomview
-                    if images_parsed[id].type == SpmGridImage
-                        width, counts = get_histogram(images_parsed[id], dir_data)
+                    if griditems[id].type == SpmGridImage
+                        width, counts = get_histogram(griditems[id], dir_data)
                         @js_ w show_histogram($id, $width, $counts)
                     else
                         # get 2d data for spectrum
-                        spectrum_data = get_spectrum_data_dict(images_parsed[id], dir_data)
+                        spectrum_data = get_spectrum_data_dict(griditems[id], dir_data)
                         json_compressed = transcode(GzipCompressor, JSON.json(spectrum_data))
                         @js_ w show_spectrum($id, $json_compressed)
                     end
@@ -568,9 +568,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             jump = args[3]
             full_resolution = args[4]
             try
-                change_griditem!(images_parsed, ids, dir_data, what[6:end], jump, full_resolution)
-                images_parsed_sub = get_subset(images_parsed, ids)
-                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                change_griditem!(griditems, ids, dir_data, what[6:end], jump, full_resolution)
+                griditems_sub = get_subset(griditems, ids)
+                json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                 @js_ w update_images($json_compressed);
             catch e
                 error(e, w)
@@ -583,10 +583,10 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 rating = args[3]
                 try
                     for id in ids
-                        images_parsed[id].rating = rating
+                        griditems[id].rating = rating
                     end
-                    images_parsed_sub = get_subset(images_parsed, ids)
-                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    griditems_sub = get_subset(griditems, ids)
+                    json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                     @js_ w update_images($json_compressed);
                 catch e
                     error(e, w)
@@ -601,9 +601,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     keywords = String[]
                 end
                 try
-                    set_keywords!(ids, dir_data, images_parsed, mode, keywords)
-                    images_parsed_sub = get_subset(images_parsed, ids)
-                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    set_keywords!(ids, dir_data, griditems, mode, keywords)
+                    griditems_sub = get_subset(griditems, ids)
+                    json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                     @js_ w update_images($json_compressed);
                 catch e
                     error(e, w)
@@ -615,9 +615,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 range_selected = float.(args[3])
                 full_resolution = args[4]
                 try
-                    set_range_selected!(ids, dir_data, images_parsed, range_selected, full_resolution)
-                    images_parsed_sub = get_subset(images_parsed, ids)
-                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    set_range_selected!(ids, dir_data, griditems, range_selected, full_resolution)
+                    griditems_sub = get_subset(griditems, ids)
+                    json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                     @js_ w update_images($json_compressed);
                 catch e
                     error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
@@ -628,9 +628,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 lock(l)
                 range_selected = float.(args[3])
                 try
-                    set_range_selected_spectrum!(ids, dir_data, images_parsed, range_selected)
-                    images_parsed_sub = get_subset(images_parsed, ids)
-                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                    set_range_selected_spectrum!(ids, dir_data, griditems, range_selected)
+                    griditems_sub = get_subset(griditems, ids)
+                    json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                     @js_ w update_images($json_compressed);
                 catch e
                     error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
@@ -639,14 +639,14 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                 end
             end
         elseif what == "get_line_profile"
-            lock(l)  # might not be necessary here, as it is just a read operation - but images_parsed might change, so let's keep it
+            lock(l)  # might not be necessary here, as it is just a read operation - but griditems might change, so let's keep it
             id = ids[1]
             try
                 start_point = float.(args[3])
                 end_point = float.(args[4])
                 width = float(args[5])
                 # start_point_value and end_point_value is just the point (width does not affect it)
-                coords, distances, values, start_point_value, end_point_value = get_line_profile(id, dir_data, images_parsed, start_point, end_point, width)
+                coords, distances, values, start_point_value, end_point_value = get_line_profile(id, dir_data, griditems, start_point, end_point, width)
                 @js_ w show_line_profile($id, $distances, $values, $start_point_value, $end_point_value)
             catch e
                 error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
@@ -657,9 +657,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             lock(l)
             full_resolution = args[3]
             try
-                reset_griditem!(images_parsed, ids, dir_data, full_resolution)
-                images_parsed_sub = get_subset(images_parsed, ids)
-                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                reset_griditem!(griditems, ids, dir_data, full_resolution)
+                griditems_sub = get_subset(griditems, ids)
+                json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                 @js_ w update_images($json_compressed);
             catch e
                 error(e, w)
@@ -671,9 +671,9 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             id_from = args[3]
             full_resolution = args[4]
             try
-                paste_params!(images_parsed, ids, id_from, dir_data, full_resolution)
-                images_parsed_sub = get_subset(images_parsed, ids)
-                json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_sub))
+                paste_params!(griditems, ids, id_from, dir_data, full_resolution)
+                griditems_sub = get_subset(griditems, ids)
+                json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                 @js_ w update_images($json_compressed);
             catch e
                 error(e, w)
@@ -688,14 +688,14 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                     updated_virtual_copy_is = Dict{String, Int}()  # save updated virtual copy values (so that we keep js and julia in sync - might be important for js-sorting)
                     ids_new = Array{String}(undef, 0)
                     for id in ids
-                        id_original = images_parsed[id].filename_original
-                        virtual_copies = get_virtual_copies(images_parsed, id_original)
+                        id_original = griditems[id].filename_original
+                        virtual_copies = get_virtual_copies(griditems, id_original)
                         new_i = update_virtual_copies_order!(virtual_copies, id) 
-                        id_new = get_new_id(images_parsed, id_original)
-                        virtual_copy_new = deepcopy(images_parsed[id])
+                        id_new = get_new_id(griditems, id_original)
+                        virtual_copy_new = deepcopy(griditems[id])
                         virtual_copy_new.id = id_new
                         virtual_copy_new.virtual_copy = new_i
-                        images_parsed[id_new] = virtual_copy_new
+                        griditems[id_new] = virtual_copy_new
 
                         push!(ids_new, id_new)
                         for virtual_copy in virtual_copies
@@ -703,12 +703,12 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
                         end
                     end
 
-                    images_parsed_sub = get_subset(images_parsed, ids_new)
-                    @js_ w insert_images($images_parsed_sub, $ids)  # insert images after positions of ids
+                    griditems_sub = get_subset(griditems, ids_new)
+                    @js_ w insert_images($griditems_sub, $ids)  # insert images after positions of ids
                 elseif mode =="delete"
                     for id in ids
-                        if haskey(images_parsed, id) && images_parsed[id].virtual_copy > 0
-                            delete!(images_parsed, id)
+                        if haskey(griditems, id) && griditems[id].virtual_copy > 0
+                            delete!(griditems, id)
                         end
                     end
                     @js_ w delete_images($ids)
@@ -722,7 +722,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
             lock(l)
             filename_export = args[3]
             try
-                export_odp(ids, dir_data, images_parsed, filename_export)
+                export_odp(ids, dir_data, griditems, filename_export)
                 @js_ w exported()
             catch e
                 if (:msg in fieldnames(typeof(e)))  # this is often a file-busy error
@@ -742,31 +742,31 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         lock(l)
         try
             global cancel_sent = false  # user might send cancel during the next steps
-            save_all(dir_data, images_parsed)
-            images_parsed, images_parsed_new = parse_files(dir_data, only_new=!parse_all)
-            bottomleft, topright = get_scan_range(images_parsed)
+            save_all(dir_data, griditems)
+            griditems, griditems_new = parse_files(dir_data, only_new=!parse_all)
+            bottomleft, topright = get_scan_range(griditems)
             if cancel_sent
                 @js_ w console.log()
                 global cancel_sent = false
             else
                 # only send the images with status >=0 (deleted ones are not sent, but still saved)
-                images_parsed_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, collect(values(images_parsed)))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+                griditems_values = NaturalSort.sort!(collect(filter(im->im.status >= 0, collect(values(griditems)))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
                 if parse_all
-                    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
+                    json_compressed = transcode(GzipCompressor, JSON.json(griditems_values))
                     @js_ w load_images($json_compressed, $bottomleft, $topright, $parse_all, true)
                 else
                     ids_after = String[]
-                    images_parsed_sub = OrderedDict{String, SpmGridItem}()
+                    griditems_sub = OrderedDict{String, SpmGridItem}()
                     prev_id = ""
-                    global images_parsed_values_test = copy(images_parsed_values)
-                    for im in images_parsed_values
-                        if im.id in images_parsed_new
-                            images_parsed_sub[im.id] = im
+                    global griditems_values_test = copy(griditems_values)
+                    for im in griditems_values
+                        if im.id in griditems_new
+                            griditems_sub[im.id] = im
                             push!(ids_after, prev_id)
                         end
                         prev_id = im.id
                     end
-                    @js_ w insert_images($images_parsed_sub, $ids_after)  # insert images after positions of ids
+                    @js_ w insert_images($griditems_sub, $ids_after)  # insert images after positions of ids
                 end
             end
         catch e
@@ -783,7 +783,7 @@ function set_event_handlers(w::Window, dir_data::String, images_parsed::Dict{Str
         end
         try
             if dir_data != ""
-                save_all(dir_data, images_parsed)
+                save_all(dir_data, griditems)
             end
             @js_ w saved_all()
         catch e
@@ -873,14 +873,14 @@ function load_directory(dir_data::String, w::Window)
     global memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
     global memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
 
-    images_parsed, _ = parse_files(dir_data, w)
-    bottomleft, topright = get_scan_range(images_parsed)
+    griditems, _ = parse_files(dir_data, w)
+    bottomleft, topright = get_scan_range(griditems)
     if cancel_sent
         msg = "Cancelled loading $dir_data"
         @js_ w page_start_load_error($msg)
         global cancel_sent = false
         return nothing
-    elseif length(images_parsed) == 0
+    elseif length(griditems) == 0
         msg = "There are no SPM files in $dir_data"
         @js_ w page_start_load_error($msg)
         return nothing
@@ -895,11 +895,11 @@ function load_directory(dir_data::String, w::Window)
     @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar)
     
     # only send the images with status >=0 (deleted ones are not sent, but still saved)
-    images_parsed_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(images_parsed))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
-    json_compressed = transcode(GzipCompressor, JSON.json(images_parsed_values))
+    griditems_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(griditems))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
+    json_compressed = transcode(GzipCompressor, JSON.json(griditems_values))
     @js_ w load_images($json_compressed, $bottomleft, $topright, true)
 
-    set_event_handlers(w, dir_data, images_parsed)
+    set_event_handlers(w, dir_data, griditems)
 
     save_config(dir_data)  # set and save new last dirs
     @js_ w set_last_directories($last_directories)

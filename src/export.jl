@@ -179,7 +179,7 @@ end
 
 
 """Saves an OpenOffice Document presentation"""
-function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{String, SpmGridItem}, filename_export::String)
+function export_odp(ids::Vector{String}, dir_data::String, griditems::Dict{String, SpmGridItem}, filename_export::String)
     dir_cache = get_dir_cache(dir_data)
     
     dict_template = Dict{String,Any}()
@@ -200,7 +200,7 @@ function export_odp(ids::Vector{String}, dir_data::String, images_parsed::Dict{S
     count = 1
     for id in ids
         dict_image = Dict{String, Any}()
-        griditem = images_parsed[id]
+        griditem = griditems[id]
         
         # get comments
         # for now, we only use the comments in the images

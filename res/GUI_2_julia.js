@@ -44,10 +44,10 @@ function show_start() {
     toggle_start_project("start");
 }
 
-function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_previous=false, open_job_close=false) {  // here we use the array "images_parsed_arr", because we have to preserve order (we use a json+gzip for faster communication)
+function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previous=false, open_job_close=false) {  // here we use the array "griditems_arr", because we have to preserve order (we use a json+gzip for faster communication)
     // load all images into the page
-    let json_images_parsed_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed_arr));
-    let images_parsed_arr = JSON.parse(json_images_parsed_arr.toString("utf-8"));
+    let json_griditems_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_griditems_arr));
+    let griditems_arr = JSON.parse(json_griditems_arr.toString("utf-8"));
 
     // delete previous images
     if (delete_previous) {
@@ -87,35 +87,35 @@ function load_images(gzip_json_images_parsed_arr, bottomleft, topright, delete_p
     window.topright = topright;
 
     // loads new images
-    for (let i = 0, imax = images_parsed_arr.length; i < imax; i++) {
-        window.items[images_parsed_arr[i].id] = images_parsed_arr[i];
-        add_image(images_parsed_arr[i].id);
-        images_parsed_arr[i].keywords.forEach((keyword) => {
+    for (let i = 0, imax = griditems_arr.length; i < imax; i++) {
+        window.items[griditems_arr[i].id] = griditems_arr[i];
+        add_image(griditems_arr[i].id);
+        griditems_arr[i].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         })
     }
 
     filter_items();
-    document.getElementById('footer_num_images_total').innerText = images_parsed_arr.length;
+    document.getElementById('footer_num_images_total').innerText = griditems_arr.length;
 
     if (open_job_close) {
         open_jobs(-1);
     }
 }
 
-function update_images(gzip_json_images_parsed) {  // "images_parsed" is a dictionary here
+function update_images(gzip_json_griditems) {  // "griditems" is a dictionary here
     // updates images
 
     // let t1 = performance.now();
     // console.log("Update info get:" + (t1 - window.t0) + " ms.");
 
-    let json_images_parsed = require("zlib").gunzipSync(new Buffer.from(gzip_json_images_parsed));
-    let images_parsed = JSON.parse(json_images_parsed.toString("utf-8"));
+    let json_griditems = require("zlib").gunzipSync(new Buffer.from(gzip_json_griditems));
+    let griditems = JSON.parse(json_griditems.toString("utf-8"));
 
-    for (let key in images_parsed) {
-        window.items[key] = images_parsed[key];
+    for (let key in griditems) {
+        window.items[key] = griditems[key];
         update_image(key);
-        images_parsed[key].keywords.forEach((keyword) => {
+        griditems[key].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         });
     }
@@ -132,25 +132,25 @@ function update_images(gzip_json_images_parsed) {  // "images_parsed" is a dicti
     // t1 = performance.now();
     // console.log("Update info get2:" + (t1 - window.t0) + " ms.");
 
-    filter_items(Object.keys(images_parsed));
+    filter_items(Object.keys(griditems));
 
     open_jobs(-1);
 }
 
-function insert_images(images_parsed, ids_after) {
+function insert_images(griditems, ids_after) {
     // inserts new images at specific positions (ids_after)
 
     let i = 0;
-    for (let key in images_parsed) {
-        window.items[key] = images_parsed[key];
+    for (let key in griditems) {
+        window.items[key] = griditems[key];
         add_image(key, ids_after[i]);
-        images_parsed[key].keywords.forEach((keyword) => {
+        griditems[key].keywords.forEach((keyword) => {
             window.keywords_all.add(keyword);
         });
         i++;
     }
 
-    filter_items(Object.keys(images_parsed));
+    filter_items(Object.keys(griditems));
     document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
 
     open_jobs(-1);
