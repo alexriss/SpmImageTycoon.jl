@@ -106,7 +106,7 @@ function selector(id::String)::String
 end
 
 """Get window.items from js."""
-function get_items(sleeptime=2.)
+function get_items(sleeptime=1.)
     sleep(sleeptime)
     return @js w window.items
 end
