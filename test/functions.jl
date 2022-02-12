@@ -45,10 +45,11 @@ function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
             continue
         end
         if isa(v1, Dict)
+            curr_basekey = ""
             if basekey == ""
-                basekey = k
+                curr_basekey = k
             end
-            if !compare_dicts(v1, v2, basekey=basekey)
+            if !compare_dicts(v1, v2, basekey=curr_basekey)
                 return false
             end
         elseif isa(v1, AbstractArray)
@@ -105,7 +106,7 @@ function selector(id::String)::String
 end
 
 """Get window.items from js."""
-function get_items(sleeptime=1)
+function get_items(sleeptime=2.)
     sleep(sleeptime)
     return @js w window.items
 end
