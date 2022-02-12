@@ -1,8 +1,5 @@
 using SpmImageTycoon
 using Test
-
-using InteractiveUtils: clipboard
-
 import Dates
 import Base: _sizeof_uv_fs, uv_error
 
@@ -308,8 +305,8 @@ end
     send_key("ctrl-E")
     sleep(0.2)
 
-    clip = clipboard() 
-    # clip = @js w getClipboard()
+    # clip = clipboard()   # does not work in all environments
+    clip = @js w getClipboard()
     @test clip == "\"Image_695.sxm\", \"Z-Spectroscopy507.dat\""
 end
 
