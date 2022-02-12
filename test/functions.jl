@@ -30,7 +30,7 @@ function delete_files(i = 1)::Nothing
 end
 
 """Compare two dictionaries of items."""
-function compare_dicts(dict1, dict2, tol=1e-6)
+function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
     for (k,v1) in dict1
         if k in ["created", "last_modified", "filename_display_last_modified"]  # these won't be the same
             continue
@@ -45,36 +45,39 @@ function compare_dicts(dict1, dict2, tol=1e-6)
             continue
         end
         if isa(v1, Dict)
-            if !compare_dicts(v1, v2)
+            if basekey == ""
+                basekey = k
+            end
+            if !compare_dicts(v1, v2, basekey=basekey)
                 return false
             end
         elseif isa(v1, AbstractArray)
             if !(length(v1) == length(v2))
-                println("Not equal $(k):\n $(v1)\n $(v2)")
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
             if !all(abs.(v1 .- v2) .< tol)
-                println("Not equal $(k):\n $(v1)\n $(v2)")
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
         elseif isa(v1, String)
             if v1 != v2
-                println("Not equal $(k):\n $(v1)\n $(v2)")
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
         elseif isnan(v1)
             if !isnan(v2)
-                println("Not equal $(k):\n $(v1)\n $(v2)")
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
         elseif isa(v1, Number)
             if !(abs(v1 - v2) < tol)
-                println("Not equal $(k):\n $(v1)\n $(v2)")
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
         else
             if v1 != v2
-                println("Not equal $(k):\n $(v1)\n $(v2)")
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
         end
@@ -113,7 +116,7 @@ function send_key(k::String)
     k = s[end]
     modifiers = s[1:end-1]
     @js w test_press_key($k, $modifiers)
-    sleep(0.05)
+    sleep(0.1)
 end
 
 """Sends a key-press to js. Also modifiers can be included. E.g. `ctrl-a` or `ctrl-shift-a`."""
@@ -126,20 +129,20 @@ end
 """Sends a mouse click to all elements set by the css selector."""
 function send_click(sel::String)
     @js w test_click_mouse($sel)
-    sleep(0.1)
+    sleep(0.2)
 end
 
 """Sends a double-click to all elements set by the css selector.
 Does not seem to work so well."""
 function send_double_click(sel::String)
     @js w test_dblclick_mouse($sel)
-    sleep(0.1)
+    sleep(0.2)
 end
 
 """Hovers the mouse over all elements set by the css selector."""
 function send_hover_mouse(sel::String)
     @js w test_hover_mouse($sel)
-    sleep(0.1)
+    sleep(0.2)
 end
 
 
