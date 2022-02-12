@@ -69,6 +69,13 @@ function test_sleep(ms) {
 }
 
 
+function getClipboard() {
+    const { clipboard } = require('electron')
+    const text = clipboard.readText()
+    return text
+}
+
+
 function test_export_to(filename) {
     // extra function here, to avoid the save-dialog
 
