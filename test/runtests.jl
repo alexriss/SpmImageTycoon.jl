@@ -96,16 +96,35 @@ end
 end
 
 @testset "Copy and paste" begin
+    items = get_items()
+    @test compare_dicts(items, items4)
+
     # copy and paste parameters
     send_key(["n"])
     selected = ["Image_002.sxm", "Image_004.sxm"]
     sel = selector(selected)
     send_click(sel)
+
+    active = @js w get_active_element_ids()
+    @test sort(active) == sort(selected)
+
     send_key(["ctrl-c"])
+
+    active = @js w get_active_element_ids()
+    @test sort(active) == sort(selected)
+
+    items = get_items()
+    @test compare_dicts(items, items4)
+
     send_key("n")  # deselect all
+
     selected = ["Image_110.sxm", "Image_661.sxm", "Image_695.sxm", "Z-Spectroscopy507.dat"]
     sel = selector(selected)
     send_click(sel)
+
+    items = get_items()
+    @test compare_dicts(items, items4)
+
     send_key(["ctrl-v"])
 
     # nothing should happen because the initial selection were two images (copy only workls from one image)
