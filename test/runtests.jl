@@ -96,25 +96,27 @@ end
 end
 
 @testset "Copy and paste" begin
-    items = get_items()
-    @test compare_dicts(items, items4)
-
     # copy and paste parameters
     send_key(["n"])
     selected = ["Image_002.sxm", "Image_004.sxm"]
     sel = selector(selected)
     send_click(sel)
 
-    active = @js w get_active_element_ids()
-    @test sort(active) == sort(selected)
-
+    # select multiple, and mouse hovering on one of them, should copy
+    selected = ["Image_004.sxm"]
+    sel = selector(selected)
+    send_hover_mouse(sel)
     send_key(["ctrl-c"])
+    copy_from = @js w window.last_copy_from
+    @test copy_from == "Image_004.sxm"
 
-    active = @js w get_active_element_ids()
-    @test sort(active) == sort(selected)
-
-    items = get_items()
-    @test compare_dicts(items, items4)
+    # multiple selectec, but mouse not hovering on one of them - should not copy
+    selected = ["Image_695.sxm"]
+    sel = selector(selected)
+    send_hover_mouse(sel)
+    send_key(["ctrl-c"])
+    copy_from = @js w window.last_copy_from
+    @test copy_from == ""
 
     send_key("n")  # deselect all
 
