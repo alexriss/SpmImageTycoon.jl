@@ -55,6 +55,12 @@ function test_hover_mouse(selector) {
         const posy = rect.top + 5;
         require("electron").remote.getCurrentWebContents().sendInputEvent({type: 'mouseMove', x: posx, y: posy});
         el.dispatchEvent(event);
+
+        // check if `hover` worked
+        const elHover = document.getElementById('imagegrid').querySelector('div.item:hover');
+        if (elHover == null) { // didn't work, we set `image_info_id` manually - bit hacky
+            window.image_info_id = el.id;
+        }
     });
 }
 
