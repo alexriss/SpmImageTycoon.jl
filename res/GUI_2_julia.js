@@ -365,8 +365,13 @@ function show_spectrum(id, gzip_json_spectrum_data) {
     open_jobs(-1);
 }
 
-function saved_all() {
+function saved_all(saved) {
     // current state has been saved to disk
+    if (saved) {
+        console.log("changes saved.")
+    } else {
+        console.log("no db changes.")
+    }
     open_jobs(-1);
 }
 
@@ -677,11 +682,11 @@ function export_to(what) {
     }
 }
 
-function save_all(exit=false) {
+function save_all(exit=false, force=false) {
     // saves the current state to disk
     if (get_view() != "start") {
         console.log("save all")
-        Blink.msg("save_all", [exit]);
+        Blink.msg("save_all", [exit, force]);
         show_message("saving.")
         open_jobs(1);
     } else if (exit == true) {

@@ -57,7 +57,7 @@ let alt_key_commands = {
 // with ctrl-modifier
 let ctrl_key_commands = {
     a: { command: toggle_all_active, args: [true] },
-    s: { command: save_all, args: [] },
+    s: { command: save_all, args: [false, true] },  // exit=false, force=true
     c: { command: set_copyfrom_id, args: ["set copy.", "can't set copy - select one item."] },
     v: { command: paste_parameters, args: ["paste parameters."] },
     e: { command: export_to, args: ["odp"] },

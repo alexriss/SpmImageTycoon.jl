@@ -7,13 +7,14 @@ include("results.jl")
 
 FNAME_odp = "test_presentation.odp"
 DIR_db_old = "old_db/"
-
+DIR_data = "data/"
+DIR_cache = "data/_spmimages_cache"
 
 """Delete old files."""
 function delete_files(i = 1)::Nothing
     try
-        if isdir("data/_spmimages_cache")
-            rm("data/_spmimages_cache", recursive=true)
+        if isdir(DIR_cache)
+            rm(DIR_cache, recursive=true)
         end
         if isfile(FNAME_odp)
             rm(FNAME_odp)
@@ -158,8 +159,8 @@ end
 @testset "Parse directory" begin
     delete_files()
 
-    global dir_data = abspath("data/")
-    dir_cache = abspath("data/_spmimages_cache")
+    global dir_data = abspath(DIR_data)
+    dir_cache = abspath(DIR_cache)
 
     global w = tycoon(keep_alive=false, return_window=true)  # in the test environment config is not loaded and saved
 
@@ -180,7 +181,7 @@ end
     @test length(fnames_spectra_generated) == length(fnames_spectra)
 end
 
-@testset "Conversion of old database" begin
+@testset "Convert old database" begin
     griditems = SpmImageTycoon.load_all(DIR_db_old, nothing)
     items_loaded = Dict{String,Any}()
     for item in griditems
@@ -299,6 +300,28 @@ end
     @js w load_directory($dir_data)
     items = get_items()
     @test compare_dicts(items, items5)
+
+    # check saving behavior - db file should be only saved when there are changes
+    mtime_db = mtime(joinpath(DIR_cache, "db.jld2"))
+    # since we just opened, this should save (without `force`)
+    @js w save_all()
+    sleep(0.5)
+    mtime_db_2 = mtime(joinpath(DIR_cache, "db.jld2"))
+    @test mtime_db_2 > mtime_db
+
+    # this should not save, since there were no changes
+    
+    @eval SpmImageTycoon griditems_last_changed -= 1000.0  # we could also sleep for a while, but this is faster (we need the eval to assign vars in other modules)
+    @js w save_all()
+    sleep(0.5)
+    mtime_db_3 = mtime(joinpath(DIR_cache, "db.jld2"))
+    @test mtime_db_2 ≈ mtime_db_3
+
+    # this should save, since we force it
+    @js w save_all(false, true)
+    sleep(0.5)
+    mtime_db_4 = mtime(joinpath(DIR_cache, "db.jld2"))
+    @test mtime_db_4 > mtime_db_3
 end
 
 @testset "Edge cases" begin
@@ -373,7 +396,13 @@ end
 end
 
 @testset "Close" begin
+    mtime_db = mtime(joinpath(DIR_cache, "db.jld2"))
     send_key(["ctrl-w"])
+    sleep(0.5)
+
+    # upon closing, the db should be saved
+    mtime_db_2 = mtime(joinpath(DIR_cache, "db.jld2"))
+    @test mtime_db_2 > mtime_db
     # close(w)
     # delete_files()
 end
