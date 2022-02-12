@@ -42,12 +42,18 @@ function test_dblclick_mouse(selector) {
 
 function test_hover_mouse(selector) {
     // hovers mouse on all elements selected by selector (for testing purposes)
+    const event = new MouseEvent('mouseenter', {
+        'view': window,
+        'bubbles': true,
+        'cancelable': true
+      });
     document.querySelectorAll(selector).forEach(el => {
         // we have to move the mouse as well (dblclick handlers can rely on a hover-state()
         const rect = el.getBoundingClientRect();
         const posx = rect.left + 1;
         const posy = rect.top + 1;
         require("electron").remote.getCurrentWebContents().sendInputEvent({type: 'mouseMove', x: posx, y: posy});
+        el.dispatchEvent(event);
     });
 }
 
