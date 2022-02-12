@@ -58,7 +58,7 @@ function test_hover_mouse(selector) {
 
         // check if `hover` worked
         const elHover = document.getElementById('imagegrid').querySelector('div.item:hover');
-        if (elHover == null) { // didn't work, we set `image_info_id` manually - bit hacky
+        if (elHover != el) { // didn't work, we set `image_info_id` manually - bit hacky
             window.image_info_id = el.id;
         }
     });
