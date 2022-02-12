@@ -115,10 +115,6 @@ Pkg.update()
 
 The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
 
-### Automated tests
-
-[![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
-
 ### Dependencies
 
 The program relies on
@@ -136,6 +132,10 @@ The following javascript and css libraries are included in the app:
 - [Bulma](https://bulma.io/): MIT License
 - [μPlot](https://github.com/leeoniya/uPlot): MIT License
 - [SelectionJS](https://github.com/Simonwep/selection): MIT License
+
+### Automated tests
+
+[![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 
 ## Related projects
 
