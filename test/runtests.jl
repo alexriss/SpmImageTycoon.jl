@@ -1,6 +1,9 @@
 using SpmImageTycoon
 using Test
 
+import Dates
+import Base: _sizeof_uv_fs, uv_error
+
 import SpmImageTycoon.Blink.@js
 
 include("results.jl")
@@ -154,31 +157,63 @@ end
 @testset "Save and reload" begin
     send_key(["ctrl-w"])
     sleep(1)
+
+    # check saving behavior - db file should be only saved when there are changes
+    mtime_db = mtime(joinpath(DIR_cache, "db.jld2"))
+    mtime_bak1 = mtime(joinpath(DIR_cache, "db_backup_1.jld2"))
+    mtime_bak2 = mtime(joinpath(DIR_cache, "db_backup_2.jld2"))
+    mtime_bak3 = mtime(joinpath(DIR_cache, "db_backup_3.jld2"))
+    mtime_bak4 = mtime(joinpath(DIR_cache, "db_backup_4.jld2"))
+
+    # the db file, as well as backups should exist
+    @test mtime_db > 0
+    @test mtime_bak1 > 0
+    @test mtime_bak2 > 0
+    @test mtime_bak3 > 0
+    @test mtime_bak4 > 0
+    @test (mtime_db - mtime_bak1) < 10
+
+    # reopen directory
     @js w load_directory($dir_data)
     items = get_items()
     @test compare_dicts(items, items5)
 
-    # check saving behavior - db file should be only saved when there are changes
-    mtime_db = mtime(joinpath(DIR_cache, "db.jld2"))
     # since we just opened, this should save (without `force`)
     @js w save_all()
     sleep(0.5)
     mtime_db_2 = mtime(joinpath(DIR_cache, "db.jld2"))
     @test mtime_db_2 > mtime_db
+    mtime_bak1_ = mtime(joinpath(DIR_cache, "db_backup_1.jld2"))
+    mtime_bak3_ = mtime(joinpath(DIR_cache, "db_backup_3.jld2"))
+    # there should be no change in backup files
+    @test mtime_bak1_ == mtime_bak1
+    @test mtime_bak3_ == mtime_bak3
+
+    mtime_bak1_set = mtime_bak1 - 2 * 3600
+    mtime_bak3_set = mtime_bak3 - 40 * 3600
+    setmtime(joinpath(DIR_cache, "db_backup_1.jld2"), mtime_bak1_set)
+    setmtime(joinpath(DIR_cache, "db_backup_3.jld2"), mtime_bak3_set)
 
     # this should not save, since there were no changes
-    
     @eval SpmImageTycoon griditems_last_changed -= 1000.0  # we could also sleep for a while, but this is faster (we need the eval to assign vars in other modules)
     @js w save_all()
     sleep(0.5)
     mtime_db_3 = mtime(joinpath(DIR_cache, "db.jld2"))
+    mtime_bak1_ = mtime(joinpath(DIR_cache, "db_backup_1.jld2"))
+    mtime_bak3_ = mtime(joinpath(DIR_cache, "db_backup_3.jld2"))
     @test mtime_db_2 ≈ mtime_db_3
+    @test (mtime_bak1_ - mtime_bak1_set) < 1e-3  # should be the same as before - but the set-operation is not completely precise
+    @test (mtime_bak3_ - mtime_bak3_set) < 1e-3
 
     # this should save, since we force it
     @js w save_all(false, true)
     sleep(0.5)
     mtime_db_4 = mtime(joinpath(DIR_cache, "db.jld2"))
+    mtime_bak1_ = mtime(joinpath(DIR_cache, "db_backup_1.jld2"))
+    mtime_bak3_ = mtime(joinpath(DIR_cache, "db_backup_3.jld2"))
     @test mtime_db_4 > mtime_db_3
+    @test (mtime_bak1_ - mtime_db_4) < 10
+    @test (mtime_bak3_ - mtime_db_4) < 10
 end
 
 @testset "Edge cases" begin
@@ -260,6 +295,7 @@ end
     # upon closing, the db should be saved
     mtime_db_2 = mtime(joinpath(DIR_cache, "db.jld2"))
     @test mtime_db_2 > mtime_db
-    # close(w)
+
+    # send_key(["alt-F4"])
     # delete_files()
 end

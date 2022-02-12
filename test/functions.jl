@@ -141,3 +141,25 @@ function send_hover_mouse(sel::String)
     @js w test_hover_mouse($sel)
     sleep(0.1)
 end
+
+
+function setmtime(path::AbstractString, mtime::Real, atime::Real=mtime; follow_symlinks::Bool=true)
+    req = Libc.malloc(_sizeof_uv_fs)
+    try
+        if follow_symlinks
+            ret = ccall(:uv_fs_utime, Cint,
+                (Ptr{Cvoid}, Ptr{Cvoid}, Cstring, Cdouble, Cdouble, Ptr{Cvoid}),
+                C_NULL, req, path, atime, mtime, C_NULL)
+        else
+            ret = ccall(:uv_fs_lutime, Cint,
+                (Ptr{Cvoid}, Ptr{Cvoid}, Cstring, Cdouble, Cdouble, Ptr{Cvoid}),
+                C_NULL, req, path, atime, mtime, C_NULL)
+        end
+        ccall(:uv_fs_req_cleanup, Cvoid, (Ptr{Cvoid},), req)
+        ret < 0 && uv_error("utime($(repr(path)))", ret)
+    finally
+        Libc.free(req)
+    end
+end
+setmtime(path::AbstractString, mtime::Dates.AbstractDateTime, atime::Dates.AbstractDateTime=mtime; follow_symlinks::Bool=true) =
+    setmtime(path, Dates.datetime2unix(mtime), Dates.datetime2unix(atime); follow_symlinks=follow_symlinks)

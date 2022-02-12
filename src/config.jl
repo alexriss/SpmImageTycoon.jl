@@ -36,6 +36,9 @@ odp_channel_names_short = OrderedDict{String,String}(  # channel names to be rep
 )
 
 const filename_db = "db.jld2"  # save all data to this file (in cache_dir)
+const filename_db_backup = "db_backup_{{num}}.jld2"  # backup file name scheme
+
+const backup_scheme_hours = Float64[1, 6, 34, 720, 4320]  # keep backups of the database, overwrite after n hours
 
 default_color_scheme = "gray"
 auto_save_minutes = 10  # auto-save every n minutes
