@@ -32,7 +32,7 @@ end
 """Compare two dictionaries of items."""
 function compare_dicts(dict1, dict2, tol=1e-6)
     for (k,v1) in dict1
-        if k in ["created", "filename_display_last_modified"]  # these won't be the same
+        if k in ["created", "last_modified", "filename_display_last_modified"]  # these won't be the same
             continue
         end
 
