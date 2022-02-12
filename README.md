@@ -136,6 +136,7 @@ The following javascript and css libraries are included in the app:
 ### Automated tests
 
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
+[![Coverage](https://codecov.io/gh/alexriss/SpmImageTycoon.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alexriss/SpmImageTycoon.jl)
 
 ## Related projects
 
