@@ -657,7 +657,7 @@ sup {
 .filter_overview_dot.with_background {
   border: 0px solid #234b88;
   background-color: #234b88;
-  box-shadow: 0px 0px 2px 2px #234b88;
+  box-shadow: 0px 0px 1px 2px #ffefef, 0px 0px 2px 2px #234b88;
 }
 
 .filter_overview_dot.selected.filtered_out {
@@ -668,7 +668,7 @@ sup {
 .filter_overview_dot.highlight {
   border-color: #193764;
   background-color: #193764;
-  box-shadow: 0px 0px 2px 2px #1c63cc, 0px 0px 4px 3px #ffef5f;
+  box-shadow: 0px 0px 1px 3px #ffef5f, 0px 0px 1px 4px #1c63cc;
   z-index: 10;
 }
 
