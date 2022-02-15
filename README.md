@@ -39,27 +39,35 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 <table>
   <tr>
     <td>
-      <a href="http://www.youtube.com/watch?v=x_KSCst92Lo" target="_blank"><img src="http://img.youtube.com/vi/x_KSCst92Lo/0.jpg" width="250" /></a>
+      <a href="http://www.youtube.com/watch?v=x_KSCst92Lo" target="_blank"><img src="http://img.youtube.com/vi/x_KSCst92Lo/0.jpg" width="230" /></a>
     </td>
     <td>
-      <a href="http://www.youtube.com/watch?v=FRl0HwMmiD4" target="_blank"><img src="http://img.youtube.com/vi/FRl0HwMmiD4/0.jpg" width="250" /></a>
+      <a href="http://www.youtube.com/watch?v=FRl0HwMmiD4" target="_blank"><img src="http://img.youtube.com/vi/FRl0HwMmiD4/0.jpg" width="230" /></a>
+    </td>
+    <td>
+      <a href="https://www.youtube.com/watch?v=nIBMQAzwzQs" target="_blank"><img src="http://img.youtube.com/vi/nIBMQAzwzQs/0.jpg" width="230" /></a>
     </td>
   </tr>
   <tr>
-    <td>Feature demo (YouTube)</td>
-    <td>Global scan frame filter (YouTube)</td>
+    <td>Feature demo<br />(YouTube)</td>
+    <td>Global scan frame filter<br />(YouTube)</td>
+    <td>Copy and paste parameters<br />(YouTube)</td>
   </tr>
   <tr>
     <td>
-      <a href="demo/screenshot_gridview.jpg?raw=true" target="_blank"><img src="demo/screenshot_gridview.jpg?raw=true" width="250" /></a>
+      <a href="demo/screenshot_gridview.jpg?raw=true" target="_blank"><img src="demo/screenshot_gridview.jpg?raw=true" width="230" /></a>
     </td>
     <td>
-      <a href="demo/screenshot_spectrum.jpg?raw=true" target="_blank"><img src="demo/screenshot_spectrum.jpg?raw=true" width="250" /></a>
+      <a href="demo/screenshot_spectrum.jpg?raw=true" target="_blank"><img src="demo/screenshot_spectrum.jpg?raw=true" width="230" /></a>
+    </td>
+    <td>
+      <a href="https://www.youtube.com/watch?v=fz8UmxgXNqk" target="_blank"><img src="http://img.youtube.com/vi/fz8UmxgXNqk/0.jpg" width="230" /></a>
     </td>
   </tr>
   <tr>
     <td>Grid view: images and spectra<br />(Screenshot)</td>
     <td>Spectrum display<br />(Screenshot)</td>
+    <td>Spectra demo <br />(YouTube)</td>
   </tr>
 </table>
 
