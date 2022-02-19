@@ -1,5 +1,9 @@
-using SpmImageTycoon
 using Test
+t0 = time()
+using SpmImageTycoon
+t1 = time()
+using Printf
+using DataStructures: OrderedDict
 import Dates
 import Base: _sizeof_uv_fs, uv_error
 
@@ -14,6 +18,9 @@ DIR_db_old = "old_db/"
 DIR_data = "data/"
 DIR_cache = "data/_spmimages_cache"
 
+timings = OrderedDict{String, Float64}()
+
+timings["import"] = t1 - t0
 
 @testset "Parse directory" begin
     delete_files()
@@ -21,12 +28,15 @@ DIR_cache = "data/_spmimages_cache"
     global dir_data = abspath(DIR_data)
     dir_cache = abspath(DIR_cache)
 
+    t0 = time()
     global w = tycoon(keep_alive=false, return_window=true)  # in the test environment config is not loaded and saved
+    t1 = time()
 
     global fnames_images = filter(endswith(".sxm"), readdir(dir_data))
     global fnames_spectra = filter(endswith(".dat"), readdir(dir_data))
 
     @js w load_directory($dir_data)
+    t2 = time()
 
     items = get_items()
     @test compare_dicts(items, items1)
@@ -38,6 +48,9 @@ DIR_cache = "data/_spmimages_cache"
     fnames_spectra_generated = filter(endswith(".svg"), readdir(dir_cache))
     @test length(fnames_images_generated) == length(fnames_images)
     @test length(fnames_spectra_generated) == length(fnames_spectra)
+
+    global timings["startup"] = t1 - t0
+    global timings["load directory"] = t2 - t1
 end
 
 @testset "Convert old database" begin
@@ -57,8 +70,16 @@ end
     selected = ["Image_002.sxm", "Image_004.sxm"]
     sel = selector(selected)
     send_click(sel)
-    send_key(["b","b","B"])
-    send_key(["i","p","p","P", "x"])  # "x" should have no effect
+    t0 = time()
+    send_key(["b"])
+    t1 = time()
+    send_key(["b","B"])
+    t2 = time()
+    send_key(["p"])
+    t3 = time()
+    send_key(["i"])
+    t4 = time()
+    send_key(["p","P", "x"])  # "x" should have no effect
 
     send_key(["n"])
 
@@ -92,6 +113,11 @@ end
 
     items = get_items()
     @test compare_dicts(items, items4)
+
+    global timings["background correction"] = t1 - t0
+    global timings["background correction (two times)"] = t2 - t1
+    global timings["color scheme"] = t3 - t2
+    global timings["invert color scheme"] = t4 - t3
 end
 
 @testset "Copy and paste" begin
@@ -194,7 +220,9 @@ end
     @test (mtime_db - mtime_bak1) < 10
 
     # reopen directory
+    t0 = time()
     @js w load_directory($dir_data)
+    t1 = time()
     items = get_items()
     @test compare_dicts(items, items5)
 
@@ -226,7 +254,9 @@ end
     @test (mtime_bak3_ - mtime_bak3_set) < 1e-3
 
     # this should save, since we force it
+    t2 = time()
     @js w save_all(false, true)
+    t3 = time()
     sleep(0.5)
     mtime_db_4 = mtime(joinpath(DIR_cache, "db.jld2"))
     mtime_bak1_ = mtime(joinpath(DIR_cache, "db_backup_1.jld2"))
@@ -234,6 +264,9 @@ end
     @test mtime_db_4 > mtime_db_3
     @test (mtime_bak1_ - mtime_db_4) < 10
     @test (mtime_bak3_ - mtime_db_4) < 10
+
+    global timings["load directory"] = t1 - t0
+    global timings["save"] = t3 - t2
 end
 
 @testset "Edge cases" begin
@@ -295,7 +328,9 @@ end
 
 @testset "Export" begin
     send_key("n")  # deselect all, should then export all images
+    t0 = time()
     @js w test_export_to($FNAME_odp)
+    t1 = time()
     @test filesize(FNAME_odp) > 300e3  # for now we just make sure that there is a reasonable filesize
 
     # copy to clipboard
@@ -308,6 +343,8 @@ end
     # clip = clipboard()   # does not work in all environments
     clip = @js w getClipboard()
     @test clip == "\"Image_695.sxm\", \"Z-Spectroscopy507.dat\""
+
+    global timings["export"] = t1 - t0
 end
 
 @testset "Close" begin
@@ -321,4 +358,15 @@ end
 
     # send_key(["alt-F4"])
     # delete_files()
+end
+
+
+# timings
+l = maximum(length.(keys(timings)))
+s = rpad("Timings", l, " ")
+printstyled("$s | seconds\n", bold=true)
+for (k, v) in timings
+    local s = rpad(k, l, " ")
+    sv =  @sprintf "%7.2f" v
+    println("$s | $sv")
 end
