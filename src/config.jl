@@ -83,6 +83,7 @@ const colorscheme_list_pre = OrderedDict{String,ColorScheme}(
     "CMRmap" => ColorSchemes.CMRmap,
     "avocado" => ColorSchemes.avocado,
     "rainbow" => ColorSchemes.rainbow,
+    "sunflower" => ColorScheme([colorant"#0047b7", colorant"#0075cf", colorant"#cfa700", colorant"#fffccc"]),
     "rust" => ColorSchemes.rust,
     "valentine" => ColorSchemes.valentine,
     "fuchsia" => ColorSchemes.fuchsia,
