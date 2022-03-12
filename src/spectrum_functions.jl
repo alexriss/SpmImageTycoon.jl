@@ -1,6 +1,6 @@
 # initialize cache variable
 memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
-
+memcache_spectra_lock = ReentrantLock()
 
 """expands a range between `start` and `stop` by symmetrically shifting `start` and `stop` apart"""
 function expand_range(start::Float64, stop::Float64)::Tuple{Float64,Float64}
@@ -218,10 +218,13 @@ end
 Loads a spectrum from either the file or the memory cache.
 """
 function load_spectrum_memcache(filename::AbstractString)::SpmSpectrum
-    spectrum = get_cache(memcache_spectra, filename)
-    if spectrum === missing
-        spectrum = load_spectrum(filename, index_column=true, index_column_type=Float64)
-        set_cache(memcache_spectra, filename, spectrum)
+    spectrum=missing
+    lock(memcache_spectra_lock) do
+        spectrum = get_cache(memcache_spectra, filename)
+        if spectrum === missing
+            spectrum = load_spectrum(filename, index_column=true, index_column_type=Float64)
+            set_cache(memcache_spectra, filename, spectrum)
+        end
     end
 
     return spectrum
@@ -460,10 +463,12 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     f = joinpath(base_dir, filename_display)
     yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
 
-    griditem.channel_range = yxranges
+    lock(griditems_lock) do
+        griditem.channel_range = yxranges
 
-    griditem.filename_display = filename_display
-    griditem.filename_display_last_modified = unix2datetime(mtime(f))
+        griditem.filename_display = filename_display
+        griditem.filename_display_last_modified = unix2datetime(mtime(f))
+    end
     return nothing
 end
 

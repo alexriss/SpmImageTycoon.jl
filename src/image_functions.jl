@@ -1,6 +1,6 @@
 # initialize cache variable
 memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
-
+memcache_images_lock = ReentrantLock() 
 
 """saves all colorbars as pngs in the cache directory.
 Returns a dictionary that associates each colorscheme name with a png file"""
@@ -195,8 +195,6 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
 
     # create grayscale image
     d, unit, vmin, vmax = get_image_data(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
-    griditem.channel_unit = unit
-    griditem.channel_range = [vmin, vmax]
 
     if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
@@ -208,8 +206,13 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
     f = joinpath(base_dir, filename_display)
     save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
 
-    griditem.filename_display = filename_display
-    griditem.filename_display_last_modified = unix2datetime(mtime(f))
+    lock(griditems_lock) do
+        griditem.channel_unit = unit
+        griditem.channel_range = [vmin, vmax]
+        griditem.filename_display = filename_display
+        griditem.filename_display_last_modified = unix2datetime(mtime(f))
+    end
+
     return nothing
 end
 
@@ -274,10 +277,13 @@ end
 Loads an image from either the file or the memory cache.
 """
 function load_image_memcache(filename::AbstractString)::SpmImage
-    im_spm = get_cache(memcache_images, filename)
-    if im_spm === missing
-        im_spm = load_image(filename, output_info=0)
-        set_cache(memcache_images, filename, im_spm)
+    im_spm = missing
+    lock(memcache_images_lock) do
+        im_spm = get_cache(memcache_images, filename)
+        if im_spm === missing
+            im_spm = load_image(filename, output_info=0)
+            set_cache(memcache_images, filename, im_spm)
+        end
     end
 
     return im_spm

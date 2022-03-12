@@ -95,6 +95,7 @@ exit_tycoon = false  # if set to true, then keep-alive loop will end
 cancel_sent = false  # user can cancel load-directory operation
 griditems_last_saved = 0.  # time of last save of griditems
 griditems_last_changed = 0.  # time of last (potential) change of griditems - we do not keep track of actual changes, but only if certain events happen
+griditems_lock = ReentrantLock()
 
 
 """sets keywords"""
