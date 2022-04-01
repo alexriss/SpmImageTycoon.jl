@@ -58,7 +58,7 @@ function format_with_prefix(number::Real; delimiter::String="")::String
 end
 
 
-"""formats a vector of numbers to a notation that uses DI prefixes"""
+"""formats a vector of numbers to a notation that uses SI prefixes"""
 function format_with_prefix(numbers::AbstractVector{<:Real})::Tuple{Vector{String}, String, Float64}
     max_number = maximum(abs.(numbers))
     unit_factor, unit_prefix = get_factor_prefix(max_number)
