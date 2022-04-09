@@ -146,6 +146,11 @@ The following javascript and css libraries are included in the app:
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 [![Coverage](https://codecov.io/gh/alexriss/SpmImageTycoon.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alexriss/SpmImageTycoon.jl)
 
+## Get in touch
+
+Please post issues, suggestions, and pull requests on github. <a href="https://twitter.com/00alexx">Follow me on twitter</a> for updates and more information about this project: 
+<a href="https://twitter.com/00alexx"><img src="https://img.shields.io/twitter/follow/00alexx?label=Twitter&style=social" alt="Twitter"></a>
+
 ## Related projects
 
 - [SpmImages.jl](https://github.com/alexriss/SpmImages.jl): Julia library to read and display SPM images.
