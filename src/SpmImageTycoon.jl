@@ -432,7 +432,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
 
     num_parsed = 0
     time_start = Dates.now()
-    @sync for datafile in datafiles
+    tasks = Task[]
+    for datafile in datafiles
         filename_original = basename(datafile)
         s = stat(datafile)
         created = unix2datetime(s.ctime)
@@ -448,11 +449,13 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
             griditems[id].status = 0
         else
             if endswith(filename_original, extension_image)
-                parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
+                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
+                append!(tasks, ts)
             elseif endswith(filename_original, extension_spectrum)
-                parse_spectrum!(griditems, virtual_copies_dict, griditems_new, only_new,
+                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
+                append!(tasks, ts)
             end
         end
 
@@ -469,6 +472,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
             break
         end
     end
+    wait.(tasks)
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0

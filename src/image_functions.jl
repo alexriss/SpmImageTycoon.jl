@@ -293,7 +293,10 @@ end
 """Parses an image file and creates the images in the cache directory if necessary."""
 function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
     griditems_new::Vector{String}, only_new::Bool,
-    dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
+    dir_cache::String, datafile::String, id::String, filename_original::String,
+    created::DateTime, last_modified::DateTime)::Vector{Task}
+
+    tasks = Task[]
 
     im_spm = load_image(datafile, output_info=0)  # we dont use the cache here
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
@@ -334,7 +337,8 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
         end
         griditem = griditems[id]
     end
-    Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+    t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+    push!(tasks, t)
     
     # virtual copies
     if haskey(virtual_copies_dict, id)
@@ -359,8 +363,9 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
             griditem.comment = utf8ify(im_spm.header["Comment"])
             griditem.status = 0
 
-            Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+            t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+            push!(tasks, t)
         end
     end
-    return nothing
+    return tasks
 end

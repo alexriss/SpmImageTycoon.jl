@@ -476,7 +476,10 @@ end
 """Parses a spectrum file and creates the preview in the cache directory if necessary."""
 function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
     griditems_new::Vector{String}, only_new::Bool,
-    dir_cache::String, datafile::String, id::String, filename_original::String, created::DateTime, last_modified::DateTime)::Nothing
+    dir_cache::String, datafile::String, id::String, filename_original::String,
+    created::DateTime, last_modified::DateTime)::Vector{Task}
+
+    tasks = Task[]
 
     # spectrum = load_spectrum_memcache(datafile)
     spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
@@ -558,7 +561,8 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         end
         griditem = griditems[id]
     end
-    Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
+    t = Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
+    push!(tasks, t)
     
     # virtual copies
     if haskey(virtual_copies_dict, id)
@@ -579,8 +583,9 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
             griditem.comment = comment
             griditem.status = 0
 
-            Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
+            t = Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
+            push!(tasks, t)
         end
     end
-    return nothing
+    return tasks
 end

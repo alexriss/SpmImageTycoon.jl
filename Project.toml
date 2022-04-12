@@ -1,10 +1,10 @@
 name = "SpmImageTycoon"
 uuid = "9d058c39-626d-4326-b74c-2931221b7bf0"
-keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunneling microscopy", "atomic force microscopy", "images", "image analysis", "line profile", "browser"]
+keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunneling microscopy", "atomic force microscopy", "images", "spectroscopy", "spectra", "image analysis", "line profile", "browser"]
 license = "GPLv3"
-desc = "Organize scanning probe microscopy images"
+desc = "Organize scanning probe microscopy images and spectra"
 authors = ["Alex Riss"]
-version = "0.3.2"
+version = "0.3.3"
 
 [deps]
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
