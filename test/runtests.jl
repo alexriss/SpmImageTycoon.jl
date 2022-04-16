@@ -298,7 +298,45 @@ end
 end
 
 @testset "Virtual Copy" begin
-    # todo
+    send_key("n")  # deselect all
+    selected = ["Image_695.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["&"])
+    sleep(2)
+
+    send_key("n")  # deselect all
+    selected = ["Image_695.sxm_1", "Z-Spectroscopy507.dat_1"]
+    send_click(sel)
+    send_key(["b", "b", "x", "y", "P", "P", "P", "x", "y"])
+    sleep(1)
+
+    send_key("n")  # deselect all
+    selected = ["Image_695.sxm_1", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["&"])
+
+    items = get_items()
+    @test compare_dicts(items, items6)
+
+    send_key("n")  # deselect all
+    selected = ["Image_695.sxm_1"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["shift-Delete"])
+
+    items = get_items()
+    items7 = copy(items6)
+    delete!(items7, "Image_695.sxm_1")
+    @test compare_dicts(items, items7)
+
+    # reload directory
+    send_key(["ctrl-w"])
+    sleep(1)
+    @js w load_directory($dir_data)
+    sleep(1)
+    @test compare_dicts(items, items7)
 end
 
 @testset "Filtering" begin

@@ -152,7 +152,7 @@ end
 
 
 """Generates a new unique id that is not yet present in griditems by appending numbers to the given id"""
-function get_new_id(griditems::Dict{String, SpmGridItem},id_original::String)::String
+function get_new_id(griditems::Dict{String, SpmGridItem},id_original::String)::Tuple{String, Int}
     id = id_original
     i = 1
     while true
@@ -162,7 +162,20 @@ function get_new_id(griditems::Dict{String, SpmGridItem},id_original::String)::S
         end
         i += 1
     end
-    return id
+    return id, i
+end
+
+
+"""Generates the display filename for `griditem`."""
+function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
+    base = splitext(griditem.filename_original)[1] * suffix
+    if griditem.type == SpmGridSpectrum
+        filename_display = "$(base).svg"  # the `id` already contains info on a virtual copy
+    else
+        filename_display = "$(base).png"  # the `id` already contains info on a virtual copy
+    end
+    
+    return filename_display
 end
 
 
@@ -343,6 +356,33 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
 end
 
 
+"""Creates a virtual copy of the image/spectrum with the given id."""
+function create_virtual_copy!(griditems::Dict{String,SpmGridItem}, id::String, dir_data::String)::String
+    dir_cache = get_dir_cache(dir_data)
+    griditem = griditems[id]
+
+    id_original = griditem.filename_original
+    virtual_copies = get_virtual_copies(griditems, id_original)
+    new_i = update_virtual_copies_order!(virtual_copies, id) 
+    id_new, id_suffix_i = get_new_id(griditems, id_original)
+    griditem_new = deepcopy(griditem)
+
+    griditem_new.id = id_new
+    griditem_new.filename_display = get_filename_display(griditem, "__virtualcopy_$(id_suffix_i)")
+
+    # copy generated file
+    f_original = joinpath(dir_cache, griditem.filename_display)
+    f_new = joinpath(dir_cache, griditem_new.filename_display)
+    cp(f_original, f_new, force=true)
+    griditem_new.filename_display_last_modified = unix2datetime(mtime(f_new))
+
+    griditem_new.virtual_copy = new_i
+    griditems[id_new] = griditem_new
+
+    return id_new
+end
+
+
 """Loads the header data for an griditem and returns a tuple: the dictionary with all the header data, as well as some extra info"""
 function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{OrderedDict{String,String}, OrderedDict{String,String}}
     filename_original_full = joinpath(dir_data, griditem.filename_original)
@@ -363,19 +403,21 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
 end
 
 
-"""Checks if a generated image/spectrum file exists and is up to date."""
-function griditem_cache_up_to_date(griditem::SpmGridItem, base_dir::String="")::Bool
-    if griditem.filename_display == ""
-        return false
+"""Checks if a generated image/spectrum files for `griditems` exist and are up to date."""
+function griditem_cache_up_to_date(griditems::Vector{SpmGridItem}, base_dir::String="")::Bool
+    for griditem in griditems
+        if griditem.filename_display == ""
+            return false
+        end
+        
+        f = joinpath(base_dir, griditem.filename_display)
+        lmod = mtime(f)
+        if unix2datetime(lmod) != griditem.filename_display_last_modified  || lmod == 0  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
+            return false
+        end
     end
-    
-    f = joinpath(base_dir, griditem.filename_display)
-    lmod = mtime(f)
-    if unix2datetime(lmod) == griditem.filename_display_last_modified  && lmod != 0  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
-        return true
-    else
-        return false
-    end
+
+    return true
 end
 
 
@@ -444,9 +486,25 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
             continue
         end
 
+        if haskey(griditems, id)
+            griditem_and_virtual_copies = SpmGridItem[griditems[id]]
+            if haskey(virtual_copies_dict, id)
+                for virtual_copy in virtual_copies_dict[id]
+                    push!(griditem_and_virtual_copies, griditems[virtual_copy.id])
+                end
+            end
+        else
+            griditem_and_virtual_copies = SpmGridItem[]
+        end
+
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
-        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified && griditem_cache_up_to_date(griditems[id], dir_cache)
+        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified && griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache)
             griditems[id].status = 0
+            if haskey(virtual_copies_dict, id)
+                for virtual_copy in virtual_copies_dict[id]
+                    griditems[virtual_copy.id].status = 0
+                end
+            end
         else
             if endswith(filename_original, extension_image)
                 ts = parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,

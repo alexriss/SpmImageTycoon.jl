@@ -451,7 +451,7 @@ end
 The "filename_display" field of the SpmGridItem is updated (to the svg filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
 function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir::String="", use_existing::Bool=false)
-    if use_existing && griditem_cache_up_to_date(griditem, base_dir)
+    if use_existing && griditem_cache_up_to_date(SpmGridItem[griditem], base_dir)
         return nothing  # image exists, nothing to do
     end
 
@@ -459,7 +459,7 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     xy_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true)  # sort x_values (asc or desc is ok), so that we get a nice line plot
     griditem.points = size(xy_datas[1], 1)
 
-    filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).svg"
+    filename_display = get_filename_display(griditem)
     f = joinpath(base_dir, filename_display)
     yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
 

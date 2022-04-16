@@ -202,7 +202,7 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
         im_arr = colorize(d, griditem.colorscheme)
     end
     
-    filename_display = "$(griditem.filename_original[1:end-4])_$(griditem.virtual_copy).png"
+    filename_display = get_filename_display(griditem)
     f = joinpath(base_dir, filename_display)
     save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
 

@@ -165,22 +165,10 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
             mode = args[3]
             try
                 if mode =="create"
-                    updated_virtual_copy_is = Dict{String, Int}()  # save updated virtual copy values (so that we keep js and julia in sync - might be important for js-sorting)
                     ids_new = Array{String}(undef, 0)
                     for id in ids
-                        id_original = griditems[id].filename_original
-                        virtual_copies = get_virtual_copies(griditems, id_original)
-                        new_i = update_virtual_copies_order!(virtual_copies, id) 
-                        id_new = get_new_id(griditems, id_original)
-                        virtual_copy_new = deepcopy(griditems[id])
-                        virtual_copy_new.id = id_new
-                        virtual_copy_new.virtual_copy = new_i
-                        griditems[id_new] = virtual_copy_new
-
+                        id_new = create_virtual_copy!(griditems, id, dir_data)
                         push!(ids_new, id_new)
-                        for virtual_copy in virtual_copies
-                            updated_virtual_copy_is[virtual_copy.id] = virtual_copy.virtual_copy
-                        end
                     end
 
                     griditems_sub = get_subset(griditems, ids_new)
