@@ -552,8 +552,11 @@ sup {
 }
 
 #sidebar_filter_table input, #sidebar_filter_table select {
-  margin-top:0.3rem;
-  margin-bottom:0.3rem;
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+  padding-top: 0.05rem;
+  padding-bottom: 0.05rem;
+  height: 1.6rem;
 }
 
 
@@ -748,13 +751,18 @@ sup {
 
 #table_line_profile td, #table_line_profile th {
   vertical-align: middle;
+  height: 3em;
+  padding: .2em .75em;
 }
 
 #table_line_profile input {
   text-align: right;
   height: 1.6rem; 
   /* width: 3.75rem; */
-  padding: 3px;
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+  padding-top: 0.05rem;
+  padding-bottom: 0.05rem;
 }
 
 #table_line_profile td {
