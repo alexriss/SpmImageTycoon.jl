@@ -198,7 +198,7 @@ function show_info(id, gzip_info_json, extra_info={}) {
     if (window.items[id].type == "SpmGridSpectrum") {
         document.getElementById("image_info_scansize_or_xaxis").innerText = window.items[id].channel2_name;
         document.getElementById("image_info_angle_or_points").innerText = window.items[id].points + " pts";
-        const num_channels = extra_info["Units"].split(", ").length - 1;  // we subtract one, becuase "Index" is not really a channel
+        const num_channels = extra_info["Units"].split(", ").length - 1;  // we subtract one, because "Index" is not really a channel
         document.getElementById("image_info_colorscheme_or_channels").innerText =  num_channels + " chs";
 
         if (window.items[id].channel_range.length == 4) {  // first two are y-axis, second two are x-axis

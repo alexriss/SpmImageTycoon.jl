@@ -347,4 +347,78 @@ function event_handlers() {
             require("electron").shell.openExternal(e.target.href);
         });
     }
+
+    event_handlers_clipboard()
+}
+
+
+// sets up douyble click events that copy to clipboard
+function event_handlers_clipboard() {
+    // double click elements to copy to clipboard
+    const els = {
+        image_info_title: el => el.filename_original,
+        image_info_channel_name: el => el.channel_name,
+        image_info_background_correction: el => el.background_correction,
+        image_info_bias: el => {
+            nnp = format_number_prefix(el.bias,4);
+            return nnp.number_formatted + nnp.prefix;
+        },
+        image_info_bias_unit_prefix: el => {
+            nnp = format_number_prefix(el.bias,4);
+            return nnp.number_formatted + nnp.prefix;
+        },
+        sidebar_keywords_container: el => el.keywords.join(", "),
+        image_info_scansize_or_xaxis: el => {
+            if (el.type == "SpmGridSpectrum") {
+                return el.channel2_name; 
+            }
+            else if (el.type == "SpmGridImage") {
+                return number_max_decimals(el.scansize[0], 4) + "n";
+            }
+        },
+        image_info_angle_or_points: el => {
+            if (el.type == "SpmGridSpectrum") {
+                return el.points; 
+            }
+            else if (el.type == "SpmGridImage") {
+                return number_max_decimals(el.angle, 4);
+            }
+        },
+        image_info_colorscheme_or_channels: el => {
+            if (el.type == "SpmGridSpectrum") {
+                return document.getElementById("image_info_colorscheme_or_channels").innerText.replace(" chs", "");
+            }
+            else if (el.type == "SpmGridImage") {
+                return el.colorscheme;
+            }
+        },
+        image_info_z_feedback_setpoint_or_xaxis_range: el => {
+            if (el.type == "SpmGridSpectrum") {
+                return document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText;
+            }
+            else if (el.type == "SpmGridImage") {
+                if (el.z_feedback) {
+                    nnp = format_number_prefix(el.z_feedback_setpoint,4);
+                    return nnp.number_formatted + nnp.prefix;
+                } else {
+                    nnp = format_number_prefix(el.z,4);
+                    return nnp.number_formatted + nnp.prefix;
+                }        
+            }
+        }
+    }
+
+    for (const [key, func] of Object.entries(els)) {
+        console.log(key);
+        document.getElementById(key).addEventListener('dblclick', (e) => {
+            if (window.image_info_id != "") {
+                const el = window.items[window.image_info_id];
+                const text = String(func(el));
+                console.log("copy to clipboard: " + text);
+                const {clipboard} = require('electron');
+                clipboard.writeText(text);
+                e.stopPropagation();
+            }
+        });
+    }
 }
