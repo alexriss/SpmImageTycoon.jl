@@ -23,8 +23,10 @@ function toggle_keywords_dialog(only_current=false) {
 
             if (ids.length > 1) {  // show different modes
                 document.getElementById("modal_keywords_mode_container").classList.remove("is-hidden");
+                document.getElementById("modal_keywords_button_save_mode_container").classList.remove("is-hidden");
             } else {
                 document.getElementById("modal_keywords_mode_container").classList.add("is-hidden");
+                document.getElementById("modal_keywords_button_save_mode_container").classList.add("is-hidden");
             }
             toggle_keywords_mode(jump=0, initial=true);  // also sets the inital keywords
 
@@ -62,6 +64,7 @@ function keywords_mode_set_css(keywords_mode) {
 function toggle_keywords_mode(jump=1, initial=false) {
     // toggles the keywords mode (and sets the keywords if initial=true or the user hasn't changed anything)
     const el = document.getElementById("modal_keywords_mode");
+    const el_button_span = document.getElementById("modal_keywords_button_save_mode");
     let index = window.keywords_modes.indexOf(window.keywords_mode) + jump;
     index = index % window.keywords_modes.length;
     if (index < 0) {
@@ -70,6 +73,7 @@ function toggle_keywords_mode(jump=1, initial=false) {
 
     window.keywords_mode = window.keywords_modes[index];
     el.innerText = window.keywords_modes_display[index];
+    el_button_span.innerText = window.keywords_modes_display[index];
 
     if (initial || window.keywords_input_initial_value == JSON.stringify(window.keywords_input.value)) {  // user has not changed anything
         window.keywords_input.removeAllTags();
