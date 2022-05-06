@@ -235,7 +235,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                         end
                         prev_id = im.id
                     end
-                    @js_ w insert_images($griditems_sub, $ids_after)  # insert images after positions of ids
+                    @js_ w insert_images($griditems_sub, $ids_after, $bottomleft, $topright)  # insert images after positions of ids
                 end
             end
         catch e

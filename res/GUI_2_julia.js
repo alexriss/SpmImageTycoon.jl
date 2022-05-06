@@ -44,6 +44,31 @@ function show_start() {
     toggle_start_project("start");
 }
 
+function setup_filter_overview(bottomleft, topright, delete_previous=false) {
+    // sets up limits for filter-overview
+
+    if (delete_previous) {
+        els = document.getElementById('filter_overview').getElementsByClassName('filter_overview_item');
+        while (els.length > 0) {
+            els[0].remove();
+        }
+    }
+
+    // scan ranges - we set them to a square
+    const w = topright[0]-bottomleft[0];
+    const h = topright[1]-bottomleft[1];
+    if (w > h) {
+        bottomleft[1] = bottomleft[1] - (w-h) / 2;
+        topright[1] = topright[1] + (w-h) / 2;
+    } else if (h > w) {
+        bottomleft[0] = bottomleft[0] - (h-w) / 2;
+        topright[0] = topright[0] + (h-w) / 2;
+
+    }
+    window.bottomleft = bottomleft;
+    window.topright = topright;
+}
+
 function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previous=false, open_job_close=false) {  // here we use the array "griditems_arr", because we have to preserve order (we use a json+gzip for faster communication)
     // load all images into the page
     let json_griditems_arr = require("zlib").gunzipSync(new Buffer.from(gzip_json_griditems_arr));
@@ -57,34 +82,15 @@ function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previ
             els[0].remove();
         }
 
-        els = document.getElementById('filter_overview').getElementsByClassName('filter_overview_item');
-        while (els.length > 0) {
-            els[0].remove();
-        }
-
         // delete saved items
         window.items = {};
         window.keywords_all = new Set();
-    }
-
-    // make sure that the project page is visible
-    if (delete_previous) {
+        
+        // make sure that the project page is visible
         toggle_start_project("project");
     }
 
-    // save scan ranges - we set them to a square
-    const w = topright[0]-bottomleft[0];
-    const h = topright[1]-bottomleft[1];
-    if (w > h) {
-        bottomleft[1] = bottomleft[1] - (w-h) / 2;
-        topright[1] = topright[1] + (w-h) / 2;
-    } else if (h > w) {
-        bottomleft[0] = bottomleft[0] - (h-w) / 2;
-        topright[0] = topright[0] + (h-w) / 2;
-
-    }
-    window.bottomleft = bottomleft;
-    window.topright = topright;
+    setup_filter_overview(bottomleft, topright, delete_previous);
 
     // loads new images
     for (let i = 0, imax = griditems_arr.length; i < imax; i++) {
@@ -137,8 +143,17 @@ function update_images(gzip_json_griditems) {  // "griditems" is a dictionary he
     open_jobs(-1);
 }
 
-function insert_images(griditems, ids_after) {
+function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {
     // inserts new images at specific positions (ids_after)
+
+    if (bottomleft.length == 2 && topright.length == 2) {
+        if (bottomleft[0] < window.bottomleft[0] || bottomleft[1] < window.bottomleft[1] || topright[0] > window.topright[0] || topright[1] > window.topright[1]) {
+            setup_filter_overview(bottomleft, topright, delete_previous=true);
+            for (const key of Object.keys(window.items)) {
+                add_image_overview(key);
+            }
+        }
+    }
 
     let i = 0;
     for (let key in griditems) {
@@ -161,6 +176,9 @@ function delete_images(ids) {
     for (let i=0;i<ids.length;i++) {
         document.getElementById(ids[i]).remove();
         delete window.items[ids[i]];
+
+        let id_overview = "filter_overview_item_" + ids[i];
+        document.getElementById(id_overview).remove();
     }
 
     // TODO: we could update the window.keywords - but for now we just leave it as is
