@@ -103,6 +103,7 @@ function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previ
 
     filter_items();
     document.getElementById('footer_num_images_total').innerText = griditems_arr.length;
+    check_hover_enabled()
 
     if (open_job_close) {
         open_jobs(-1);
@@ -139,6 +140,7 @@ function update_images(gzip_json_griditems) {  // "griditems" is a dictionary he
     // console.log("Update info get2:" + (t1 - window.t0) + " ms.");
 
     filter_items(Object.keys(griditems));
+    check_hover_enabled()
 
     open_jobs(-1);
 }
@@ -167,6 +169,7 @@ function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {
 
     filter_items(Object.keys(griditems));
     document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
+    check_hover_enabled()
 
     open_jobs(-1);
 }
@@ -185,6 +188,7 @@ function delete_images(ids) {
 
     filter_items([]);  // no need to apply extra filtering now, so give empty array, so we will update the value in the filter sidebar
     document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
+    check_hover_enabled()
 
     open_jobs(-1);
 }
