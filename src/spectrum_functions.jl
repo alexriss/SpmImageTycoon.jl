@@ -459,14 +459,20 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     xy_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true)  # sort x_values (asc or desc is ok), so that we get a nice line plot
     griditem.points = size(xy_datas[1], 1)
 
-    filename_display = get_filename_display(griditem)
+    if griditem.filename_display === ""
+        filename_display = get_filename_display(griditem)
+    else
+        filename_display = griditem.filename_display
+    end
     f = joinpath(base_dir, filename_display)
     yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
 
     lock(griditems_lock) do
         griditem.channel_range = yxranges
 
-        griditem.filename_display = filename_display
+        if griditem.filename_display === ""
+            griditem.filename_display = filename_display
+        end
         griditem.filename_display_last_modified = unix2datetime(mtime(f))
     end
     return nothing

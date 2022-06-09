@@ -170,9 +170,9 @@ end
 function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
     base = splitext(griditem.filename_original)[1] * suffix
     if griditem.type == SpmGridSpectrum
-        filename_display = "$(base).svg"  # the `id` already contains info on a virtual copy
+        filename_display = "$(base).svg"
     else
-        filename_display = "$(base).png"  # the `id` already contains info on a virtual copy
+        filename_display = "$(base).png"
     end
     
     return filename_display

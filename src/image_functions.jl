@@ -202,14 +202,20 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
         im_arr = colorize(d, griditem.colorscheme)
     end
     
-    filename_display = get_filename_display(griditem)
+    if griditem.filename_display === ""
+        filename_display = get_filename_display(griditem)
+    else
+        filename_display = griditem.filename_display
+    end
     f = joinpath(base_dir, filename_display)
     save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
 
     lock(griditems_lock) do
         griditem.channel_unit = unit
         griditem.channel_range = [vmin, vmax]
-        griditem.filename_display = filename_display
+        if griditem.filename_display === ""
+            griditem.filename_display = filename_display
+        end
         griditem.filename_display_last_modified = unix2datetime(mtime(f))
     end
 
