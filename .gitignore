@@ -7,4 +7,5 @@ old/
 SpmImageTycoonCompiled/
 test/data/_spmimages_cache/
 test/*.odp
-
+JOSS/*.pdf
+JOSS/*.jats
