@@ -15,6 +15,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Tips and tricks](#tips-and-tricks)  
 [Technical background](#technical-background)  
 [Third party libraries](#third-party-libraries-included)  
+[Contribute](#get-in-touch-and-contribute)  
 [Related projects](#related-projects)  
 
 
@@ -71,6 +72,8 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
   </tr>
 </table>
 
+It is best to play around with the app yourself, so [go ahead and install it.](#installation). Example data can be found in the [test directory](test/data).
+
 ## Disclaimer
 
 _The app should be considered experimental. It has undergone limited testing, and while it works for me, I can not guarantee that it will work flawlessly for you aswell. It is conceivable that some of the calculations potentially give erroneous results under certain circumstances. So please only use the app if you are ok with some surprises._
@@ -123,6 +126,8 @@ Pkg.update()
 
 The app is written in [Julia](https://julialang.org/), using [Blink.jl](https://github.com/JuliaGizmos/Blink.jl) for the [Electron](https://www.electronjs.org/)-based frontend.
 
+The Julia source code is in the [src directory](/src/), the HTML, CSS, and JavaScript source code for the frontend is in the [res directory](/res/).
+
 ### Dependencies
 
 The program relies on
@@ -146,9 +151,11 @@ The following javascript and css libraries are included in the app:
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 [![Coverage](https://codecov.io/gh/alexriss/SpmImageTycoon.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alexriss/SpmImageTycoon.jl)
 
-## Get in touch
+## Get in touch and contribute
 
-Please post issues, suggestions, and pull requests on github. <a href="https://twitter.com/00alexx">Follow me on twitter</a> for updates and more information about this project: 
+Contributions are very welcome. Please post issues, suggestions, and pull requests on github. If you want to contribute to the code, take a look at the [technical background](#technical-background) and [contribution guidelines](CONTRIBUTING.md); and please get in touch with me.
+
+<a href="https://twitter.com/00alexx">Follow me on twitter</a> for updates and more information about this project: 
 <a href="https://twitter.com/00alexx"><img src="https://img.shields.io/twitter/follow/00alexx?style=social" alt="Twitter"></a>
 
 ## Related projects
