@@ -48,7 +48,7 @@ overview_max_images = 1000  # maximum number of images displayed in the filter_o
 memcache_mb_spectra = 50  # size of memory cache for spectra (in mb)
 memcache_mb_images = 50 # size of memory cache for images (in mb)
 
-last_directories = []  # last opened directories (will be populated from the config file)
+last_directories = String[]  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
 
 const background_correction_list_image = OrderedDict{String,SpmImages.Background}(
