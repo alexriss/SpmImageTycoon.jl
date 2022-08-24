@@ -27,9 +27,9 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
 - Various color palettes
-- Star-rating and keyword systems
-- Powerful search
 - Line profiles *(experimental and not yet fully tested)*
+- Star-rating and keyword systems
+- Powerful search and filtering (e.g., by keywords, data type, location, scan size)
 - Overview and position-based filtering
 - Export to [OpenDocument presentation](https://en.wikipedia.org/wiki/OpenDocument)
   (compatible with [LibreOffice](https://www.libreoffice.org/), [OpenOffice](https://www.openoffice.org/), [PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint), etc.)
