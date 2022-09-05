@@ -12,6 +12,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Demo](#demo)  
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
+[Cite](#cite)  
 [Tips and tricks](#tips-and-tricks)  
 [Technical background](#technical-background)  
 [Third party libraries](#third-party-libraries-included)  
@@ -109,6 +110,27 @@ using Pkg
 Pkg.update()
 ```
 2. done
+
+## Cite
+
+If you use the app for your scientific work, please consider citing it:
+
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.04644/status.svg)](https://doi.org/10.21105/joss.04644)
+
+```bibtex
+@article{Riss2022,
+  doi = {10.21105/joss.04644},
+  url = {https://doi.org/10.21105/joss.04644},
+  year = {2022},
+  publisher = {The Open Journal},
+  volume = {7},
+  number = {77},
+  pages = {4644},
+  author = {Alexander Riss},
+  title = {SpmImage Tycoon: Organize and analyze scanning probe microscopy data},
+  journal = {Journal of Open Source Software}
+}
+```
 
 > ### _You can stop reading here and start using the app now._
 
