@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Riss"
+  given-names: "Alexander"
+  orcid: "https://orcid.org/0000-0002-3212-7925"
+title: "SpmImage Tycoon: Organize and analyze scanning probe microscopy data"
+doi: "10.21105/joss.04644"
+url: "https://doi.org/10.21105/joss.04644"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Riss"
+    given-names: "Alexander"
+    orcid: "https://orcid.org/0000-0002-3212-7925"
+  doi: "10.21105/joss.04644"
+  journal: "Journal of Open Source Software"
+  start: 4644
+  title: "SpmImage Tycoon: Organize and analyze scanning probe microscopy data"
+  issue: 77
+  volume: 7
+  year: 2022
