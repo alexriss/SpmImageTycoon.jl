@@ -5,12 +5,14 @@ on:
       - main
     paths-ignore:
       - '**.md'
+      - '**.cff'
       - 'JOSS/**'
   pull_request:
     branches:
       - main
     paths-ignore:
       - '**.md'
+      - '**.cff'
       - 'JOSS/**'
 jobs:
   test:
