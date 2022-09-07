@@ -27,6 +27,12 @@ body {
   white-space: nowrap;
 }
 
+@media only screen and (max-height: 1120px) {
+  #footer_citation {
+    display: none;
+  }
+}
+
 sup {
   vertical-align: super;
   font-size:80%;
