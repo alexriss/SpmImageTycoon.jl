@@ -118,7 +118,7 @@ If you use the app for your scientific work, please consider citing it:
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.04644/status.svg)](https://doi.org/10.21105/joss.04644)
 
 ```bibtex
-@article{Riss2022,
+@article{Riss_JOSS_2022,
   doi = {10.21105/joss.04644},
   url = {https://doi.org/10.21105/joss.04644},
   year = {2022},
