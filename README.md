@@ -6,6 +6,7 @@
 
 Cross-platform app to manage and edit scanning probe microscopy (SPM) images and spectra. *Under development.*
 
+
 Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra are supported.
 
 [Features](#features)  
@@ -13,6 +14,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
 [Cite](#cite)  
+[Case study](#real-world-case-study)  
 [Tips and tricks](#tips-and-tricks)  
 [Technical background](#technical-background)  
 [Third party libraries](#third-party-libraries-included)  
@@ -133,6 +135,10 @@ If you use the app for your scientific work, please consider citing it:
 ```
 
 > ### _You can stop reading here and start using the app now._
+
+## Real world case study
+
+![image](demo/cartoon.jpg?raw=true)
 
 ## Tips and tricks
 
