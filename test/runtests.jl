@@ -13,14 +13,15 @@ include("results.jl")
 include("functions.jl")
 
 
-FNAME_odp = "test_presentation.odp"
-DIR_db_old = "old_db/"
-DIR_data = "data/"
-DIR_cache = "data/_spmimages_cache"
+# need to be global, so we can call it from within the main SpmImageTycoon module (for tests of the compiled version)
+global FNAME_odp = "test_presentation.odp"
+global DIR_db_old = "old_db/"
+global DIR_data = "data/"
+global DIR_cache = "data/_spmimages_cache"
 
-timings = OrderedDict{String, Float64}()
+global timings = OrderedDict{String, Float64}()
 
-timings["import"] = t1 - t0
+global timings["import"] = t1 - t0
 
 @testset "Parse directory" begin
     delete_files()

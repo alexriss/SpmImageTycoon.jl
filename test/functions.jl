@@ -1,11 +1,13 @@
 """Delete old files."""
-function delete_files(i = 1)::Nothing
+function delete_files(i::Int=1; dir_cache::String="", fname_odp::String="")::Nothing
+    dir_cache_ = (dir_cache == "") ? DIR_cache : dir_cache
+    fname_odp_ = (fname_odp == "") ? FNAME_odp : fname_odp
     try
-        if isdir(DIR_cache)
-            rm(DIR_cache, recursive=true)
+        if isdir(dir_cache_)
+            rm(dir_cache_, recursive=true)
         end
-        if isfile(FNAME_odp)
-            rm(FNAME_odp)
+        if isfile(fname_odp_)
+            rm(fname_odp_)
         end
         if i > 1
             println(" ok.")
@@ -106,43 +108,48 @@ function selector(id::String)::String
 end
 
 """Get window.items from js."""
-function get_items(sleeptime=1.)
+function get_items(sleeptime::Real=1.; window=nothing)
+    w_ = isnothing(window) ? w : window
     sleep(sleeptime)
-    return @js w window.items
+    return @js w_ window.items
 end
 
 """Sends a key-press to js. Also modifiers can be included. E.g. `ctrl-a` or `ctrl-shift-a`."""
-function send_key(k::String)
+function send_key(k::String; window=nothing)
+    w_ = isnothing(window) ? w : window
     s = split(k, "-")
     k = s[end]
     modifiers = s[1:end-1]
-    @js w test_press_key($k, $modifiers)
+    @js w_ test_press_key($k, $modifiers)
     sleep(0.1)
 end
 
 """Sends a key-press to js. Also modifiers can be included. E.g. `ctrl-a` or `ctrl-shift-a`."""
-function send_key(k::AbstractArray)
+function send_key(k::AbstractArray; window=nothing)
     for k_ in k
-        send_key(k_)
+        send_key(k_; window=window)
     end
 end
 
 """Sends a mouse click to all elements set by the css selector."""
-function send_click(sel::String)
-    @js w test_click_mouse($sel)
+function send_click(sel::String; window=nothing)
+    w_ = isnothing(window) ? w : window
+    @js w_ test_click_mouse($sel)
     sleep(0.2)
 end
 
 """Sends a double-click to all elements set by the css selector.
 Does not seem to work so well."""
-function send_double_click(sel::String)
-    @js w test_dblclick_mouse($sel)
+function send_double_click(sel::String; window=nothing)
+    w_ = isnothing(window) ? w : window
+    @js w_ test_dblclick_mouse($sel)
     sleep(0.2)
 end
 
 """Hovers the mouse over all elements set by the css selector."""
-function send_hover_mouse(sel::String)
-    @js w test_hover_mouse($sel)
+function send_hover_mouse(sel::String; window=nothing)
+    w_ = isnothing(window) ? w : window
+    @js w_ test_hover_mouse($sel)
     sleep(0.2)
 end
 
