@@ -311,10 +311,13 @@ function event_handlers() {
 
     // menu
     document.getElementById('nav_home').addEventListener('click', (e) => {
-        if (get_view() == "start") {
-            return;
+        if (get_view() == "start" && e.ctrlKey) {
+            toggle_start_project("re-project");
+        } else if (get_view() == "grid") {
+            toggle_start_project("start", true);
+        } else {
+            standard_view();
         }
-        standard_view();
     });
     document.getElementById('nav_help').addEventListener('click', (e) => {
         toggle_help();
