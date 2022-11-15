@@ -4,7 +4,7 @@ keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunnelin
 license = "GPLv3"
 desc = "Organize scanning probe microscopy images and spectra"
 authors = ["Alex Riss"]
-version = "0.3.9"
+version = "0.3.10"
 
 [deps]
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
@@ -20,10 +20,12 @@ JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 NaturalSort = "c020b1a1-e9b0-503a-9c33-f039bfc54a85"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+SnoopPrecompile = "66db9d55-30c0-4569-8b51-7e840670fc0c"
 SpmImages = "a5d333f8-9588-4c9f-ac4d-4583361e1fcb"
 SpmSpectroscopy = "9ab0b2fc-e013-4186-b0b9-58e9a8cad668"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
@@ -38,11 +40,12 @@ JLD2 = "^0.4"
 JSON = "^0.21"
 Mustache = "^1.0"
 NaturalSort = "^1.0"
-SpmImages = "^0.2"
+SnoopPrecompile = "^1.0"
+SpmImages = "^0.3"
 SpmSpectroscopy = "^0.5"
 StatsBase = "^0.33"
 ZipFile = "^0.10"
-julia = "^1.7"
+julia = "^1.8"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
