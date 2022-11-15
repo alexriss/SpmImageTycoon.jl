@@ -1,5 +1,3 @@
-__precompile__()
-
 module SpmImageTycoon
 
 using Blink
@@ -13,6 +11,7 @@ using ImageIO
 using JLD2
 using JSON
 using NaturalSort
+using SnoopPrecompile
 using SpmImages
 using SpmSpectroscopy
 using StatsBase
@@ -572,7 +571,7 @@ end
 
 
 """Loads images in specific directory"""
-function load_directory(dir_data::String, w::Window)
+function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothing
     # parse images etc
     global cancel_sent = false  # user might send cancel during the next step
 
@@ -580,7 +579,7 @@ function load_directory(dir_data::String, w::Window)
     global memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
     global memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
 
-    griditems, _ = parse_files(dir_data, w)
+    griditems, _ = parse_files(dir_data, w, output_info=output_info)
     bottomleft, topright = get_scan_range(griditems)
     if cancel_sent
         msg = "Cancelled loading $dir_data"
@@ -617,6 +616,7 @@ end
 
 """Start the main GUI and loads images from dir_data (if specified)"""
 function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool=true)::Union{Window,Nothing}
+    global exit_tycoon = false
     file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
@@ -670,9 +670,9 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     @js w require("electron").remote.getCurrentWindow().show()
 
     if keep_alive
-        while !exit_tycoon
+        while active(w) && !exit_tycoon
             yield()
-            sleep(0.05)
+            sleep(0.1)
         end
     end
     if return_window
@@ -683,20 +683,99 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 end
 
 
-"""Used to force some precompilations - quite hacky"""
-function __init__()::Nothing
-    fname = joinpath(@__DIR__ , "../test/data/Z-Spectroscopy420.dat")
-    load_spectrum(fname);
-    fname = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
-    load_image(fname, output_info=0);
-    return nothing
+@precompile_setup begin
+    global Precompiling = true
+    fname_spec = joinpath(@__DIR__ , "../test/data/Z-Spectroscopy420.dat")
+    fname_img = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
+    DIR_db_old = joinpath(@__DIR__ , "../test/data/old_db/")
+    DIR_data = joinpath(@__DIR__ , "../test/data/")
+    FNAME_odp = joinpath(@__DIR__ , "../test/test_presentation.odp")
+    file_GUI = path_asset("GUI.html")
+    dir_asset = path_asset("");
+    dir_asset_external = path_asset("external/");
+    asset_files = vcat(readdir(dir_asset, join=true), readdir(dir_asset_external, join=true))
+    versions = Dict{String,String}(
+        "SpmImageTycoon" => string(VERSION),
+        "SpmImages" => string(SpmImages.VERSION),
+        "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
+    )
+    include(joinpath(@__DIR__ , "../test/functions.jl"))
+
+
+    @precompile_all_calls begin
+        spec = load_spectrum(fname_spec)
+        ima = load_image(fname_img, output_info=0)
+        df = get_channel(ima, "Frequency shift")
+        SpmImages.correct_background(df.data, line_average)
+        SpmImages.correct_background(df.data, line_linear_fit)
+        SpmImages.correct_background(df.data, vline_average)
+        SpmImages.correct_background(df.data, vline_linear_fit)
+        SpmImages.correct_background(df.data, plane_linear_fit)
+        d = SpmImages.correct_background(df.data, SpmImages.subtract_minimum)
+        normalize01!(d)
+        clamp01nan!(d)
+
+        SpmImageTycoon.load_all(DIR_db_old, nothing)
+
+        # we need to make it global for the test-functions below (send_click)
+        w = Window(
+            Dict(
+                "webPreferences" => Dict("webSecurity" => false),
+                :transparent => true,
+                :frame => false,
+                :titleBarStyle => "hidden",
+                :show => false
+            )
+        )
+        # @js w require("electron").remote.getCurrentWindow().hide()
+        # @js w require("electron").remote.getCurrentWindow().setIgnoreMouseEvents(true)
+
+        load_config()
+        if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
+            generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
+        end
+        load!(w, file_GUI)
+        filter!(
+            x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
+            asset_files
+        )
+        for asset_file in asset_files
+            load!(w, asset_file)
+        end
+        @js w set_params($dir_asset, 0, 100)
+
+        @js w load_page($versions)
+        @js w show_start()
+   
+        set_event_handlers_basic(w)
+
+        delete_files(;dir_cache=get_dir_cache(DIR_data), fname_odp=FNAME_odp)
+        load_directory(abspath(DIR_data), w, output_info=0)
+
+        selected = ["Image_004.sxm"]
+        sel = selector(selected)
+        send_hover_mouse(sel, window=w)
+
+        @js w get_image_info("Image_004.sxm")
+
+        selected = ["Image_002.sxm", "Image_004.sxm"]
+        sel = selector(selected)
+        send_click(sel, window=w)
+        send_key(["b", "b", "b", "b", "b", "c", "c", "i", "p"], window=w)
+    
+        items = get_items(window=w)
+    end
 end
-precompile(__init__, ())
 
 
 """Entry point for sysimage/binary created by PackageCompiler.jl"""
 function julia_main()::Cint
-    tycoon()
+    if "--test" in ARGS
+        cd(joinpath(@__DIR__ , "../test/"))
+        include(joinpath(@__DIR__ , "../test/runtests.jl"))
+    else
+        tycoon()
+    end
     return 0
 end
 
