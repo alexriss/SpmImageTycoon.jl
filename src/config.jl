@@ -253,6 +253,7 @@ end
 """saves config to file"""
 function save_config(new_directory::String="")::Nothing
     isdefined(Main, :Test) && return nothing  # we do not save config in test environment
+    isdefined(Main, :Precompiling) && return nothing  # we do not save config during precompilation
 
     if !isdir(joinpath(homedir(), config_dir))
         mkpath(joinpath(homedir(), config_dir))
