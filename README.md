@@ -177,7 +177,7 @@ The following javascript and css libraries are included in the app:
 
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 [![Coverage](https://codecov.io/gh/alexriss/SpmImageTycoon.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alexriss/SpmImageTycoon.jl)
-[![SpmImageTycoon Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/SpmImageTycoon)]()
+[![SpmImageTycoon Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/SpmImageTycoon)](https://pkgs.genieframework.com/?packages=SpmImageTycoon)
 
 ## Get in touch and contribute
 
