@@ -4,8 +4,7 @@
 
 # SpmImage Tycoon
 
-Cross-platform app to manage and edit scanning probe microscopy (SPM) images and spectra. *Under development.*
-
+Cross-platform app to manage and edit scanning probe microscopy (SPM) images and spectra.
 
 Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra are supported.
 
@@ -178,6 +177,7 @@ The following javascript and css libraries are included in the app:
 
 [![Build Status](https://github.com/alexriss/SpmImageTycoon.jl/workflows/CI/badge.svg)](https://github.com/alexriss/SpmImageTycoon.jl/actions)
 [![Coverage](https://codecov.io/gh/alexriss/SpmImageTycoon.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alexriss/SpmImageTycoon.jl)
+[![SpmImageTycoon Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/SpmImageTycoon)]()
 
 ## Get in touch and contribute
 
