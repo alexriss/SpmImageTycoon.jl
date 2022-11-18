@@ -14,7 +14,7 @@ global script
 */
 Menu Tray, NoStandard
 Menu Tray, Icon
-Menu Tray, Icon, logo_diamond.ico
+Menu Tray, Icon, SpmImageTycoon.ico
 Menu Tray, Add, Show / Hide, TrayClick
 Menu Tray, Add, Close, CloseItem
 Menu Tray, Default, Show / Hide
