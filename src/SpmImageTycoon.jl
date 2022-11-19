@@ -689,6 +689,7 @@ end
     fname_img = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
     DIR_db_old = joinpath(@__DIR__ , "../test/data/old_db/")
     DIR_data = joinpath(@__DIR__ , "../test/data/")
+    DIR_cache = get_dir_cache(DIR_data) 
     FNAME_odp = joinpath(@__DIR__ , "../test/test_presentation.odp")
     file_GUI = path_asset("GUI.html")
     dir_asset = path_asset("");
@@ -749,7 +750,7 @@ end
    
         set_event_handlers_basic(w)
 
-        delete_files(;dir_cache=get_dir_cache(DIR_data), fname_odp=FNAME_odp)
+        delete_files(;dir_cache=DIR_cache, fname_odp=FNAME_odp)
         load_directory(abspath(DIR_data), w, output_info=0)
 
         selected = ["Image_004.sxm"]
