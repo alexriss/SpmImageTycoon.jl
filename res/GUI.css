@@ -27,7 +27,13 @@ body {
   white-space: nowrap;
 }
 
-@media only screen and (max-height: 1120px) {
+@media only screen and (max-height: 960px) {
+  #footer_citation {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 900px) {
   #footer_citation {
     display: none;
   }
