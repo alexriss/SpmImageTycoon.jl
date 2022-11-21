@@ -96,6 +96,8 @@ griditems_last_saved = 0.  # time of last save of griditems
 griditems_last_changed = 0.  # time of last (potential) change of griditems - we do not keep track of actual changes, but only if certain events happen
 griditems_lock = ReentrantLock()
 
+Precompiling = false
+
 
 """sets keywords"""
 function set_keywords!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, mode::String, keywords::Vector{String})
@@ -616,7 +618,9 @@ end
 
 """Start the main GUI and loads images from dir_data (if specified)"""
 function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool=true)::Union{Window,Nothing}
+    global Precompiling = false
     global exit_tycoon = false
+    
     file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict("webSecurity" => false),  # to load local files
