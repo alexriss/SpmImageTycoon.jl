@@ -522,8 +522,10 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         # indicate progress
         if num_parsed % show_load_progress_every == 0
             if w !== nothing
-                progress = ceil(num_parsed / length(datafiles) * 100)
-                @js_ w page_start_load_progress($progress)
+                prog1 = num_parsed / length(datafiles)
+                prog100 = ceil(prog1 * 100)
+                @js_ w page_start_load_progress($prog100)
+                Blink.progress(w, prog1)
             end
         end
 
@@ -611,6 +613,8 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
 
     save_config(dir_data)  # set and save new last dirs
     @js_ w set_last_directories($last_directories)
+
+    Blink.progress(w, -1)
 
     return nothing
 end
