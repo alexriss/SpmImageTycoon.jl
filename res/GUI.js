@@ -408,6 +408,14 @@ function imagezoom_size_adjust() {
             el_img.classList.remove("fullwidth");
             el_img.classList.add("fullheight");
         }
+
+        // when maximizing, there is sometimes a glitch where the image size has a wrong ratio
+        let w_img_curr = el_img.clientWidth;
+        let h_img_curr = el_img.clientHeight;
+        if (Math.abs(w_img/h_img - w_img_curr/h_img_curr) > 0.05) {
+            el_img.style.opacity = 0.999;
+            setTimeout(() => { el_img.style.opacity = '' }, 50);
+        }
     }
     if (window.line_profile_object !== null) {
         window.line_profile_object.setup();  // will set up size of canvas
