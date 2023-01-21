@@ -2,10 +2,10 @@
 
 function load_page(versions) {
     // loads the page contents
-    const nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
-    const link = nodes[nodes.length - 1];
-    document.body.innerHTML = link.import.querySelector('body').innerHTML;
-    link.remove();  // remove this node, we wont need it anymore
+    const nodes = document.querySelectorAll('div.htmlimport');  // blink.jl loads it into an html import
+    const last = nodes[nodes.length - 1];
+    document.body.innerHTML = last.innerHTML;
+    last.remove();  // remove this node, we wont need it anymore
 
     // set version numbers in about-modal
     window.versions = versions;
@@ -735,4 +735,10 @@ function load_directory(directory) {
     
     Blink.msg("load_directory", directory);
 }
+
+function toggle_dev_tools() {
+    // toggles dev tools
+    Blink.msg("devtools", []);
+}
+
 

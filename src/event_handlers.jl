@@ -306,5 +306,15 @@ function set_event_handlers_basic(w::Window)
         println("debug: " * string(args))
     end
 
+    handle(w, "devtools") do args
+        tools(w)
+    end
+
+    handle(w, "send_input_event") do args
+        iev = Dict("type" => args[1], "x" => args[2], "y" => args[3])
+        Blink.AtomShell.@dot w webContents.sendInputEvent($iev)
+    end
+
+
     return nothing
 end

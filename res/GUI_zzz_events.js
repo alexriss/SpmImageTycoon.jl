@@ -332,10 +332,9 @@ function event_handlers() {
     });
 
     // on close
-    require('electron').remote.getCurrentWindow().on('close', (e) => {
+    window.addEventListener('beforeunload', (e) => {
         save_all(true);
-        return false;
-    });
+    })
 
     // auto-save every n minutes
     if (window.auto_save_minutes > 0) {
@@ -412,7 +411,6 @@ function event_handlers_clipboard() {
     }
 
     for (const [key, func] of Object.entries(els)) {
-        console.log(key);
         document.getElementById(key).addEventListener('dblclick', (e) => {
             if (window.image_info_id != "") {
                 const el = window.items[window.image_info_id];

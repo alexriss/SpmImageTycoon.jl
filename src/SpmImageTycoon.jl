@@ -9,6 +9,7 @@ using Dates
 using Images
 using ImageIO
 using JLD2
+using JSExpr
 using JSON
 using NaturalSort
 using SnoopPrecompile
@@ -574,6 +575,31 @@ function log(msg::AbstractString, w::Union{Window,Nothing}; new_line::Bool=true)
 end
 
 
+"""loads html from a file into a div.htmlimport - this is then loaded into the document body by the js function `load_page`"""
+function loadhtml!(w, url; async=false)
+    expr = JSExpr.@js begin
+        fetch($url).
+        then(response -> begin
+            return response.text()
+        end).
+        then(text -> begin
+            @var el = document.createElement("div")
+            el.style.display = "none"
+            el.className = "htmlimport"
+            el.innerHTML = text
+            document.body.appendChild(el)
+        end).
+        catch(error -> console.log(error))
+    end
+
+    if async
+        Blink.js(w, expr, callback=false)
+    else
+        Blink.js(w, expr, callback=true)
+    end
+end
+
+
 """Loads images in specific directory"""
 function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothing
     # parse images etc
@@ -627,13 +653,17 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     
     file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
-        "webPreferences" => Dict("webSecurity" => false),  # to load local files
+        "webPreferences" => Dict(
+            "webSecurity" => false,  # to load local files
+            "nodeIntegration" => true,  # for require("..") within the renderer process
+            "contextIsolation" => false  # for require("..") within the renderer process
+        ),
         "title" => "SpmImage Tycoon",
         "icon" => file_logo,
     ))
-    @js w require("electron").remote.getCurrentWindow().setMenuBarVisibility(false)
-    @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
-    @js w require("electron").remote.getCurrentWindow().maximize()
+    Blink.AtomShell.@dot w setMenuBarVisibility(false)
+    Blink.AtomShell.@dot w setIcon($file_logo)
+    Blink.AtomShell.@dot w maximize()
 
     load_config()
     if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
@@ -642,7 +672,8 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 
     # load main html file
     file_GUI = path_asset("GUI.html")
-    load!(w, file_GUI)
+    # load!(w, file_GUI)
+    loadhtml!(w, file_GUI)
 
     # load all .css and .js asset files
     dir_asset = path_asset("");
@@ -675,7 +706,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     end
     
     # bring window to front
-    @js w require("electron").remote.getCurrentWindow().show()
+    Blink.AtomShell.@dot w show()
 
     if keep_alive
         while active(w) && !exit_tycoon
@@ -729,21 +760,25 @@ end
         # we need to make it global for the test-functions below (send_click)
         w = Window(
             Dict(
-                "webPreferences" => Dict("webSecurity" => false),
+                "webPreferences" => Dict(
+                    "webSecurity" => false,
+                    "nodeIntegration" => true,
+                    "contextIsolation" => false
+                ),
                 :transparent => true,
                 :frame => false,
                 :titleBarStyle => "hidden",
                 :show => false
             )
         )
-        # @js w require("electron").remote.getCurrentWindow().hide()
-        # @js w require("electron").remote.getCurrentWindow().setIgnoreMouseEvents(true)
+        # Blink.AtomShell.@dot w hide()
+        # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
         load_config()
         if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
             generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
         end
-        load!(w, file_GUI)
+        loadhtml!(w, file_GUI)
         filter!(
             x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
             asset_files

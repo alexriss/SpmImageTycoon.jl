@@ -35,7 +35,7 @@ function test_dblclick_mouse(selector) {
         const rect = el.getBoundingClientRect();
         const posx = rect.left + 1;
         const posy = rect.top + 1;
-        require("electron").remote.getCurrentWebContents().sendInputEvent({type: 'mouseMove', x: posx, y: posy});
+        Blink.msg("send_input_event", ["mouseMove", posx, posy])
         el.dispatchEvent(event);
     });
 }
@@ -53,7 +53,7 @@ function test_hover_mouse(selector) {
         const rect = el.getBoundingClientRect();
         const posx = rect.left + 5;
         const posy = rect.top + 5;
-        require("electron").remote.getCurrentWebContents().sendInputEvent({type: 'mouseMove', x: posx, y: posy});
+        Blink.msg("send_input_event", ["mouseMove", posx, posy])
         el.dispatchEvent(event);
 
         // check if `hover` worked

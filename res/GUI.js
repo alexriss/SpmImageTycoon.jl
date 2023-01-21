@@ -174,11 +174,6 @@ function toggle_error() {
     }
 }
 
-function toggle_dev_tools() {
-    // toggles dev tools
-    require('electron').remote.getCurrentWindow().toggleDevTools();
-}
-
 function toggle_start_project(target="project", save=false) {
     // toggles between project page and start page
     if (target == "re-project") {  // undo close project
