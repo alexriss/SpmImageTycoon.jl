@@ -261,7 +261,11 @@ function save_config(new_directory::String="")::Nothing
 
     if new_directory != ""
         filter!(x -> x != new_directory, last_directories)
-        pushfirst!(last_directories, new_directory)
+        if length(last_directories) == 0
+            global last_directories = String[new_directory]
+        else
+            pushfirst!(last_directories, new_directory)
+        end
         while length(last_directories) > last_directories_max
             pop!(last_directories)
         end
