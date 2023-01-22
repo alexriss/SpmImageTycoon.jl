@@ -140,19 +140,22 @@ end
     selected = ["Image_695.sxm"]
     sel = selector(selected)
     send_hover_mouse(sel)
+    # send clicks twice, to select and de-select (hover does not seem to work on github actions)
+    send_click(sel)
+    send_click(sel)
 
-    ids = @js w = get_active_element_ids()
+    ids = @js w  get_active_element_ids()
     id_curr = @js w get_active_element_ids(only_current=true)
     @show ids
     @show id_curr
 
     send_key(["ctrl-c"])
 
-    ids = @js w = get_active_element_ids()
+    ids = @js w get_active_element_ids()
     id_curr = @js w get_active_element_ids(only_current=true)
     @show ids
     @show id_curr
-    
+
     copy_from = @js w window.last_copy_from
     @test copy_from == ""
 
