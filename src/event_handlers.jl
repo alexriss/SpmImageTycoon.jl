@@ -200,11 +200,16 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                     ]
                 )
 
-                filename_export = @js shell(w) require("electron").dialog.showSaveDialogSync(windows[$(w.id)], $options)
-                if !isnothing(filename_export)
-                    @js_ w export_start($ids, $(filename_export))
-                    export_odp(ids, dir_data, griditems, filename_export)
+                if length(args) == 3  # filename is directly given, used for tests
+                    export_odp(ids, dir_data, griditems, args[3])
                     @js_ w exported()
+                else
+                    filename_export = @js shell(w) require("electron").dialog.showSaveDialogSync(windows[$(w.id)], $options)
+                    if !isnothing(filename_export)
+                        @js_ w export_start($ids, $(filename_export))
+                        export_odp(ids, dir_data, griditems, filename_export)
+                        @js_ w exported()
+                    end
                 end
             catch e
                 if (:msg in fieldnames(typeof(e)))  # this is often a file-busy error
