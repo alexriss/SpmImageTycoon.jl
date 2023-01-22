@@ -576,27 +576,20 @@ end
 
 
 """loads html from a file into a div.htmlimport - this is then loaded into the document body by the js function `load_page`"""
-function loadhtml!(w, url; async=false)
-    expr = JSExpr.@js begin
-        fetch($url).
-        then(response -> begin
-            return response.text()
-        end).
-        then(text -> begin
-            @var el = document.createElement("div")
-            el.style.display = "none"
-            el.className = "htmlimport"
-            el.innerHTML = text
-            document.body.appendChild(el)
-        end).
-        catch(error -> console.log(error))
+function loadhtml!(w::Window,  fname::String)
+    s = open(fname) do file
+        read(file, String)
     end
 
-    if async
-        Blink.js(w, expr, callback=false)
-    else
-        Blink.js(w, expr, callback=true)
+    expr = JSExpr.@js begin
+        @var el = document.createElement("div")
+        el.style.display = "none"
+        el.className = "htmlimport"
+        el.innerHTML = $s
+        document.body.appendChild(el)
     end
+
+    Blink.js(w, expr, callback=true)
 end
 
 
@@ -674,7 +667,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     file_GUI = path_asset("GUI.html")
     # load!(w, file_GUI)
     loadhtml!(w, file_GUI)
-
+    
     # load all .css and .js asset files
     dir_asset = path_asset("");
     dir_asset_external = path_asset("external/");
@@ -686,14 +679,14 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     for asset_file in asset_files
         load!(w, asset_file)
     end
-
+    
     # get versions
     versions = Dict{String,String}(
         "SpmImageTycoon" => string(VERSION),
         "SpmImages" => string(SpmImages.VERSION),
         "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
     )
-
+            
     @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images)
     @js w set_last_directories($last_directories)
     @js w load_page($versions)
@@ -743,6 +736,7 @@ end
 
 
     @precompile_all_calls begin
+        return 0
         spec = load_spectrum(fname_spec)
         ima = load_image(fname_img, output_info=0)
         df = get_channel(ima, "Frequency shift")
