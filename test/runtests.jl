@@ -155,7 +155,7 @@ end
 
     send_key(["ctrl-v"])
 
-    # nothing should happen because the initial selection were two images (copy only workls from one image)
+    # nothing should happen because the initial selection were two images (copy only works from one image)
     items = get_items()
     @test compare_dicts(items, items4)
 

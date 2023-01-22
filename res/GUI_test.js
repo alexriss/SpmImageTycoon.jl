@@ -61,6 +61,8 @@ function test_hover_mouse(selector) {
         if (elHover != el) { // didn't work, we set `image_info_id` manually - bit hacky
             window.image_info_id = el.id;
         }
+        // set it anyways - it does not seem to work under some circumstances
+        window.image_info_id = el.id;
     });
 }
 
