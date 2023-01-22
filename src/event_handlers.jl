@@ -189,10 +189,23 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
             end
         elseif what == "export_odp"
             lock(l)
-            filename_export = args[3]
             try
-                export_odp(ids, dir_data, griditems, filename_export)
-                @js_ w exported()
+                options = Dict(
+                    "title" => "Export as OpenDocument Presentation",
+                    "defaultPath" => dir_data,  # we could specify a filename here
+                    "buttonLabel" => "Export",
+                    "filters" => [
+                        Dict("name" => "OpenDocument Presentations", "extensions" => ["odp"]),
+                        Dict("name" => "All Files", "extensions" => ["*"])
+                    ]
+                )
+
+                filename_export = @js shell(w) require("electron").dialog.showSaveDialogSync(windows[$(w.id)], $options)
+                if !isnothing(filename_export)
+                    @js_ w export_start($ids, $(filename_export))
+                    export_odp(ids, dir_data, griditems, filename_export)
+                    @js_ w exported()
+                end
             catch e
                 if (:msg in fieldnames(typeof(e)))  # this is often a file-busy error
                     msg = string(e.msg)
@@ -261,7 +274,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                     saved = true
                 end
             end
-            @js_ w saved_all($saved)
+            !exit_tycoon && @js_ w saved_all($saved)
         catch e
             error(e, w)
         finally
@@ -281,10 +294,37 @@ end
 function set_event_handlers_basic(w::Window)
     l = ReentrantLock()  # not sure if it is necessary to do it here, but it should be safer this way
 
-    handle(w, "load_directory") do arg
+    handle(w, "select_directory") do args
         lock(l)
         try
-            dir = abspath(arg)
+            options = Dict(
+                "title" => "Load images from folder",
+                "properties" => ["openDirectory"],
+                "multiSelections" => false,
+                "defaultPath" => args[1],
+                "buttonLabel" => "Open folder",
+                # "filters" => [
+                #     {"name" => 'Nanonis SPM images', "extensions" => ['sxm']},
+                #     {"name" => 'All Files', "extensions" => ['*']}
+                # ]
+            )
+            sel = @js shell(w) require("electron").dialog.showOpenDialogSync(windows[$(w.id)], $options)
+            if !isnothing(sel) && length(sel) > 0
+                dir = sel[1]
+                # use async, so that the lock is released later and the sunsequent functions/handlers can be called
+                @js_ w load_directory($dir)
+            end
+        catch e
+            error(e, w)
+        finally
+            unlock(l)
+        end
+    end
+
+    handle(w, "load_directory") do args
+        lock(l)
+        try
+            dir = abspath(args[1])
             if !isdir(dir)
                 msg = "Cannot open directory $dir"
                 @js_ w page_start_load_error($msg)

@@ -397,6 +397,18 @@ function saved_all(saved) {
     open_jobs(-1);
 }
 
+function export_start(ids, fname) {
+    // julia starts exporting a presentation
+    open_jobs(1);
+    let plural_s = "";
+    if (ids.length > 1) {
+        plural_s = "s";
+    }
+    const str_num_files = "" + ids.length + " file" + plural_s;
+    console.log("Export " + str_num_files + " to " + fname);
+    show_message("export " + str_num_files + " to presentation.")
+}
+
 function exported() {
     // exported presentation
     open_jobs(-1);
@@ -436,35 +448,6 @@ function page_start_load_error(message) {
     el_error_message.innerText = message;
     el_error.classList.remove("is-hidden");
     el_error.classList.add("bounce");
-}
-
-function select_directory() {
-    // select directory - open dialog
-    if (get_view() != "start") {
-        return;
-    }
-    const {remote} = require('electron');
-    const dialog = remote.dialog;
-    const win = remote.getCurrentWindow();
-    let options = {
-        title: "Load images from folder",
-        properties: ['openDirectory'],
-        multiSelections: false,
-        defaultPath : window.dir_data,
-        buttonLabel : "Open folder",
-        // filters :[
-        //  {name: 'Nanonis SPM images', extensions: ['sxm']},
-        //  {name: 'All Files', extensions: ['*']}
-        // ]
-    }
-    let directory = dialog.showOpenDialog(win, options);
-    if (directory !== undefined) {
-        if (Array.isArray(directory))
-            load_directory(directory[0]);
-        else {
-            load_directory(directory[0]);
-        }
-    }
 }
 
 function header_data(json) {
@@ -672,35 +655,9 @@ function export_to(what) {
     if (get_view() != "grid") {
         return;
     }
-
-    console.log("Export to " + what);
     let ids = get_active_element_ids(only_current=false, all_visible_if_none_selected=true);
-
     if (ids.length > 0) {
-        const {remote} = require('electron');
-        const dialog = remote.dialog;
-        const win = remote.getCurrentWindow();
-        let options = {
-            title: "Export as OpenDocument Presentation",
-            defaultPath : window.dir_data,  // we could specify a filename here
-            buttonLabel : "Export",
-            filters :[
-             {name: 'OpenDocument Presentations', extensions: ['odp']},
-             {name: 'All Files', extensions: ['*']}
-            ]
-        }
-        let filename = dialog.showSaveDialog(win, options)
-        console.log(filename)
-
-        if (filename !== undefined) {
-            Blink.msg("grid_item", ["export_odp", ids, filename]);
-            open_jobs(1);
-            let plural_s = "";
-            if (ids.length > 1) {
-                plural_s = "s";
-            }
-            show_message("export " + ids.length + " file" + plural_s + " to presentation.")
-        }
+        Blink.msg("grid_item", ["export_odp", ids]);
     }
 }
 
@@ -722,6 +679,14 @@ function send_cancel() {
     Blink.msg("cancel", []);
 }
 
+function select_directory() {
+    // select directory - open dialog
+    if (get_view() != "start") {
+        return;
+    }
+    Blink.msg("select_directory", [window.dir_data]);
+}
+
 function load_directory(directory) {
     // loads directory
     console.log("load directory: " + directory);
@@ -733,7 +698,7 @@ function load_directory(directory) {
     document.getElementById("page_start_progress_directory").innerText = directory;  // "/home/riss/awesome projects/2022/project 51/";
     document.getElementById("page_start_progress").classList.remove("is-hidden");
     
-    Blink.msg("load_directory", directory);
+    Blink.msg("load_directory", [directory]);
 }
 
 function toggle_dev_tools() {
