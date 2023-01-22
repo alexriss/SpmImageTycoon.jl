@@ -736,7 +736,7 @@ end
 
 
     @precompile_all_calls begin
-        return 0
+        global Precompiling = true
         spec = load_spectrum(fname_spec)
         ima = load_image(fname_img, output_info=0)
         df = get_channel(ima, "Frequency shift")
