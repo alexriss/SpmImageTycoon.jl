@@ -143,22 +143,12 @@ end
     send_hover_mouse(sel)
     sleep(0.5)
     # send clicks twice, to select and de-select (hover does not seem to work on github actions)
+    # also do the hover again
     send_click(sel)
     send_click(sel)
-
-    ids = @js w  get_active_element_ids()
-    id_curr = @js w get_active_element_ids(only_current=true)
-    @show ids
-    @show id_curr
-
     send_hover_mouse(sel)
+    sleep(0.5)
     send_key(["ctrl-c"])
-
-    ids = @js w get_active_element_ids()
-    id_curr = @js w get_active_element_ids(only_current=true)
-    @show ids
-    @show id_curr
-
     copy_from = @js w window.last_copy_from
     @test copy_from == ""
 
