@@ -137,9 +137,11 @@ end
     @test copy_from == "Image_004.sxm"
 
     # multiple selectec, but mouse not hovering on one of them - should not copy
+    sleep(0.5)
     selected = ["Image_695.sxm"]
     sel = selector(selected)
     send_hover_mouse(sel)
+    sleep(0.5)
     # send clicks twice, to select and de-select (hover does not seem to work on github actions)
     send_click(sel)
     send_click(sel)
@@ -149,6 +151,7 @@ end
     @show ids
     @show id_curr
 
+    send_hover_mouse(sel)
     send_key(["ctrl-c"])
 
     ids = @js w get_active_element_ids()
