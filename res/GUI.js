@@ -244,7 +244,7 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
     }
     
     // toggle the selected sidebar
-    if (sidebar.classList.contains("is-hidden") || show_sidebar) {
+    if (show_sidebar) {
         sidebar.classList.remove("is-hidden");
         if (what == "info") {
             get_image_info();  // update info of current or last image
@@ -264,19 +264,24 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
 function toggle_sidebar_imagezoomtools(restore_previous=false) {
     // toggles sidebar in imagezoom mode
     const sidebar = document.getElementById('sidebar_imagezoomtools');
+    const line_profile_container = document.getElementById("line_profile_container");
     const griditem = window.items[window.zoom_last_selected];
+    
+    if (get_view() == "zoom") {
+        if (griditem.type == "SpmGridImage") {
+            line_profile_container.classList.remove("is-hidden");
+        } else {
+            line_profile_container.classList.add("is-hidden");
+        }
+    }
 
     if (restore_previous && get_view() == "zoom") {
-        if (window.sidebar_imagezoomtools && griditem.type == "SpmGridImage") {
-            if (sidebar.classList.contains("is-hidden")) {
-                sidebar.classList.remove("is-hidden");
-            }
+        if (window.sidebar_imagezoomtools) {
+            sidebar.classList.remove("is-hidden");
         } else {
-            if (!sidebar.classList.contains("is-hidden")) {
-                sidebar.classList.add("is-hidden");
-            }
+            sidebar.classList.add("is-hidden");
         }
-    } else if (get_view() == "zoom" && griditem.type == "SpmGridImage") {
+    } else if (get_view() == "zoom") {
         if (sidebar.classList.contains("is-hidden")) {
             sidebar.classList.remove("is-hidden");
             window.sidebar_imagezoomtools = true;
@@ -285,10 +290,9 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
             window.sidebar_imagezoomtools = false;
         }
     } else {
-        if (!sidebar.classList.contains("is-hidden")) {
-            sidebar.classList.add("is-hidden");
-        }
+        sidebar.classList.add("is-hidden");
     }
+
     if (!sidebar.classList.contains("is-hidden") && window.line_profile_object !== null) {
         window.line_profile_object.setup();  // will set up or remove event handlers
     }

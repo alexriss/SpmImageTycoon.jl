@@ -23,11 +23,12 @@ Editing.prototype = {
         this.remove_options(el_ch2);
         const channels = extra_info.Channels.split(", ");
         if (item.type == "SpmGridSpectrum") {
+            let spec_channels = channels.filter(ch => !ch.endsWith(" [bwd]"));
             this.add_options(el_dir, window.directions_list["spectrum"], item.scan_direction);
-            this.add_options(el_bg, window.background_corrections["image"], item.background_correction);
-            this.add_options(el_ch, channels, item.channel_name);
+            this.add_options(el_bg, window.background_corrections["spectrum"], item.background_correction);
+            this.add_options(el_ch, spec_channels, item.channel_name);
             editing_entry_main_channel2_row.classList.remove("is-hidden");
-            this.add_options(el_ch2, channels, item.channel_name2);
+            this.add_options(el_ch2, spec_channels, item.channel2_name);
         } else if (item.type == "SpmGridImage") {
             let dir = (item.channel_name.endsWith(" bwd")) ? 1 : 0;
             let channel = item.channel_name.replace(" bwd", "");
