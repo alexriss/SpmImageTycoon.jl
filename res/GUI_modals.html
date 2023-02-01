@@ -1,0 +1,244 @@
+
+<!-- modal-keywords -->
+<div id="modal_keywords" class="modal">
+    <div class="modal-background" style="position:fixed;"></div>
+    <div id="modal_keywords_card" class="modal-card">
+      <header id="modal_keywords_header" class="modal-card-head">
+        <p class="modal-card-title is-size-6 has-text-weight-bold">Change keywords for <span id="modal_keywords_files"></span></p>
+        <div id="modal_keywords_mode_container" class="has-text-right pr-0 mr-0">
+          <button class="button is-static is-outline mr-0 pr-1" style="border:none;">Mode: </button>
+          <button id="modal_keywords_mode" class="button is-link is-light"></button>
+        </div>
+        <!-- <button class="delete" aria-label="close"></button> -->
+      </header>
+      <section class="modal-card-body">
+        <textarea id="modal_keywords_input"></textarea>
+   
+      </section>
+      <footer class="modal-card-foot">
+            <button id="modal_keywords_button_save" class="button is-success">
+              Save
+              <span id="modal_keywords_button_save_mode_container" class="is-italic has-text-grey-lighter ml-2">
+                (<span id="modal_keywords_button_save_mode"></span>)
+              </span>
+            </button>
+            <button id="modal_keywords_button_cancel" class="button">Cancel</button>
+      </footer>
+    </div>
+  </div>
+  
+  
+  <!-- modal-help -->
+  <div id="modal_help" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Help</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body" style="line-height:160%;">
+        <h1 class="title is-4">Grid view and zoom view</h1>
+        <p class="mb-3">The default view is <b class="has-text-weight-bold">grid
+            view.</b>
+  
+          Here you can hover the mouse over an image and change its properties using keyboard shortcuts (see below).
+  
+          Also you can select and un-select images by clicking on them.
+          To select a range of images hold the <span class="tag is-light p-2">shift</span>-key when clicking the mouse.
+        </p>
+  
+        <p class="mb-3">A <span class="tag is-light p-2">double-click</span> on an image will switch into <b
+            class="has-text-weight-bold">zoom view</b>. You can move forward
+          and backwards through images using the arrows keys
+          ( <span class="tag is-light p-2">&lt;</span> and <span class="tag is-light p-2">&gt;</span> ).
+          Use the mouse wheel to zoom in and out, <span class="tag is-light p-2">double-click</span> will reset the zoom.
+        </p>
+  
+        <p class="mb-3">
+          Click or drag the histogram or colorbar to change the display range of the image. Alternatively, you can directly specify the numerical values for the display range.
+          A <span class="tag is-light p-2">double-click</span> on this area will reset the values to show the full range.
+        </p>
+  
+        <p class="mb-3">Use <span class="tag is-light p-2">Escape</span>,
+          <span class="tag is-light p-2">z</span>,
+          or <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">double-click</span> to get back to
+          grid view.</p>
+  
+        <h1 class="title mt-6 is-4">Keyboard shortcuts</h1>
+        <ul style="line-height:210%">
+          <li>
+            <span class="tag is-light p-2">c</span> Cycle channel, cycle y channel for spectra (use <span class="tag is-light p-2">shift</span>-<span
+              class="tag is-light p-2">c</span> to
+            cycle backwards)
+          </li>
+          <li>
+            <span class="tag is-light p-2">y</span> Cycle channel, cycle y channel for spectra
+          </li>
+          <li>
+            <span class="tag is-light p-2">x</span> Cycle x channel <span class="tag is-info is-light">spectrum only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">d</span> Switch scan direction (backward/forward)
+          </li>
+          <li>
+            <span class="tag is-light p-2">b</span> Cycle background correction
+          </li>
+          <li>
+            <span class="tag is-light p-2">p</span> Cycle color palette <span class="tag is-info is-light">images only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">i</span> Invert color palette for images, invert direction for x and y axes for spectra
+          </li>
+          <li>
+            <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">R</span> Revert image/spectrum parameters.
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">c</span>, <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">v</span> Copy and paste image/spectrum parameters.
+          </li>
+          <li>
+            <span class="tag is-light p-2">k</span> Set keywords (opens dialog)
+          </li>
+          <li>
+            <span class="tag is-light p-2">0</span>-<span class="tag is-light p-2">5</span> Change rating to 0 to 5 stars
+          </li>
+          <li>
+            <span class="tag is-light p-2">&</span> Create virtual copy
+          </li>
+          <li>
+            <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">Del</span> Delete virtual copy
+          </li>
+          <li>
+            <span class="tag is-light p-2">a</span> Select all/none <span class="tag is-info is-light">grid view
+              only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">n</span> Select none <span class="tag is-info is-light">grid view
+              only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">m</span> Toggle side bar with image details
+          </li>
+          <li>
+            <span class="tag is-light p-2">f</span> Toggle side bar with filters
+          </li>
+          <li>
+            <span class="tag is-light p-2">t</span> Toggle side bar with measurement and line profile tools <span class="tag is-info is-light">zoom view only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">f</span> Parameter search
+          </li>
+          <li>
+            <span class="tag is-light p-2">z</span> Toggle zoom/grid view
+          </li>
+          <li>
+            <span class="tag is-light p-2">Escape</span> Back to grid view
+          </li>
+          <li>
+            <span class="tag is-light p-2">&larr;</span>, <span class="tag is-light p-2">&rarr;</span>
+            Next/previous image <span class="tag is-info is-light">zoom view only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">=</span> Toggle image interpolation <span class="tag is-info is-light">zoom view only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">&uarr;</span>, <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">&darr;</span>
+            Jump to selection (previous/next)<span class="tag is-info is-light">grid view only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">F5</span> Load new images
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">F5</span> Re-parse all images <span class="tag is-info is-light">grid view only</span>
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">s</span> Save all (in addition, all changes are automatically saved on close and auto-saved every few minutes)
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">e</span> Export OpenDocument presentation (can be directly opened by Microsoft PowerPoint)
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">e</span> Copy list of filenames to clipboard
+          </li>
+          <li>
+            <span class="tag is-light p-2">shift</span>-<span class="tag is-light p-2">e</span> Show file in explorer
+          </li>
+          <li>
+            <span class="tag is-light p-2">alt</span>-<span class="tag is-light p-2">e</span> Show image file in explorer
+          </li>
+          <li>
+            <span class="tag is-light p-2">ctrl</span>-<span class="tag is-light p-2">w</span> Close directory
+          </li>
+          <li>
+            <span class="tag is-light p-2">h</span>, <span class="tag is-light p-2">?</span> or
+            <span class="tag is-light p-2">F1</span> Show help
+          </li>
+        </ul>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success">Ok, groovy!</button>
+      </footer>
+    </div>
+  </div>
+  
+  
+  <!-- modal-about -->
+  <div id="modal_about" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">About</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body" style="line-height:160%;">
+        <h1 class="title is-4">SpmImage Tycoon</h1>
+        <p class="mb-3">An app to organize scanning probe microscopy (SPM) images and spectra. Currently, Nanonis
+          scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra are supported.
+        </p>
+        <p class="mb-3">
+          Developed by Alex Riss under the GPL-3.0 License. For more information visit the <a class="external" href="https://github.com/alexriss/SpmImageTycoon.jl">project page on github</a>.
+        </p>
+        <p class="mb-3">
+          If you like this software, please consider citing it: <br />
+          A. Riss. JOSS <b>7</b>, 4644 (2022) <span class="p-2 has-text-grey-light"> | </span><a class="external" href="https://doi.org/10.21105/joss.04644">https://doi.org/10.21105/joss.04644</a>
+        </p>
+        <p class="is-size-6 has-text-grey-light is-italic">
+          <b class="">Version information</b> 
+          (<a class="external" style="opacity:0.6;" href="https://github.com/alexriss/SpmImageTycoon.jl/releases">release notes</a>):
+          </br />
+          SpmImageTycoon: <span id="about_version_spmimagetycoon"></span>,
+          SpmImages: <span id="about_version_spmimages"></span>,
+          SpmSpectroscopy: <span id="about_version_spmspectroscopy"></span>
+        </p>
+       </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success">Ok, groovy!</button>
+        <button class="button is-success is-light" id="modal_about_check_update">Check for updates</button>
+        <span class="mlauto is-italic is-hidden" id="modal_about_no_new_version">No new version available.</span>
+        <span class="mlauto is-italic is-hidden" id="modal_about_unreleased_version">You are using a future version.</span>
+        <span class="mlauto is-italic is-hidden" id="modal_about_unknown_version">Check failed.</span>
+        <span class="mlauto is-italic is-hidden" id="modal_about_new_version">
+          <a class="external" href="https://github.com/alexriss/SpmImageTycoon.jl#update-an-existing-installation">Get new version.</a>
+        </span>
+      </footer>
+    </div>
+  </div>
+  
+  
+  <!-- modal-error -->
+  <div id="modal_error" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Something went wrong...</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body" style="line-height:160%;">
+        <h1 class="title is-4 mb-2">Error:</h1>
+        <p class="message">
+        </p>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success">Ok</button>
+      </footer>
+    </div>
+  </div>

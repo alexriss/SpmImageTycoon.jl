@@ -167,11 +167,12 @@ The program relies on
 
 The following javascript and css libraries are included in the app:
 
-- [tagify](https://github.com/yairEO/tagify): MIT License
-- [Simple-DataTables](https://github.com/fiduswriter/Simple-DataTables): LGPL License
 - [Bulma](https://bulma.io/): MIT License
 - [μPlot](https://github.com/leeoniya/uPlot): MIT License
 - [SelectionJS](https://github.com/Simonwep/selection): MIT License
+- [Simple-DataTables](https://github.com/fiduswriter/Simple-DataTables): LGPL License
+- [Sortable](https://github.com/SortableJS/Sortable): MIT License
+- [tagify](https://github.com/yairEO/tagify): MIT License
 
 ### Automated tests
 

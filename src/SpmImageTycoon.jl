@@ -391,6 +391,8 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
     extra_info = OrderedDict{String,String}()
     if griditem.type == SpmGridImage
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
+        extra_info["Channels"] = join(im_spm.channel_names, ", ")
+        extra_info["Units"] = join(im_spm.channel_units, ", ")
         return im_spm.header, extra_info
     elseif griditem.type == SpmGridSpectrum
         spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)  # no caching here
@@ -575,11 +577,26 @@ function log(msg::AbstractString, w::Union{Window,Nothing}; new_line::Bool=true)
 end
 
 
-"""loads html from a file into a div.htmlimport - this is then loaded into the document body by the js function `load_page`"""
-function loadhtml!(w::Window,  fname::String)
+"""Loads html from files and assembles into one file"""
+function read_html_files(fname::String)
     s = open(fname) do file
         read(file, String)
     end
+
+    ms = eachmatch(r"{{{([^}]*)}}}", s)
+    for m in ms
+        fname2 = m.captures[1]
+        s2 = read_html_files(path_asset(string(fname2)))
+        s = replace(s, m.match => s2)
+    end
+
+    return s
+end
+
+
+"""loads html from a file into a div.htmlimport - this is then loaded into the document body by the js function `load_page`"""
+function loadhtml!(w::Window,  fname::String)::Nothing
+    s = read_html_files(fname)
 
     expr = JSExpr.@js begin
         @var el = document.createElement("div")
@@ -590,6 +607,7 @@ function loadhtml!(w::Window,  fname::String)
     end
 
     Blink.js(w, expr, callback=true)
+    return nothing
 end
 
 
@@ -686,8 +704,16 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
         "SpmImages" => string(SpmImages.VERSION),
         "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
     )
-            
-    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images)
+    
+    bg_corrections = Dict(
+        "image" => keys(background_correction_list_image),
+        "spectrum" => keys(background_correction_list_spectrum)
+    )
+    directions_list = Dict(
+        "image" => Dict("0" => "forward", "1" => "backward"),
+        "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
+    )
+    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list)
     @js w set_last_directories($last_directories)
     @js w load_page($versions)
     @js w show_start()
@@ -750,8 +776,6 @@ end
         clamp01nan!(d)
 
         SpmImageTycoon.load_all(DIR_db_old, nothing)
-
-        # we need to make it global for the test-functions below (send_click)
         w = Window(
             Dict(
                 "webPreferences" => Dict(
@@ -772,6 +796,7 @@ end
         if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
             generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
         end
+        
         loadhtml!(w, file_GUI)
         filter!(
             x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),

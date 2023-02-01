@@ -1,0 +1,127 @@
+<div class="column sidebar is-narrow has-background-info-light p-2" id="sidebar_info">
+    <div id="sidebar_content_none">
+      <div class="columns is-mobile title is-size-6 mb-1 pb-1">
+        <div class="column">
+          <span>Image Data</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar_content is-hidden" id="sidebar_content">
+      <div id="image_info_title" class="columns is-mobile title is-size-6 mb-1 pb-1">
+        <div class="column abbreviate">
+          <span id="image_info_filename">Item Data</span>
+          <span id="image_info_virtual_copy" class="icon is-small" style="margin-left:-4px;margin-right:-4px;padding-top:3px;"><img style="opacity:0.4;height:80%;" src="media/virtual_copy.svg" /></span>
+        </div>
+        <div class="column has-text-left abbreviate">
+          <span id="image_info_channel_inverted">-</span><span id="image_info_channel_name" class="is-info"></span>
+        </div>
+        <div class="column has-text-right pl-0 pr-0 is-narrow" style="width:90px;">
+          <div class="rating">
+            <input type="radio" name="image_info_rating" class="rating__control screen-reader" id="image_info_rating_0" value="0" checked>
+            <input type="radio" name="image_info_rating" class="rating__control screen-reader" id="image_info_rating_1" value="1">
+            <input type="radio" name="image_info_rating" class="rating__control screen-reader" id="image_info_rating_2" value="2">
+            <input type="radio" name="image_info_rating" class="rating__control screen-reader" id="image_info_rating_3" value="3">
+            <input type="radio" name="image_info_rating" class="rating__control screen-reader" id="image_info_rating_4" value="4">
+            <input type="radio" name="image_info_rating" class="rating__control screen-reader" id="image_info_rating_5" value="5">
+            <label for="image_info_rating_0" class="rating__item">
+              &nbsp;
+              <span class="screen-reader">0</span>
+            </label>
+            <label for="image_info_rating_1" class="rating__item">
+              <svg class="rating__star">
+                <use xlink:href="#star"></use>
+              </svg>
+              <span class="screen-reader">1</span>
+            </label>
+            <label for="image_info_rating_2" class="rating__item">
+              <svg class="rating__star">
+                <use xlink:href="#star"></use>
+              </svg>
+              <span class="screen-reader">2</span>
+            </label>
+            <label for="image_info_rating_3" class="rating__item">
+              <svg class="rating__star">
+                <use xlink:href="#star"></use>
+              </svg>
+              <span class="screen-reader">3</span>
+            </label>
+            <label for="image_info_rating_4" class="rating__item">
+              <svg class="rating__star">
+                <use xlink:href="#star"></use>
+              </svg>
+              <span class="screen-reader">4</span>
+            </label>
+            <label for="image_info_rating_5" class="rating__item">
+              <svg class="rating__star">
+                <use xlink:href="#star"></use>
+              </svg>
+              <span class="screen-reader">5</span>
+            </label>	
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+            <symbol id="star" viewBox="0 0 26 28">
+              <path d="M26 10.109c0 .281-.203.547-.406.75l-5.672 5.531 1.344 7.812c.016.109.016.203.016.313 0 .406-.187.781-.641.781a1.27 1.27 0 0 1-.625-.187L13 21.422l-7.016 3.687c-.203.109-.406.187-.625.187-.453 0-.656-.375-.656-.781 0-.109.016-.203.031-.313l1.344-7.812L.39 10.859c-.187-.203-.391-.469-.391-.75 0-.469.484-.656.875-.719l7.844-1.141 3.516-7.109c.141-.297.406-.641.766-.641s.625.344.766.641l3.516 7.109 7.844 1.141c.375.063.875.25.875.719z"/>
+            </symbol>
+          </svg>
+        </div>
+      </div>
+      <div class="columns is-mobile abbreviate title is-size-6 mb-2 pb-0">
+        <div class="column abbreviate pt-0 pb-1">
+          <span class="is-size-7 has-text-weight-normal">
+            <span class="icon is-small img-icon"><img style="opacity:1.0;" src="media/tilted_plane.svg" /></span>
+            <span id="image_info_background_correction"></span>
+          </span>
+        </div>
+        <div class="column abbreviate has-text-left pt-0 pb-1">
+          <span id="image_info_xaxis_inverted">-</span><span id="image_info_scansize_or_xaxis" class="is-size-7 has-text-weight-normal mr-0"></span>
+          <span id="image_info_scan_direction_up" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="media/arrow-up.svg" /></span>
+          <span id="image_info_scan_direction_down" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="media/arrow-down.svg" /></span>
+        </div>
+        <div class="column abbreviate has-text-right is-narrow pl-0 pt-0 pb-0" style="width:90px;">
+          <span class="ml-2 is-size-7 has-text-weight-normal has-text-grey">
+            <span id="image_info_xaxis_clamped" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="media/clamped.svg" /></span>
+            <span id="image_info_angle_or_points"></span>
+          </span>
+        </div>
+      </div>
+      <div class="columns is-mobile abbreviate title is-size-6 mb-0 pb-0">
+        <div class="column abbreviate pt-0 pb-1">
+          <span class="is-size-7 has-text-weight-normal">
+            <span id="image_info_bias"></span>
+            <span id="image_info_bias_unit_prefix"></span>V
+          </span>
+        </div>
+        <div class="column abbreviate has-text-left pt-0 pb-1">
+          <span class="is-size-7 has-text-weight-normal">
+            <span id="image_info_z_feedback_setpoint_or_xaxis_range"></span>
+          </span>
+        </div>
+        <div class="column abbreviate has-text-right is-narrow pl-0 pt-0 pb-0" style="width:90px;">
+          <span class="ml-2 is-size-7 has-text-weight-normal has-text-grey">
+            <!-- <span class="icon is-small img-icon"><img style="opacity:0.7;width:80%;" src="media/colorwheel.svg" /></span> -->
+            <span id="image_info_colorscheme_clamped" class="icon is-small img-icon"><img style="opacity:0.4;height:80%;margin-top:-2px;" src="media/clamped.svg" /></span>
+            <span id="image_info_colorscheme_or_channels"></span>
+          </span>
+        </div>
+      </div>
+      <div id="sidebar_keywords_container" class="tags p-0 m-0 mt-1">
+        <template id="sidebar_keywords">
+          <span class="tag"></span>
+        </template>
+      </div>
+      <div id="table-container" class="table-container is-size-7">
+        <table id="image_info" class="table is-narrow is-hoverable is-size-7">
+          <colgroup>
+            <col style="width:35%;">
+            <col style="width:65%;">
+          </colgroup>
+          <thead class="is-size-7">
+            <tr>
+              <th>parameter</th>
+              <th data-sortable="false">value</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,207 @@
+<div class="column sidebar is-hidden is-narrow has-background-info-light p-2 unselectable" id="sidebar_filter">
+    <div class="sidebar_content">
+      <div id="image_info_title" class="columns is-mobile title is-size-6 mb-0 pb-0">
+        <div class="column abbreviate">
+          <span>Filter</span>
+        </div>
+        <div class="column has-text-left has-text-right">
+          <span id="filter_number_container"><span id="filter_number" class="is-info"></span></span>
+          <progress id="filter_progress" class="progress is-link" value="0" max="100"></progress>
+        </div>
+      </div>
+
+      <table id="sidebar_filter_table" class="table is-fullwidth is-size-7 mb-2 pd-0">
+        <tr>
+          <th>Rating</th>
+          <td>
+            <div class="columns">
+              <div class="column is-narrow pr-1">
+                <div class="select is-multiple">  <!-- the is-multiple removes the caret etc -->
+                <select class="pl-3 pr-3" id="filter_rating_comparator">
+                  <option value=">=">≥</option>
+                  <option value=">">&gt;</option>
+                  <option value="=">=</option>
+                  <option value="<">&lt;</option>
+                </select>
+                </div>
+              </div>
+              <div class="column pl-0 pr-1">
+                <div class="rating">
+                  <input type="radio" name="filter_rating" class="rating__control screen-reader" id="filter_rating_0" value="0" checked>
+                  <input type="radio" name="filter_rating" class="rating__control screen-reader" id="filter_rating_1" value="1">
+                  <input type="radio" name="filter_rating" class="rating__control screen-reader" id="filter_rating_2" value="2">
+                  <input type="radio" name="filter_rating" class="rating__control screen-reader" id="filter_rating_3" value="3">
+                  <input type="radio" name="filter_rating" class="rating__control screen-reader" id="filter_rating_4" value="4">
+                  <input type="radio" name="filter_rating" class="rating__control screen-reader" id="filter_rating_5" value="5">
+                  <label for="filter_rating_0" class="rating__item">
+                    &nbsp;&nbsp;
+                    <span class="screen-reader">0</span>
+                  </label>
+                  <label for="filter_rating_1" class="rating__item">
+                    <svg class="rating__star">
+                      <use xlink:href="#star"></use>
+                    </svg>
+                    <span class="screen-reader">1</span>
+                  </label>
+                  <label for="filter_rating_2" class="rating__item">
+                    <svg class="rating__star">
+                      <use xlink:href="#star"></use>
+                    </svg>
+                    <span class="screen-reader">2</span>
+                  </label>
+                  <label for="filter_rating_3" class="rating__item">
+                    <svg class="rating__star">
+                      <use xlink:href="#star"></use>
+                    </svg>
+                    <span class="screen-reader">3</span>
+                  </label>
+                  <label for="filter_rating_4" class="rating__item">
+                    <svg class="rating__star">
+                      <use xlink:href="#star"></use>
+                    </svg>
+                    <span class="screen-reader">4</span>
+                  </label>
+                  <label for="filter_rating_5" class="rating__item">
+                    <svg class="rating__star">
+                      <use xlink:href="#star"></use>
+                    </svg>
+                    <span class="screen-reader">5</span>
+                  </label>	
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_rating" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_rating" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Type</th>
+          <td class="pr-1">
+            <select class="pl-1 pr-1 select is-small" id="filter_type">
+              <option value="any">Any</option>
+              <option value="SpmGridImage">Images</option>
+              <option value="SpmGridSpectrum">Spectra</option>
+            </select>
+          </td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_type" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_type" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Filename</th>
+          <td class="pr-1"><input class="input is-small" type="text" id="filter_filename_original"></td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_filename_original" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_filename_original" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Keywords</th>
+          <td class="pr-1"><input class="input is-small" type="text" id="filter_keywords"></td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_keywords" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_keywords" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Comment</th>
+          <td class="pr-1"><input class="input is-small" type="text" id="filter_comment"></td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_comment" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_comment" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Channel</th>
+          <td class="pr-1"><input class="input is-small" type="text" id="filter_channel_name"></td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_channel_name" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_channel_name" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Scan size</th>
+          <td class="pr-1">
+            <div class="columns">
+              <div class="column is-narrow pr-1">
+                <div class="select is-multiple">  <!-- the is-multiple removes the caret etc -->
+                <select class="pl-3 pr-3 is-small" id="filter_scansize_comparator">
+                  <option value=">">&gt;</option>
+                  <option value="=">=</option>
+                  <option value="<">&lt;</option>
+                </select>
+                </div>
+              </div>
+              <div class="column pl-0 pr-1">
+                <input class="input is-small" type="number" id="filter_scansize">
+              </div>
+              <div class="column is-narrow pl-0 pr-3" style="margin-top:0.6em;">
+                nm<sup>2</sup>
+              </div>
+            </div>
+          </td>
+          <td class="px-0"><img class="warning is-invisible" id="warning_filter_scansize" src="media/alert-circle.svg" /></td>
+          <td class="px-0"><button id="button_delete_filter_scansize" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Selected</th>
+          <td><input class="checkbox" type="checkbox" id="filter_selected"></td>
+          <td></td>
+          <td class="px-0"><button id="button_delete_filter_selected" class="delete"></button></td>
+        </tr>
+        <tr>
+          <th>Location</th>
+          <td>
+            <span id="filter_overview_info">select below</span>
+            <span id="filter_overview_num_selected_container" class="is-hidden">
+              selected: <span id="filter_overview_num_selected"></span>
+            </span>
+          </td>
+          <td></td>
+          <td class="px-0"><button id="button_delete_filter_overview" class="delete"></button></td>
+        </tr>
+        <tr>
+          <td colspan="4" class="has-text-right pt-3"><button id="button_delete_all_filters" class="button is-small" type="reset">Clear all</button></td>
+        </tr>
+        <tr>
+          <td colspan="4" class="pt-3 has-text-grey">
+            <p>
+              Filter mode is pro mode. All inputs take regular expressions.
+              <span id="filter_info_show_more_container"><br/><a id="filter_info_show_more">more...</a></span>
+            </p>
+            <p class="pt-2 info_more is-hidden">
+              All inputs are case-sensitive, i.e. "CO" is not the same as "Co". If you want case-insensitive search, append "/i" to your search input.
+            </p>
+            <p class="pt-2 info_more is-hidden">
+              Other regular expression syntax works as well, such as "." denoting any character. If you want to match ".", you need to escape it (i.e. "\.").
+            </p>
+            <p class="pt-2 info_more is-hidden">
+              For keywords, the search-input will be matched against one comma-delimited string of image-keywords.
+              This makes it possible to e.g. filter images that contain two keywords: keyword1.*keyword2
+            </p>
+            <p class="pt-1 info_more is-hidden">
+              <a id="filter_info_show_less">(collapse)</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <div id="image_info_title" class="columns is-mobile title is-size-6 mb-0 pb-0 unselectable">
+        <div class="column abbreviate m-0 pb-1">
+          <span>Overview</span>
+          <span id="filter_overview_zoom_controls" class="is-size-7 ml-1">
+            <a id="filter_overview_reset_zoom" class="ml-1 is-size-7 notactive">all</a> | 
+            <a id="filter_overview_selected_zoom" class="mr-1 is-size-7 notactive">selected</a>
+          </span>
+        </div>
+        <div class="column has-text-right m-0 pb-0 pt-4 is-size-7">
+          <span id="filter_overview_position" class="is-invisible">
+            <span id="filter_overview_position_x">0</span>
+            <span id="filter_overview_position_y">0</span>
+            <span id="filter_overview_position_unit" clas="ml-2">nm</span>
+          </span>
+        </div>
+      </div>
+      <div id="filter_overview_container" class="unselectable">
+        <section id="filter_overview" class="unselectable">
+          <template id="filter_overview_item_template">
+            <div class="filter_overview_item unselectable">
+              <div class="filter_overview_item_background"></div>
+            </div>
+          </template>
+        </section>
+      </div>
+
+    </div>
+  </div>
