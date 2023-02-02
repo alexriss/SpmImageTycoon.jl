@@ -878,34 +878,3 @@ sup {
 }
 
 
-#editing_list_dropdown button, #editing_list_dropdown a,
-#editing_list_dropdown input, #editing_list_dropdown span,
-#editing_list_dropdown i {
-  font-size: 0.75rem;
-}
-
-#editing_list_dropdown .field.dropdown-item {
-  padding: 0px;
-  margin-bottom: 0px;
-}
-
-#editing_list_dropdown .field.dropdown-item input{
-  border: none;
-  border-radius: 0px;
-  box-shadow: none;
-  margin-bottom: 0px;
-}
-
-#editing_list_dropdown button {
-  font-weight:bold;
-  background-color: #cee7fa;
-}
-
-#editing_list_dropdown button:after {
-  content: "\25bc";
-  font-size: 10px;
-  color: #a0a0a0;
-  float: right;
-  margin-left: 5px;
-  padding-top: 2px;
-}
