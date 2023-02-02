@@ -336,7 +336,6 @@ function show_info(id, gzip_info_json, extra_info={}) {
         document.getElementById("sidebar_keywords_container").appendChild(el_keyword);
     });
 
-    console.log(extra_info);
     window.editing_object.setup_form(id, extra_info);
 
     if (window.datatable == null) {
@@ -480,6 +479,15 @@ function change_item(what, message, jump=1) {
         open_jobs(1);
         show_message(message)
     }
+}
+
+function recalculate_item(id, state) {
+    console.log("recalculate: " + state);
+    if (get_view() == "zoom") {
+        full_resolution = true;
+    }
+    Blink.msg("grid_item", ["set_multiple", [id], state, full_resolution]);
+    open_jobs(1);
 }
 
 function reset_item(what, message) {

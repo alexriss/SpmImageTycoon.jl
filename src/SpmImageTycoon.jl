@@ -232,12 +232,69 @@ function get_scan_range(griditems::Dict{String, SpmGridItem})::Tuple{Vector{Floa
 end
 
 
+"""Changes the griditem fieldnames. Cycles/toggles the respective property."""
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, what::String, jump::Int=1)::Nothing
+    # multiple dispatch for update functions
+    if what == "channel"
+        next_channel_name!(griditem, item, jump)
+    elseif what == "channel2"
+        next_channel2_name!(griditem, item, jump)
+    elseif what == "direction"
+        next_direction!(griditem, item)
+    elseif what == "background_correction"
+        next_background_correction!(griditem, item, jump)
+    elseif what == "colorscheme"
+        next_colorscheme!(griditem, item, jump)
+    elseif what == "inverted"
+        next_invert!(griditem, item)
+    else
+        println("Unknown property to change: ", what)  # this should never happen, though
+        return nothing
+    end
+    return nothing
+end
+
+
+"""Changes the griditem fieldnames. Changes multiple properties to specific values."""
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, state::Dict, jump::Int)::Nothing
+    # set new properties for griditem - we also do some checks
+    for (k,v) in state
+        if k =="channel_name"
+            v_orig = v
+            if griditem.type == SpmGridImage
+                if endswith(v_orig, " bwd")
+                    v_orig = replace(v_orig, " bwd" => "")
+                end
+            end
+            if v_orig in item.channel_names
+                griditem.channel_name = v
+            end
+        elseif k == "channel2_name" && griditem.type == SpmGridSpectrum
+            if v in item.channel_names
+                griditem.channel2_name = v
+            end
+        elseif k == "scan_direction" && griditem.type == SpmGridSpectrum
+            v = parse(Int, v)
+            if v in (0, 1, 2)
+                griditem.scan_direction = v
+            end
+        elseif k == "background_correction"
+            vs = (griditem.type == SpmGridImage) ? background_correction_list_image : background_correction_list_spectrum
+            if v in keys(vs)
+                griditem.background_correction = v
+            end
+        end
+    end
+    return nothing
+end
+
+
 """Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
 for the images/spectra specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
 Modifies the griditems array."""
-function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)::Nothing
+function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::Union{String,Dict}, full_resolution::Bool, jump::Int=0)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
         filename_original_full = joinpath(dir_data, griditems[id].filename_original)
@@ -250,23 +307,7 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
             continue
         end
 
-        # multiple dispatch for update functions
-        if what == "channel"
-            next_channel_name!(griditems[id], item, jump)
-        elseif what == "channel2"
-            next_channel2_name!(griditems[id], item, jump)
-        elseif what == "direction"
-            next_direction!(griditems[id], item)
-        elseif what == "background_correction"
-            next_background_correction!(griditems[id], item, jump)
-        elseif what == "colorscheme"
-            next_colorscheme!(griditems[id], item, jump)
-        elseif what == "inverted"
-            next_invert!(griditems[id], item)
-        else
-            println("Unknown property to change: ", what)  # this should never happen, though
-            return nothing
-        end
+        pre_change_griditem!(griditems[id], item, what, jump)
 
         # update the image or spectrum
         if griditems[id].type == SpmGridImage

@@ -41,7 +41,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
             jump = args[3]
             full_resolution = args[4]
             try
-                change_griditem!(griditems, ids, dir_data, what[6:end], jump, full_resolution)
+                change_griditem!(griditems, ids, dir_data, what[6:end], full_resolution, jump)
                 griditems_sub = get_subset(griditems, ids)
                 json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                 @js_ w update_images($json_compressed);
@@ -107,6 +107,21 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                 try
                     set_range_selected_spectrum!(ids, dir_data, griditems, range_selected)
                     griditems_sub = get_subset(griditems, ids)
+                    json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
+                    @js_ w update_images($json_compressed);
+                catch e
+                    error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
+                finally
+                    unlock(l)
+                    global griditems_last_changed = time()
+                end
+            elseif what[5:end] == "multiple"
+                lock(l)
+                state = args[3]
+                full_resolution = args[4]
+                try
+                    griditems_sub = get_subset(griditems, ids)
+                    change_griditem!(griditems, ids, dir_data, state, full_resolution)
                     json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
                     @js_ w update_images($json_compressed);
                 catch e
