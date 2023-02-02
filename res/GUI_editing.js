@@ -16,6 +16,16 @@ Editing.prototype = {
                 that.recalculate_timeout();
             });
         });
+
+        const btn = document.getElementById("editing_list_button_add");
+        const dropdown = document.getElementById("editing_list_dropdown");
+        btn.addEventListener("click", () => {
+            dropdown.classList.toggle("is-active");
+        });
+        dropdown.addEventListener("mouseout", () => {
+            // dropdown.classList.remove("is-active");
+        });
+
         this.initial_setup_complete = true;
     },
 
