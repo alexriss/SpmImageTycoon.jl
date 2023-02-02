@@ -62,11 +62,15 @@
           
           <div class="editing_entry">
             <header>
-              <p class="p-2 abbreviate">
+              <span class="icon editing_entry_move"><img src="media/chevrons-ud.svg"></span>
+              <p class="py-2 pl-0 pr-2 abbreviate">
                 Gaussian
               </p>
-              <span class="icon editing_entry_move"><img src="media/chevrons-ud.svg"></span>
-              <button class="delete editing_entry_delete mt-1"></button>
+              <div class="field">
+                <input id="editing_entry_active_1" type="checkbox" class="switch is-rounded is-outlined is-info is-small" checked="checked">
+                <label for="editing_entry_active_1"></label>
+              </div>
+              <button class="delete editing_entry_delete is-small"></button>
             </header>
             <div class="p-2">
               <table class="table is-fullwidth is-size-7">

@@ -809,7 +809,7 @@ sup {
 
 .editing_entry_move {
   cursor: grab;
-  margin-top:2px;
+  margin-top:5px;
   opacity:0.4;
 }
 
@@ -819,6 +819,21 @@ sup {
 
 .editing-entry-ghost {
   opacity: 0.5;
+}
+
+#editing_list .field {
+  margin:0;
+  padding:0;
+}
+
+#editing_list .editing_entry_delete {
+  background-color: #cb2d4d;
+  margin-top:7px;
+  opacity:0.4;
+}
+
+#editing_list .editing_entry_delete:hover {
+  opacity:0.6;
 }
 
 #editing_list .editing_entry {

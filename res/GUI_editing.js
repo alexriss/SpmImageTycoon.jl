@@ -116,9 +116,11 @@ Editing.prototype = {
     },
 
     add_entry() {
-        const type = document.getElementById("editing_entry_add").value;
+        const el_add = document.getElementById("editing_entry_add");
+        const type = el_add.value;
         const props = this.editing_entry_list[type];
 
+        el_add.options[0].selected = 'selected';
     },
 
     state_changed(curr_state, item) {
