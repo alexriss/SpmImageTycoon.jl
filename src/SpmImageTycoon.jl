@@ -89,6 +89,7 @@ include("spectrum_functions.jl")
 include("export.jl")
 include("event_handlers.jl")
 include("db_functions.jl")
+include("editing.jl")
 
 
 exit_tycoon = false  # if set to true, then keep-alive loop will end
@@ -754,7 +755,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
         "image" => Dict("0" => "forward", "1" => "backward"),
         "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
     )
-    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list)
+    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list, $editing_entries)
     @js w set_last_directories($last_directories)
     @js w load_page($versions)
     @js w show_start()

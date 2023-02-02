@@ -69,7 +69,17 @@
               <button class="delete editing_entry_delete mt-1"></button>
             </header>
             <div class="p-2">
-                sigma
+              <table class="table is-fullwidth is-size-7">
+                <tr>
+                  <th width="50%" class="abbreviate">sigma</th>
+                  <td width="35%">
+                    <input type="number" step="0.1" class="input is-small">
+                  </td>
+                  <td width="15%" class="has-text-right abbreviate">
+                    nm
+                  </td>
+                </tr>
+              </table>
             </div>
           </div>
 
@@ -97,23 +107,23 @@
         <table id="table_line_profile" class="table is-fullwidth is-size-7">
           <tr>
             <th width="20%">Start</th>
-            <td width="20%" class="pr-1"><input type="number" step="0.1" class="input is-small" type="text" id="line_profile_start_x"></td>
-            <td width="20%" class="pr-1"><input type="number" step="0.1" class="input is-small" type="text" id="line_profile_start_y"></td>
+            <td width="20%" class="pr-1"><input type="number" step="0.1" class="input is-small" id="line_profile_start_x"></td>
+            <td width="20%" class="pr-1"><input type="number" step="0.1" class="input is-small" id="line_profile_start_y"></td>
             <td width="10%"><span id="line_profile_start_unit"></span></td>
             <td width="20%" class="has-text-right"><span id="line_profile_start_value"></span></td>
             <td width="10%"><span id="line_profile_start_value_unit_prefix"></span><span id="line_profile_start_value_unit"></span></td>
           </tr>
           <tr>
             <th>End</th>
-            <td class="pr-1"><input type="number" step="0.1" class="input is-small" type="text" id="line_profile_end_x"></td>
-            <td class="pr-1"><input type="number" step="0.1" class="input is-small" type="text" id="line_profile_end_y"></td>
+            <td class="pr-1"><input type="number" step="0.1" class="input is-small" id="line_profile_end_x"></td>
+            <td class="pr-1"><input type="number" step="0.1" class="input is-small" id="line_profile_end_y"></td>
             <td><span id="line_profile_end_unit"></span></td>
             <td class="has-text-right"><span id="line_profile_end_value"></span></td>
             <td><span id="line_profile_end_value_unit_prefix"></span><span id="line_profile_end_value_unit"></span></td>
           </tr>
           <tr>
             <th>Width</th>
-            <td class="pr-1"><input type="number" step="0.1" class="input is-small" type="text" id="line_profile_width" value="0"></td>
+            <td class="pr-1"><input type="number" step="0.1" class="input is-small" id="line_profile_width" value="0"></td>
             <td><span id="line_profile_width_unit"></span></td>
             <td></td>
             <td></td>
@@ -121,7 +131,7 @@
           </tr>
           <tr>
             <th>Length</th>
-            <td class="pr-1"><input type="number" step="0.1" class="input is-small" type="text" id="line_profile_length"></td>
+            <td class="pr-1"><input type="number" step="0.1" class="input is-small" id="line_profile_length"></td>
             <td><span id="line_profile_length_unit"></span></td>
             <td></td>
             <td></td>
@@ -129,7 +139,7 @@
           </tr>
           <tr>
             <th>Angle</th>
-            <td class="pr-1"><input type="number" step="1" class="input is-small" type="text" id="line_profile_angle"></td>
+            <td class="pr-1"><input type="number" step="1" class="input is-small" id="line_profile_angle"></td>
             <td>°</td>
             <td colspan="2" class="has-text-right"><span id="line_profile_angle_global">global: <span id="line_profile_angle_global_value"></span></span></td>
             <td><span id="line_profile_angle_global_unit">°</span></td>

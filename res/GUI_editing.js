@@ -3,6 +3,7 @@ function Editing() {
     this.curr_id = "";
     this.timeout_recalculate = null;
     this.updating = false;
+    this.editing_entry_list = {};
 }
 
 
@@ -17,6 +18,10 @@ Editing.prototype = {
             });
         });
 
+        document.getElementById("editing_entry_add").addEventListener("change", () => {
+            that.add_entry();
+        });
+
         this.initial_setup_complete = true;
     },
 
@@ -25,7 +30,8 @@ Editing.prototype = {
         this.updating = true;
         this.curr_id = id;
         this.setup_form_main_entry(id, extra_info);
-        this.setup_form_entries(id, extra_info);
+        this.setup_form_editing_entry_list(id);
+        this.setup_form_entries(id);
         this.initial_setup();
         this.updating = false;
     },
@@ -60,7 +66,26 @@ Editing.prototype = {
         }
     },
 
-    setup_form_entries(id, extra_info) {
+    setup_form_editing_entry_list(id) {
+        const item = window.items[id];
+        const el = document.getElementById("editing_entry_add");
+        
+        if (item.type == "SpmGridSpectrum") {
+            this.editing_entry_list = window.editing_entry_list["spectrum"];
+        } else if (item.type == "SpmGridImage") {
+            this.editing_entry_list = window.editing_entry_list["image"];
+        }
+
+        let opt0;
+        if (el.options.length > 0) {
+            opt0 = el.options[0];  // first option is a description of the dropdown
+        }
+        this.remove_options(el);
+        el.appendChild(opt0);
+        this.add_options(el, Object.keys(this.editing_entry_list), "")
+    },
+
+    setup_form_entries(id) {
         // todo;
     },
 
@@ -88,6 +113,12 @@ Editing.prototype = {
             }
             selectElement.appendChild(opt);
         }
+    },
+
+    add_entry() {
+        const type = document.getElementById("editing_entry_add").value;
+        const props = this.editing_entry_list[type];
+
     },
 
     state_changed(curr_state, item) {

@@ -17,7 +17,7 @@ function load_page(versions) {
     event_handlers();
 }
 
-function set_params(dir_res, auto_save_minutes, overview_max_images, bg_corrections, directions_list) {
+function set_params(dir_res, auto_save_minutes, overview_max_images, bg_corrections, directions_list, editing_entries) {
     // set base directory for all relative paths (dir_res) and continuous auto-save
     const el = document.createElement('base');
     el.href = "file:///" + dir_res;
@@ -26,6 +26,7 @@ function set_params(dir_res, auto_save_minutes, overview_max_images, bg_correcti
     window.overview_max_images = overview_max_images;
     window.background_corrections = bg_corrections;
     window.directions_list = directions_list;
+    window.editing_entry_list = editing_entries;
 }
 
 function set_params_project(dir_data, dir_cache, dir_colorbars, filenames_colorbar) {
