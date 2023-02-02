@@ -82,7 +82,12 @@ Editing.prototype = {
         }
         this.remove_options(el);
         el.appendChild(opt0);
-        this.add_options(el, Object.keys(this.editing_entry_list), "")
+
+        let opts = {}
+        for (const [key, value] of Object.entries(this.editing_entry_list)) {
+            opts[key] = value.name;
+        }
+        this.add_options(el, opts, "")
     },
 
     setup_form_entries(id) {

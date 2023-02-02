@@ -1,6 +1,7 @@
 editing_entries = OrderedDict(
     "image" => OrderedDict(
-        "Gaussian" => Dict(
+        "G" => Dict(
+            "name" => "Gaussian",
             "type" => "table",
             "params" => OrderedDict(
                 "sigma" => Dict(
@@ -12,13 +13,15 @@ editing_entries = OrderedDict(
             "abbreviation" => "G",
             "function" => "Gaussian",
         ),
-        "Laplacian" => Dict(
+        "L" => Dict(
+            "name" => "Laplacian",
             "type" => "table",
             "params" => OrderedDict(),
             "abbreviation" => "L",
             "function" => "Laplacian",
         ),
-        "Difference of Gaussians" => Dict(
+        "DoG" => Dict(
+            "name" => "Difference of Gaussians",
             "type" => "table",
             "params" => OrderedDict(
                 "sigma<sub>1</sub>" => Dict(
@@ -35,7 +38,8 @@ editing_entries = OrderedDict(
             "function" => "DoG",
             "abbreviation" => "DoG",
         ),
-        "Laplacian of Gaussian" => Dict(
+        "LoG" => Dict(
+            "name" => "Laplacian of Gaussian",
             "type" => "table",
             "params" => OrderedDict(
                 "sigma" => Dict(
@@ -50,7 +54,8 @@ editing_entries = OrderedDict(
     ),
 
     "spectrum" => OrderedDict(
-        "Gaussian" => Dict(
+        "G" => Dict(
+            "name" => "Gaussian",
             "type" => "table",
             "params" => OrderedDict(
                 "sigma" => Dict(
