@@ -4,8 +4,9 @@ editing_entries = OrderedDict(
             "name" => "Gaussian",
             "type" => "table",
             "params" => OrderedDict(
-                "sigma" => Dict(
-                    "default" => 0.1,
+                "s" => Dict(
+                    "name" => "&sigma;",
+                    "default" => 0.10,
                     "step" => 0.01,
                     "unit" => "nm",
                 )
@@ -24,13 +25,15 @@ editing_entries = OrderedDict(
             "name" => "Difference of Gaussians",
             "type" => "table",
             "params" => OrderedDict(
-                "sigma<sub>1</sub>" => Dict(
-                    "default" => 0.1,
+                "s1" => Dict(
+                    "name" => "&sigma;<sub>1</sub>",
+                    "default" => 0.10,
                     "step" => 0.01,
                     "unit" => "nm",
                 ),
-                "sigma<sub>2</sub>" => Dict(
-                    "default" => 1.0,
+                "s2" => Dict(
+                    "name" => "&sigma;<sub>2</sub>",
+                    "default" => 1.00,
                     "step" => 0.01,
                     "unit" => "nm",
                 )
@@ -42,8 +45,9 @@ editing_entries = OrderedDict(
             "name" => "Laplacian of Gaussian",
             "type" => "table",
             "params" => OrderedDict(
-                "sigma" => Dict(
-                    "default" => 0.1,
+                "s" => Dict(
+                    "name" => "&sigma;",
+                    "default" => 0.10,
                     "step" => 0.01,
                     "unit" => "nm",
                 )
@@ -58,8 +62,9 @@ editing_entries = OrderedDict(
             "name" => "Gaussian",
             "type" => "table",
             "params" => OrderedDict(
-                "sigma" => Dict(
-                    "default" => 0.1,
+                "s" => Dict(
+                    "name" => "&sigma;",
+                    "default" => 0.10,
                     "step" => 0.01,
                     "unit" => "points",
                 )

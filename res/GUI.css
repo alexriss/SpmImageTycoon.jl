@@ -823,52 +823,57 @@ sup {
   opacity: 0.5;
 }
 
-#editing_list .field {
+#editing_container sub {
+  vertical-align: sub;
+  font-size: smaller;
+}
+
+#editing_container .field {
   margin:0;
   padding:0;
 }
 
-#editing_list .editing_entry_delete {
+#editing_container .editing_entry_delete {
   background-color: #cb2d4d;
   margin-top:7px;
   opacity:0.4;
 }
 
-#editing_list .editing_entry_delete:hover {
+#editing_container .editing_entry_delete:hover {
   opacity:0.6;
 }
 
-#editing_list .editing_entry {
+#editing_container .editing_entry {
   background-color: #f5f5ff;
   border: 1px solid #dbdbdb;
   border-radius: 0.25rem;
   margin-bottom: 0.5rem
 }
 
-#editing_list header {
+#editing_container header {
   background-color: #cee7fa;
   display: flex;
   font-weight: bold;
   padding-right:0.25rem;
 }
 
-#editing_list header p {
+#editing_container header p {
   display: flex;
   flex-grow: 1;
   align-items: center;
 }
 
-#editing_list table {
+#editing_container table {
   background-color: #ffffff00;
 }
 
-#editing_list table td, #editing_list table th {
+#editing_container table td, #editing_container table th {
   vertical-align: middle;
   height: 3em;
   padding: .2em .65em;
 }
 
-#editing_list table input {
+#editing_container table input {
   text-align: right;
   height: 1.6rem; 
   /* width: 3.75rem; */
@@ -878,18 +883,18 @@ sup {
   padding-bottom: 0.05rem;
 }
 
-#editing_list table select {
+#editing_container table select {
   width: 100%;
 }
 
-#editing_list table td {
+#editing_container table td {
   padding-right: 1px;
   padding-left: 1px;
 }
 
 /* remove up and down arrows */
-#editing_list table input::-webkit-outer-spin-button,
-#editing_list table input::-webkit-inner-spin-button {
+#editing_container table input::-webkit-outer-spin-button,
+#editing_container table input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
