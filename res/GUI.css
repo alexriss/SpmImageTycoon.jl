@@ -717,7 +717,9 @@ sup {
 /* sidebar imagezoomtools */
 
 #sidebar_imagezoomtools {
-  width: 350px;  /* we have to give a fixed with, because the plot is done on canvas with fixed witdth */
+  width: 350px;  /* we have to give a fixed with, because the plot is done on canvas with fixed width */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar_accordion {
