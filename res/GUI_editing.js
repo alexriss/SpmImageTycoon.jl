@@ -161,20 +161,20 @@ Editing.prototype = {
         clone.querySelector(".editing_entry_buttons label").htmlFor = id_button;
         const container_row = clone.querySelector(".editing_entry_container_row");
         let tpl_row, clone_row;
-        for (const [key, param] of Object.entries(props.pars)) {
-            if (param.type == "float") {
+        for (const [key, par] of Object.entries(props.pars)) {
+            if (par.type == "float") {
                 tpl_row = clone.getElementById("editing_entry_template_row_float");
                 clone_row = tpl_row.content.cloneNode(true);
-                clone_row.querySelector(".editing_entry_param_name").innerHTML = param.name;
-                clone_row.querySelector(".editing_entry_param_unit").innerHTML = param.unit;
-                const el_input = clone_row.querySelector(".editing_entry_param_input");
+                clone_row.querySelector(".editing_entry_par_name").innerHTML = par.name;
+                clone_row.querySelector(".editing_entry_par_unit").innerHTML = par.unit;
+                const el_input = clone_row.querySelector(".editing_entry_par_input");
                 el_input.dataset.id = key;
-                el_input.value = param.default;
-                if ("step" in param) el_input.setAttribute("step", param.step);
-                if ("max" in param) el_input.setAttribute("max", param.max);
-                if ("min" in param) el_input.setAttribute("min", param.min);
+                el_input.value = par.default;
+                if ("step" in par) el_input.setAttribute("step", par.step);
+                if ("max" in par) el_input.setAttribute("max", par.max);
+                if ("min" in par) el_input.setAttribute("min", par.min);
             } else {
-                console.log("Unknown editing entry param type: " + param.type);
+                console.log("Unknown editing entry par type: " + par.type);
                 continue;
             }
             container_row.appendChild(clone_row);
@@ -228,10 +228,10 @@ Editing.prototype = {
 
     get_entry_pars_table(el, pars_list) {
         const pars = {};
-        el.querySelectorAll(".editing_entry_param_input").forEach((el) => {
+        el.querySelectorAll(".editing_entry_par_input").forEach((el) => {
             const key = el.dataset.id;
             if (key in pars_list == false) {
-                console.log("Unknown editing entry param: " + key);
+                console.log("Unknown editing entry par: " + key);
                 return;
             }
             if (pars_list[key].type == "float") {
