@@ -146,16 +146,22 @@ Editing.prototype = {
             clone.querySelector(".editing_entry_buttons label").htmlFor = id_button;
 
             const container_row = clone.querySelector(".editing_entry_container_row");
-            const tpl_row = clone.getElementById("editing_entry_template_row");
+            let tpl_row;
             for (const [key, param] of Object.entries(props.params)) {
-                const clone_row = tpl_row.content.cloneNode(true);
-                clone_row.querySelector(".editing_entry_param_name").innerHTML = param.name;
-                clone_row.querySelector(".editing_entry_param_input").step = param.step;
-                clone_row.querySelector(".editing_entry_param_input").value = param.default;
-                clone_row.querySelector(".editing_entry_param_unit").innerHTML = param.unit;
+                if (param.type == "float") {
+                    tpl_row = clone.getElementById("editing_entry_template_row_float");
+                    const clone_row = tpl_row.content.cloneNode(true);
+                    clone_row.querySelector(".editing_entry_param_name").innerHTML = param.name;
+                    clone_row.querySelector(".editing_entry_param_input").step = param.step;
+                    clone_row.querySelector(".editing_entry_param_input").value = param.default;
+                    clone_row.querySelector(".editing_entry_param_unit").innerHTML = param.unit;
+                } else {
+                    console.log("Unknown editing entry param type: " + param.type);
+                    continue;
+                }
                 container_row.appendChild(clone_row);
             }
-            tpl_row.remove();
+            clone.querySelectorAll("template").forEach((el) => el.remove());
             container.appendChild(clone);
         } else {
             console.log("Unknown editing entry type: " + props.type);
