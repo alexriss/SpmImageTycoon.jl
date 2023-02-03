@@ -30,6 +30,9 @@ Editing.prototype = {
             easing: "cubic-bezier(0.87, 0, 0.13, 1)",
             draggable: ".editing_entry",
             ghostClass: "editing-entry-ghost",
+            onUpdate: function (evt) {
+                that.recalculate_timeout();
+            }
         });
 
         this.initial_setup_complete = true;
@@ -135,10 +138,11 @@ Editing.prototype = {
         const container = document.getElementById("editing_entry_container");
         const type = el_add.value;
         const props = this.editing_entry_list[type];
+        let clone;
         
         if (props.type == "table") {
             const tpl = document.getElementById("editing_entry_template_table");
-            const clone = tpl.content.cloneNode(true);
+            clone = tpl.content.cloneNode(true);
 
             clone.querySelector(".editing_entry_name").innerHTML = props.name;
             id_button = "editing_entry_active_" + this.get_uid();
@@ -146,11 +150,11 @@ Editing.prototype = {
             clone.querySelector(".editing_entry_buttons label").htmlFor = id_button;
 
             const container_row = clone.querySelector(".editing_entry_container_row");
-            let tpl_row;
+            let tpl_row, clone_row;
             for (const [key, param] of Object.entries(props.params)) {
                 if (param.type == "float") {
                     tpl_row = clone.getElementById("editing_entry_template_row_float");
-                    const clone_row = tpl_row.content.cloneNode(true);
+                    clone_row = tpl_row.content.cloneNode(true);
                     clone_row.querySelector(".editing_entry_param_name").innerHTML = param.name;
                     clone_row.querySelector(".editing_entry_param_input").step = param.step;
                     clone_row.querySelector(".editing_entry_param_input").value = param.default;
@@ -162,12 +166,36 @@ Editing.prototype = {
                 container_row.appendChild(clone_row);
             }
             clone.querySelectorAll("template").forEach((el) => el.remove());
-            container.appendChild(clone);
         } else {
             console.log("Unknown editing entry type: " + props.type);
+            return;
         }
-
+        this.add_entry_events(clone);
+        container.appendChild(clone);
         el_add.options[0].selected = 'selected';
+    },
+
+    add_entry_events(el) {
+        // basic events for editing entries
+        var that = this;
+        el.querySelector(".editing_entry_delete").addEventListener("click", (e) => {
+            e.target.closest(".editing_entry").remove();
+            that.recalculate_timeout();
+        });
+        el.querySelector(".editing_entry_active").addEventListener("click", (e) => {
+            if (e.target.checked) {
+                e.target.closest(".editing_entry").classList.remove("inactive");
+            } else {
+                e.target.closest(".editing_entry").classList.add("inactive");
+            }
+            // reclaculate timeout is done for all changes to input, so no need to do it here again
+        });
+
+        el.querySelectorAll("input, select").forEach((el) => {
+            el.addEventListener("change", (e) => {
+                that.recalculate_timeout();
+            });
+        });
     },
 
     state_changed(curr_state, item) {
@@ -222,6 +250,7 @@ Editing.prototype = {
         if (this.state_changed(curr_state, item)) {
             recalculate_item(curr_id, curr_state);
         }
+        console.log("recalculate", curr_state, item);
     },
 
     get_uid() {

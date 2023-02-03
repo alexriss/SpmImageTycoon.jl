@@ -66,10 +66,10 @@
                 <header>
                   <span class="icon editing_entry_move"><img src="media/chevrons-ud.svg"></span>
                   <p class="py-2 pl-0 pr-2 abbreviate editing_entry_name">
-                    {{name}}
+                    name
                   </p>
                   <div class="field editing_entry_buttons">
-                    <input id="editing_entry_active_{{num}}" type="checkbox" class="switch is-rounded is-outlined is-info is-small" checked="checked">
+                    <input id="editing_entry_active_{{num}}" type="checkbox" class="switch is-rounded is-outlined is-info is-small editing_entry_active" checked="checked">
                     <label for="editing_entry_active_{{num}}"></label>
                   </div>
                   <button class="delete editing_entry_delete is-small"></button>
@@ -78,12 +78,12 @@
                   <table class="table is-fullwidth is-size-7 editing_entry_container_row">
                     <template id="editing_entry_template_row_float">
                     <tr>
-                      <th width="50%" class="abbreviate editing_entry_param_name">{{param.name}}</th>
+                      <th width="50%" class="abbreviate editing_entry_param_name">param.name</th>
                       <td width="35%">
-                        <input type="number" step="{{param.step}}" value="{{param.value}}" class="input is-small editing_entry_param_input">
+                        <input type="number" step="0.1" value="0" class="input is-small editing_entry_param_input">
                       </td>
                       <td width="15%" class="has-text-right abbreviate editing_entry_param_unit">
-                        {{param.unit}}
+                        param.unit
                       </td>
                     </tr>
                     </template>

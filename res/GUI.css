@@ -899,4 +899,11 @@ sup {
   margin: 0;
 }
 
+#editing_container .editing_entry.inactive {
+  opacity:0.5;
+}
+#editing_container .editing_entry.inactive header {
+  background-color: hsl(206, 69%, 89%);
+}
+
 
