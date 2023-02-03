@@ -178,8 +178,9 @@ function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, default_pars::Or
     end
     s1 = nm_to_px(griditem, size(d, 1), s1)
     s2 = nm_to_px(griditem, size(d, 1), s2)
+    l = round(Int, max(s1, s2)) * 4 + 1
 
-    d .= imfilter(d, Kernel.DoG((s1, s2)))
+    d .= imfilter(d, Kernel.DoG((s1, s1), (s2, s2), (l, l)))
 
     return nothing
 end
