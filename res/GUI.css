@@ -902,8 +902,9 @@ sup {
 #editing_container .editing_entry.inactive {
   opacity:0.5;
 }
+
 #editing_container .editing_entry.inactive header {
-  background-color: hsl(206, 69%, 89%);
+  background-color: #d0e6f6;
 }
 
 

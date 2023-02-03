@@ -62,7 +62,7 @@
           
           <div id="editing_entry_container">
             <template id="editing_entry_template_table">
-              <div class="editing_entry">
+              <div class="editing_entry" data-id="">
                 <header>
                   <span class="icon editing_entry_move"><img src="media/chevrons-ud.svg"></span>
                   <p class="py-2 pl-0 pr-2 abbreviate editing_entry_name">
@@ -80,7 +80,7 @@
                     <tr>
                       <th width="50%" class="abbreviate editing_entry_param_name">param.name</th>
                       <td width="35%">
-                        <input type="number" step="0.1" value="0" class="input is-small editing_entry_param_input">
+                        <input type="number" step="0.1" value="0" class="input is-small editing_entry_param_input" data-id="">
                       </td>
                       <td width="15%" class="has-text-right abbreviate editing_entry_param_unit">
                         param.unit

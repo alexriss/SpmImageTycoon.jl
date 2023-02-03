@@ -3,12 +3,13 @@ editing_entries = OrderedDict(
         "G" => Dict(
             "name" => "Gaussian",
             "type" => "table",
-            "params" => OrderedDict(
+            "pars" => OrderedDict(
                 "s" => Dict(
                     "type" => "float",
                     "name" => "&sigma;",
                     "default" => 0.10,
                     "step" => 0.01,
+                    "min" => 0.0,
                     "unit" => "nm",
                 )
             ),
@@ -18,19 +19,20 @@ editing_entries = OrderedDict(
         "L" => Dict(
             "name" => "Laplacian",
             "type" => "table",
-            "params" => OrderedDict(),
+            "pars" => OrderedDict(),
             "abbreviation" => "L",
             "function" => "Laplacian",
         ),
         "DoG" => Dict(
             "name" => "Difference of Gaussians",
             "type" => "table",
-            "params" => OrderedDict(
+            "pars" => OrderedDict(
                 "s1" => Dict(
                     "type" => "float",
                     "name" => "&sigma;<sub>1</sub>",
                     "default" => 0.10,
                     "step" => 0.01,
+                    "min" => 0.0,
                     "unit" => "nm",
                 ),
                 "s2" => Dict(
@@ -38,6 +40,8 @@ editing_entries = OrderedDict(
                     "name" => "&sigma;<sub>2</sub>",
                     "default" => 1.00,
                     "step" => 0.01,
+                    "min" => 0.0,
+
                     "unit" => "nm",
                 )
             ),
@@ -47,12 +51,13 @@ editing_entries = OrderedDict(
         "LoG" => Dict(
             "name" => "Laplacian of Gaussian",
             "type" => "table",
-            "params" => OrderedDict(
+            "pars" => OrderedDict(
                 "s" => Dict(
                     "type" => "float",
                     "name" => "&sigma;",
                     "default" => 0.10,
                     "step" => 0.01,
+                    "min" => 0.0,
                     "unit" => "nm",
                 )
             ),
@@ -65,12 +70,13 @@ editing_entries = OrderedDict(
         "G" => Dict(
             "name" => "Gaussian",
             "type" => "table",
-            "params" => OrderedDict(
+            "pars" => OrderedDict(
                 "s" => Dict(
                     "type" => "float",
                     "name" => "&sigma;",
                     "default" => 0.10,
                     "step" => 0.01,
+                    "min" => 0.0,
                     "unit" => "points",
                 )
             ),

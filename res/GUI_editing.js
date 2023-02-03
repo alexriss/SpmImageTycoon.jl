@@ -136,36 +136,12 @@ Editing.prototype = {
     add_entry() {
         const el_add = document.getElementById("editing_entry_add");
         const container = document.getElementById("editing_entry_container");
-        const type = el_add.value;
-        const props = this.editing_entry_list[type];
+        const edit_name = el_add.value;
+        const props = this.editing_entry_list[edit_name];
         let clone;
         
         if (props.type == "table") {
-            const tpl = document.getElementById("editing_entry_template_table");
-            clone = tpl.content.cloneNode(true);
-
-            clone.querySelector(".editing_entry_name").innerHTML = props.name;
-            id_button = "editing_entry_active_" + this.get_uid();
-            clone.querySelector(".editing_entry_buttons input").id = id_button;
-            clone.querySelector(".editing_entry_buttons label").htmlFor = id_button;
-
-            const container_row = clone.querySelector(".editing_entry_container_row");
-            let tpl_row, clone_row;
-            for (const [key, param] of Object.entries(props.params)) {
-                if (param.type == "float") {
-                    tpl_row = clone.getElementById("editing_entry_template_row_float");
-                    clone_row = tpl_row.content.cloneNode(true);
-                    clone_row.querySelector(".editing_entry_param_name").innerHTML = param.name;
-                    clone_row.querySelector(".editing_entry_param_input").step = param.step;
-                    clone_row.querySelector(".editing_entry_param_input").value = param.default;
-                    clone_row.querySelector(".editing_entry_param_unit").innerHTML = param.unit;
-                } else {
-                    console.log("Unknown editing entry param type: " + param.type);
-                    continue;
-                }
-                container_row.appendChild(clone_row);
-            }
-            clone.querySelectorAll("template").forEach((el) => el.remove());
+            clone = this.add_entry_table(edit_name, props);
         } else {
             console.log("Unknown editing entry type: " + props.type);
             return;
@@ -173,6 +149,38 @@ Editing.prototype = {
         this.add_entry_events(clone);
         container.appendChild(clone);
         el_add.options[0].selected = 'selected';
+    },
+
+    add_entry_table(edit_name, props) {
+        const tpl = document.getElementById("editing_entry_template_table");
+        clone = tpl.content.cloneNode(true);
+        clone.querySelector(".editing_entry").dataset.id = edit_name;
+        clone.querySelector(".editing_entry_name").innerHTML = props.name;
+        const id_button = "editing_entry_active_" + this.get_uid();
+        clone.querySelector(".editing_entry_buttons input").id = id_button;
+        clone.querySelector(".editing_entry_buttons label").htmlFor = id_button;
+        const container_row = clone.querySelector(".editing_entry_container_row");
+        let tpl_row, clone_row;
+        for (const [key, param] of Object.entries(props.pars)) {
+            if (param.type == "float") {
+                tpl_row = clone.getElementById("editing_entry_template_row_float");
+                clone_row = tpl_row.content.cloneNode(true);
+                clone_row.querySelector(".editing_entry_param_name").innerHTML = param.name;
+                clone_row.querySelector(".editing_entry_param_unit").innerHTML = param.unit;
+                const el_input = clone_row.querySelector(".editing_entry_param_input");
+                el_input.dataset.id = key;
+                el_input.value = param.default;
+                if ("step" in param) el_input.setAttribute("step", param.step);
+                if ("max" in param) el_input.setAttribute("max", param.max);
+                if ("min" in param) el_input.setAttribute("min", param.min);
+            } else {
+                console.log("Unknown editing entry param type: " + param.type);
+                continue;
+            }
+            container_row.appendChild(clone_row);
+        }
+        clone.querySelectorAll("template").forEach((el) => el.remove());
+        return clone;
     },
 
     add_entry_events(el) {
@@ -196,6 +204,44 @@ Editing.prototype = {
                 that.recalculate_timeout();
             });
         });
+    },
+
+    get_entry_list() {
+        // gets list of entries as json string
+        const container = document.getElementById("editing_entry_container");
+        let entries = {};
+        entries["entries"] = [];
+        container.querySelectorAll(".editing_entry").forEach((el) => {
+            let entry = {};
+            let pars = {};
+            entry["id"] = el.dataset.id;
+            entry["off"] = el.querySelector(".editing_entry_active").checked ? 0 : 1;
+            const props = this.editing_entry_list[entry["id"]];
+            if (props.type == "table") {
+                pars = this.get_entry_pars_table(el, props.pars);
+            }
+            entry["pars"] = pars;
+            entries["entries"].push(entry);
+        });
+        return JSON.stringify(entries);
+    },
+
+    get_entry_pars_table(el, pars_list) {
+        const pars = {};
+        el.querySelectorAll(".editing_entry_param_input").forEach((el) => {
+            const key = el.dataset.id;
+            if (key in pars_list == false) {
+                console.log("Unknown editing entry param: " + key);
+                return;
+            }
+            if (pars_list[key].type == "float") {
+                pars[key] = el.valueAsNumber;
+                if (pars[key] == null) pars[key] = pars_list[key].default;
+            } else {
+                pars[key] = el.value;
+            }
+        });
+        return pars;
     },
 
     state_changed(curr_state, item) {
@@ -250,7 +296,8 @@ Editing.prototype = {
         if (this.state_changed(curr_state, item)) {
             recalculate_item(curr_id, curr_state);
         }
-        console.log("recalculate", curr_state, item);
+        console.log("recalculate");
+        console.log(this.get_entry_list());
     },
 
     get_uid() {

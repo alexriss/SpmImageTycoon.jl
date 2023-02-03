@@ -26,7 +26,7 @@ const VERSION = VersionNumber(TOML.parsefile(joinpath(@__DIR__, "../Project.toml
 @enum SpmGridItemType SpmGridImage SpmGridSpectrum
 
 # entries for SPM images and SPM spectra
-mutable struct SpmGridItem_v129
+mutable struct SpmGridItem_v130
     id::String                                 # id (will be filename and suffixes for virtual copies)
     type::SpmGridItemType                      # type of the griditem
     filename_original::String                  # original filename (.sxm for images or .dat for spectra)
@@ -57,28 +57,28 @@ mutable struct SpmGridItem_v129
     colorscheme::String                        # color scheme
     channel_range::Vector{Float64}             # min/max of current channel (for spectra this contains the min/max of channel and channel2)
     channel_range_selected::Vector{Float64}    # selected min/max for current channel
-    filters::Vector{String}                    # array of filters used (not implemented yet)
+    edits::Vector{String}                      # array of edits used (not implemented yet)
     keywords::Vector{String}                   # keywords
     rating::Int64                              # rating (0 to 5 stars)
     status::Int64                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
     virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
 
-    SpmGridItem_v129(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmGridItem_v130(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
         channel_name="", channel_unit="", channel2_name="", channel2_unit="",
         scansize=[], scansize_unit="nm", center=[], angle=0, scan_direction=0,
         bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0.0, points=0,
         comment="", background_correction="none", colorscheme="gray",
-        channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
+        channel_range=[], channel_range_selected=[], edits=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, type, filename_original, created, last_modified, recorded,
         filename_display, filename_display_last_modified,
         channel_name, channel_unit, channel2_name, channel2_unit,
         scansize, scansize_unit, center, angle, scan_direction,
         bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z, points,
         comment, background_correction, colorscheme,
-        channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
+        channel_range, channel_range_selected, edits, keywords, rating, status, virtual_copy)
 end
-SpmGridItem = SpmGridItem_v129
+SpmGridItem = SpmGridItem_v130
 
 
 include("config.jl")
@@ -366,10 +366,10 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         filename_original_full = joinpath(dir_data, griditem.filename_original)
         if griditem.type == SpmGridImage
             item = load_image_memcache(filename_original_full)
-            properties = [:channel_name, :background_correction, :filters, :colorscheme, :channel_range_selected]
+            properties = [:channel_name, :background_correction, :edits, :colorscheme, :channel_range_selected]
         elseif griditem.type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
-            properties = [:channel_name, :channel_unit, :channel2_name, :channel2_unit, :scan_direction, :background_correction, :filters, :channel_range_selected]
+            properties = [:channel_name, :channel_unit, :channel2_name, :channel2_unit, :scan_direction, :background_correction, :edits, :channel_range_selected]
         end
 
         changed = false

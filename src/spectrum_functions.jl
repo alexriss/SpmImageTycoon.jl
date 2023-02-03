@@ -203,8 +203,8 @@ function reset_default!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Bool
         griditem.channel_range_selected = Float64[]
         changed = true
     end
-    if griditem.filters != String[]
-        griditem.filters = String[]
+    if griditem.edits != String[]
+        griditem.edits = String[]
         changed = true
     end
 
@@ -364,7 +364,7 @@ function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{Da
     # sometimes the file is blocked, in that case we sleep for 5ms and try again
     f = nothing
     err = nothing
-    for _ in 1:10
+    for _ in 1:20
         try 
             f = open(filename, "w")
             break

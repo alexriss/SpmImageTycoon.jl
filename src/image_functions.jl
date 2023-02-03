@@ -257,8 +257,8 @@ function reset_default!(griditem::SpmGridItem, im_spm::SpmImage)::Bool
         griditem.channel_range_selected = Float64[]
         changed = true
     end
-    if griditem.filters != String[]
-        griditem.filters = String[]
+    if griditem.edits != String[]
+        griditem.edits = String[]
         changed = true
     end
 
