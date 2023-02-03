@@ -169,6 +169,7 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=
     end
 
     d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
+    apply_edits!(d, griditem)
     if normalize
         vmin, vmax = normalize01!(d, range_selected=griditem.channel_range_selected)  # normalize each value in the array to values between 0 and 1
     else

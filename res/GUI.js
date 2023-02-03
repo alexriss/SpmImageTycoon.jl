@@ -80,7 +80,8 @@ function file_url(id) {
     return 'file:///' + window.dir_cache + item.filename_display +
          "?" + item.channel_name + "_" + item.channel2_name + "_" + item.background_correction + "_" + item.colorscheme +
          "_" + item.scan_direction + 
-         "_range_" + item.channel_range_selected;  // to prevent caching and force reload
+         "_range_" + item.channel_range_selected +
+         "_edits_" + JSON.stringify(item.edits);  // to prevent caching and force reload
 }
 
 function file_url_colorbar(id) {

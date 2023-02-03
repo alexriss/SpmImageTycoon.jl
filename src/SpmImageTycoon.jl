@@ -7,6 +7,7 @@ using DataFrames
 using DataStructures: OrderedDict
 using Dates
 using Images
+using ImageFiltering
 using ImageIO
 using JLD2
 using JSExpr
