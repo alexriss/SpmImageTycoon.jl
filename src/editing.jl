@@ -87,6 +87,14 @@ editing_entries = OrderedDict(
 )
 
 
+function apply_edit!(func_name::String, pars::Vector{Any}, item::Union{SpmImage,SpmSpectrum})::Nothing
+    # get the function from the string
+    func = getfield(Main, Symbol(func_name))
+
+    # apply the function
+    func(item, pars)
+end
+
 
 # call functions from strings like that
 #

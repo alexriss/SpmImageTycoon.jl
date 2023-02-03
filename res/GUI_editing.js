@@ -1,7 +1,6 @@
 function Editing() {
     this.initial_setup_complete = false;
     this.curr_id = "";
-    this.same_id = false;
     this.timeout_recalculate = null;
     this.updating = false;
     this.editing_entry_list = {};
@@ -325,7 +324,7 @@ Editing.prototype = {
             }
             return curr_state[key] != item[key]
         });
-        return !res;
+        return res;
     },
 
     recalculate_timeout() {
