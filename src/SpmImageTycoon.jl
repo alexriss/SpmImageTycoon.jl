@@ -284,6 +284,8 @@ function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpe
             if v in keys(vs)
                 griditem.background_correction = v
             end
+        elseif k == "edits"
+            griditem.edits = v
         end
     end
     return nothing

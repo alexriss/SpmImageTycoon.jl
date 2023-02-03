@@ -1,6 +1,7 @@
 function Editing() {
     this.initial_setup_complete = false;
     this.curr_id = "";
+    this.same_id = false;
     this.timeout_recalculate = null;
     this.updating = false;
     this.editing_entry_list = {};
@@ -19,7 +20,7 @@ Editing.prototype = {
         });
 
         document.getElementById("editing_entry_add").addEventListener("change", () => {
-            that.add_entry();
+            that.add_entry_from_form();
         });
 
         var el_list = document.getElementById('editing_entry_container');
@@ -41,10 +42,13 @@ Editing.prototype = {
     setup_form(id, extra_info) {
         if (window.image_info_id != id) return;  // there was some other event already
         this.updating = true;
+
+        let update_entries = false;
+        if (id == this.curr_id) update_entries = true;
         this.curr_id = id;
         this.setup_form_main_entry(id, extra_info);
         this.setup_form_editing_entry_list(id);
-        this.setup_form_entries(id);
+        this.setup_form_entries(id, update=update_entries);
         this.initial_setup();
         this.updating = false;
     },
@@ -103,8 +107,33 @@ Editing.prototype = {
         this.add_options(el, opts, "")
     },
 
-    setup_form_entries(id) {
-        // todo;
+    setup_form_entries(id, update=false) {
+        const item = window.items[id];
+        const entries = item.edits.map(edit => JSON.parse(edit));
+
+        const ids_curr = this.get_entry_list().map(e => e.id);
+        const ids_new = entries.map(e => e.id);
+        // check that all entries are the same - then we can just update them, instead delete and recreate
+        if (ids_curr.join(",") != ids_new.join(","))  update = false;
+
+        const container = document.getElementById("editing_entry_container");
+        if (update) {
+            const container = document.getElementById("editing_entry_container");
+            let entries_form = [];
+            container.querySelectorAll(".editing_entry").forEach((el) => {
+                entries_form.push(el);
+            });
+            for (let i = 0; i < entries.length; i++) {
+                this.add_entry_from_item(entries[i], entries_form[i]);
+            }    
+        } else {
+            container.querySelectorAll(":scope > .editing_entry").forEach(el => {
+                el.remove();
+            });
+            for (let i = 0; i < entries.length; i++) {
+                this.add_entry_from_item(entries[i]);
+            }    
+        }
     },
 
     remove_options(selectElement) {
@@ -133,32 +162,73 @@ Editing.prototype = {
         }
     },
 
-    add_entry() {
+    add_entry_from_form() {
         const el_add = document.getElementById("editing_entry_add");
+        const key = el_add.value;
+        this.add_entry(key);
+        el_add.options[0].selected = 'selected';
+    },
+
+    add_entry_from_item(props_item, el_update=null) {
+        const key = props_item.id;
+        this.add_entry(key, props_item, el_update);
+    },
+
+    add_entry(key,  props_item={}, el_update=null) {
         const container = document.getElementById("editing_entry_container");
-        const edit_name = el_add.value;
-        const props = this.editing_entry_list[edit_name];
+        const props = this.editing_entry_list[key];
         let clone;
-        
+
         if (props.type == "table") {
-            clone = this.add_entry_table(edit_name, props);
+            if (el_update == null) {
+                clone = this.add_entry_table(key, props, props_item, el_update);
+                this.add_entry_events(clone);
+                container.appendChild(clone);
+            } else {
+                clone = this.update_entry_table(props_item, el_update);
+            }
         } else {
             console.log("Unknown editing entry type: " + props.type);
             return;
         }
-        this.add_entry_events(clone);
-        container.appendChild(clone);
-        el_add.options[0].selected = 'selected';
     },
 
-    add_entry_table(edit_name, props) {
+    update_entry_table(props_item, el_entry) {
+        const el_active = el_entry.querySelector(".editing_entry_buttons input");
+        if ("off" in props_item) {
+            if (props_item.off) {
+                el_active.checked = false;
+                el_entry.classList.add("inactive");
+            }
+        }
+
+        Object.entries(props_item.pars).forEach(([key, par]) => {
+            const el_par = el_entry.querySelector('[data-id="' + key + '"]');
+            if (el_par) {
+                el_par.value = par;
+            } else {
+                console.log("Unknown editing entry parameter: " + key);
+            }
+        });
+    },
+
+    add_entry_table(key, props, props_item={}) {
         const tpl = document.getElementById("editing_entry_template_table");
         clone = tpl.content.cloneNode(true);
-        clone.querySelector(".editing_entry").dataset.id = edit_name;
+        const el_entry = clone.querySelector(".editing_entry");
+        el_entry.dataset.id = key;
         clone.querySelector(".editing_entry_name").innerHTML = props.name;
         const id_button = "editing_entry_active_" + this.get_uid();
-        clone.querySelector(".editing_entry_buttons input").id = id_button;
+        const el_active = clone.querySelector(".editing_entry_buttons input");
+        el_active.id = id_button;
         clone.querySelector(".editing_entry_buttons label").htmlFor = id_button;
+        if ("off" in props_item) {
+            if (props_item.off) {
+                el_active.checked = false;
+                el_entry.classList.add("inactive");
+            }
+        }
+
         const container_row = clone.querySelector(".editing_entry_container_row");
         let tpl_row, clone_row;
         for (const [key, par] of Object.entries(props.pars)) {
@@ -169,7 +239,11 @@ Editing.prototype = {
                 clone_row.querySelector(".editing_entry_par_unit").innerHTML = par.unit;
                 const el_input = clone_row.querySelector(".editing_entry_par_input");
                 el_input.dataset.id = key;
-                el_input.value = par.default;
+                if ("pars" in props_item && key in props_item.pars) {
+                    el_input.value = props_item.pars[key];
+                } else {
+                    el_input.value = par.default;
+                }
                 if ("step" in par) el_input.setAttribute("step", par.step);
                 if ("max" in par) el_input.setAttribute("max", par.max);
                 if ("min" in par) el_input.setAttribute("min", par.min);
@@ -207,10 +281,9 @@ Editing.prototype = {
     },
 
     get_entry_list() {
-        // gets list of entries as json string
+        // gets list of entries
         const container = document.getElementById("editing_entry_container");
-        let entries = {};
-        entries["entries"] = [];
+        let entries = [];
         container.querySelectorAll(".editing_entry").forEach((el) => {
             let entry = {};
             let pars = {};
@@ -221,9 +294,9 @@ Editing.prototype = {
                 pars = this.get_entry_pars_table(el, props.pars);
             }
             entry["pars"] = pars;
-            entries["entries"].push(entry);
+            entries.push(entry);
         });
-        return JSON.stringify(entries);
+        return entries;
     },
 
     get_entry_pars_table(el, pars_list) {
@@ -245,7 +318,13 @@ Editing.prototype = {
     },
 
     state_changed(curr_state, item) {
-        const res = Object.keys(curr_state).every((key) =>  curr_state[key] == item[key]);
+        var that = this;
+        const res = Object.keys(curr_state).some((key) =>  {
+            if (typeof curr_state[key] === "object") {
+                return that.state_changed(curr_state[key], item[key]);
+            }
+            return curr_state[key] != item[key]
+        });
         return !res;
     },
 
@@ -274,6 +353,7 @@ Editing.prototype = {
 
         var curr_state = {};
         curr_state["background_correction"] = el_bg.value;
+        curr_state["edits"] = this.get_entry_list().map(x => JSON.stringify(x));
         if (item.type == "SpmGridSpectrum") {
             curr_state["scan_direction"] = el_dir.value;
             curr_state["channel_name"] = el_ch.value;
@@ -293,11 +373,13 @@ Editing.prototype = {
             }
         }
 
+        // console.log("recalculate check");
         if (this.state_changed(curr_state, item)) {
+            // console.log("recalculate changed");
             recalculate_item(curr_id, curr_state);
         }
-        console.log("recalculate");
-        console.log(this.get_entry_list());
+        // console.log(curr_state["edits"]);
+        // console.log("recalculate end");
     },
 
     get_uid() {
