@@ -320,7 +320,9 @@ Editing.prototype = {
         var that = this;
         const res = Object.keys(curr_state).some((key) =>  {
             if (typeof curr_state[key] === "object") {
-                return that.state_changed(curr_state[key], item[key]);
+                const n1 = Object.keys(curr_state[key]).length;
+                const n2 = Object.keys(item[key]).length;
+                return ((n1 !== n2) || that.state_changed(curr_state[key], item[key]));
             }
             return curr_state[key] != item[key]
         });
