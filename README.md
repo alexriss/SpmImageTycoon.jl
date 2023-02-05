@@ -12,6 +12,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Demo](#demo)  
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
+[Installation (alternative)](#alternative-installation)  
 [Cite](#cite)  
 [Case study](#real-world-case-study)  
 [Tips and tricks](#tips-and-tricks)  
@@ -29,6 +30,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
 - Various color palettes
+- Non-destructive edits
 - Line profiles *(experimental and not yet fully tested)*
 - Star-rating and keyword systems
 - Powerful search and filtering (e.g., by keywords, data type, location, scan size)
@@ -111,6 +113,13 @@ using Pkg
 Pkg.update()
 ```
 2. done
+
+
+## Alternative Installation
+
+As an alternative to the installation process described above, you can use [SpmImage Tycoon Installer](https://github.com/alexriss/SpmImageTycoonInstaller.jl). It will install a compiled version of SpmImage Tycoon with much improved startup speed. Furthermore, it can create startmenu and desktop shortcuts. This way of installation also allows to copy the app from one computer to another, by simply copying the installation directory.
+
+This will become the main way of installation in the future.
 
 ## Cite
 
