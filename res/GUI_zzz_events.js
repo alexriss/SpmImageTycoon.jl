@@ -54,6 +54,11 @@ let alt_key_commands = {
     e: { command: open_in_explorer, args: ["image"] },
 }
 
+// mac will send different key-values when alt-key is pressed
+let alt_keycode_commands = {
+    KeyE: { command: open_in_explorer, args: ["image"] },
+}
+
 // with ctrl-modifier
 let ctrl_key_commands = {
     a: { command: toggle_all_active, args: [true] },
@@ -115,6 +120,8 @@ document.addEventListener("keydown", function (event) {
         shift_key_commands[event.key].command(...shift_key_commands[event.key].args);
     } else if (event.altKey && event.key in alt_key_commands) {  // this will not block the non-modifier commands (some of those can only be typed with the shift key)
         alt_key_commands[event.key].command(...alt_key_commands[event.key].args);
+    } else if (event.altKey && event.code in alt_keycode_commands) { 
+        alt_keycode_commands[event.code].command(...alt_keycode_commands[event.code].args);
     } else if (event.key in key_commands) {
         key_commands[event.key].command(...key_commands[event.key].args);
         event.preventDefault();
