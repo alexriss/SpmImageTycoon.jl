@@ -1,6 +1,9 @@
 # initialize cache variable
 memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
 memcache_images_lock = ReentrantLock() 
+memcache_imagedata = ListNodeCache{Tuple{Array{Float32,2},String}}(memcache_mb_imagedata)
+memcache_imagedata_lock = ReentrantLock() 
+
 
 """saves all colorbars as pngs in the cache directory.
 Returns a dictionary that associates each colorscheme name with a png file"""
@@ -23,7 +26,7 @@ end
 Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
 function get_histogram(griditem::SpmGridItem, dir_data::String)::Tuple{Float32,Vector{Float32}}
     im_spm = load_image_memcache(joinpath(dir_data, griditem.filename_original))
-    d = vec(get_image_data(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
+    d = vec(get_image_data_cache(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
     N = length(d)
@@ -154,8 +157,34 @@ function colorize(data::Array{<:Number,2}, colorscheme::String)::Array{RGB{Float
 end
 
 
+"""Gets the image data from cache (if it exists, otherwise calls the function `get_image_data`)"""
+function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+    res = missing
+    key = griditem.id * "_" * griditem.channel_name * "_" * griditem.background_correction * "_" * string(griditem.edits) * "_" * string(resize_to)
+    lock(memcache_imagedata_lock) do
+        res = get_cache(memcache_imagedata, key)
+        if res === missing
+            res = get_image_data(griditem, im_spm; resize_to=resize_to)
+            set_cache(memcache_imagedata, key, res)
+        end
+    end
+
+    d = deepcopy(res[1])
+    if normalize
+        vmin, vmax = normalize01!(d, range_selected=griditem.channel_range_selected)  # normalize each value in the array to values between 0 and 1
+    else
+        vmin, vmax = 0f0, 0f0  # we only need it when also normalizing it
+    end
+    if clamp
+        clamp01nan!(d)
+    end
+
+    return d, res[2], vmin, vmax
+end
+
+
 """Get, resize, background correct and filter image data for a specific griditem. Returns a 2d array, the channel unit, minimum and maximum values."""
-function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0)::Tuple{Array{Float32,2},String}
     channel = get_channel(im_spm, griditem.channel_name, origin="upper");
     d = channel.data
     unit = channel.unit
@@ -170,16 +199,8 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=
 
     d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
     apply_edits!(d, griditem)
-    if normalize
-        vmin, vmax = normalize01!(d, range_selected=griditem.channel_range_selected)  # normalize each value in the array to values between 0 and 1
-    else
-        vmin, vmax = 0, 0  # we only need it when also normalizing it
-    end
-    if clamp
-        clamp01nan!(d)
-    end
 
-    return d, unit, vmin, vmax
+    return d, unit
 end
 
 
@@ -195,7 +216,7 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
     end
 
     # create grayscale image
-    d, unit, vmin, vmax = get_image_data(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
+    d, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
 
     if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
