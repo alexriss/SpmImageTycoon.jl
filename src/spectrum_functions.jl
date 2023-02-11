@@ -298,6 +298,7 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_
             sort!(xy_data, 1)
         end
         SpmSpectroscopy.correct_background!(x_data, y_data, background_correction_list_spectrum[griditem.background_correction])
+        apply_edits!(x_data, y_data, griditem)
     end
 
     return xy_datas, colors

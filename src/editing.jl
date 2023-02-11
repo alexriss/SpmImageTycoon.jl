@@ -74,8 +74,8 @@ editing_entries = OrderedDict(
                 "s" => Dict(
                     "type" => "float",
                     "name" => "&sigma;",
-                    "default" => 0.10,
-                    "step" => 0.01,
+                    "default" => 2,
+                    "step" => 0.1,
                     "min" => 0.0,
                     "unit" => "points",
                 )
@@ -83,11 +83,19 @@ editing_entries = OrderedDict(
             "abbreviation" => "G",
             "function" => "Gaussian",
         ),
+        "ddx" => Dict(
+            "name" => "Differentiate",
+            "type" => "table",
+            "pars" => OrderedDict(),
+            "abbreviation" => "d/dx",
+            "function" => "diff1",
+        ),
     )
 )
 
 
 MatrixFloat = Union{Matrix{Float32}, Matrix{Float64}}
+VectorFloat = Union{Vector{Float32}, Vector{Float64}}
 
 
 """Returns a string with the active edits for the given griditem."""
@@ -133,6 +141,23 @@ function apply_edits!(d::MatrixFloat, griditem::SpmGridItem)::Nothing
 end
 
 
+"""Applies all edits to the spectrum data."""
+function apply_edits!(x_data, y_data, griditem::SpmGridItem)::Nothing
+    for edit in griditem.edits
+        edit = JSON.parse(edit)
+        if "id" in keys(edit)
+            if "off" in keys(edit)
+                if edit["off"] == true
+                    continue
+                end
+            end
+            apply_edit!(x_data, y_data, griditem, edit)
+        end
+    end
+    return nothing
+end
+
+
 """Applies one edit to the image data."""
 function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict)::Nothing
     # get the function from the string
@@ -153,6 +178,29 @@ function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict)::Nothing
 
     return nothing
 end
+
+
+"""Applies one edit to the spectrum data."""
+function apply_edit!(x_data::VectorFloat, y_data::VectorFloat, griditem::SpmGridItem, edit::Dict)::Nothing
+    # get the function from the string
+
+    key = edit["id"]
+    if key ∉ keys(editing_entries["spectrum"])
+        @warn "Unknown edit key: $key"
+        return nothing
+    end
+
+    func_name = editing_entries["spectrum"][key]["function"]
+    func = getfield(SpmImageTycoon, Symbol(func_name))
+
+    default_pars = editing_entries["spectrum"][key]["pars"]
+
+    # apply the function
+    func(x_data, y_data, griditem, edit["pars"], default_pars)
+
+    return nothing
+end
+
 
 
 function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, default_pars::OrderedDict)::Nothing
@@ -221,4 +269,29 @@ function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, default_pars::Or
 
     return nothing
 end
+
+
+function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict, default_pars::OrderedDict)::Nothing
+    s = pars["s"]
+    if !isa(s, Real)
+        try
+            s = parse(Float64, s)
+        catch
+            s = default_pars["s"]["default"]
+        end
+    end
+    y .= imfilter(y, Kernel.gaussian((s, )))
+
+    return nothing
+end
+
+
+function diff1(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict, default_pars::OrderedDict)::Nothing
+    dy = diff(y)
+    push!(dy, dy[end])
+    y .= dy
+
+    return nothing
+end
+
 
