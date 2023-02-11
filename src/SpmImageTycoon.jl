@@ -434,6 +434,7 @@ end
 function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{OrderedDict{String,String}, OrderedDict{String,String}}
     filename_original_full = joinpath(dir_data, griditem.filename_original)
     extra_info = OrderedDict{String,String}()
+    extra_info["active_edits_str"] = get_active_edits_str(griditem)
     if griditem.type == SpmGridImage
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
         extra_info["Channels"] = join(im_spm.channel_names, ", ")

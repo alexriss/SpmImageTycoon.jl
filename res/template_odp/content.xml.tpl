@@ -83,6 +83,10 @@
             <style:graphic-properties fo:min-height="0.552cm" fo:min-width="1.098cm"/>
             <style:paragraph-properties style:writing-mode="lr-tb"/>
         </style:style>
+        <style:style style:name="gr8" style:family="graphic" style:parent-style-name="SPM_Edits">
+            <style:graphic-properties fo:min-height="0.295cm"/>
+            <style:paragraph-properties style:writing-mode="lr-tb"/>
+        </style:style>
         <style:style style:name="pr1" style:family="presentation" style:parent-style-name="Default-title">
             <style:graphic-properties draw:auto-grow-height="true" fo:min-height="3.505cm"/>
             <style:paragraph-properties style:writing-mode="lr-tb"/>
@@ -215,6 +219,11 @@
                         <draw:frame draw:style-name="gr6" draw:text-style-name="P1" draw:layer="layout" svg:width="{{ halfwidth }}cm" svg:height="0.395cm" svg:x="{{ channel_x }}cm" svg:y="{{ channel_y }}cm">
                             <draw:text-box>
                                 <text:p>{{ channel_name }}: {{#bias}}{{ bias }},{{/bias}} {{ feedback }}</text:p>
+                            </draw:text-box>
+                        </draw:frame>
+                        <draw:frame draw:style-name="gr8" draw:text-style-name="P1" draw:layer="layout" svg:width="{{ fullwidth }}cm" svg:height="0.300cm" svg:x="{{ edits_x }}cm" svg:y="{{ edits_y }}cm">
+                            <draw:text-box>
+                                <text:p>{{ edit_entries_str }}</text:p>
                             </draw:text-box>
                         </draw:frame>
                     </draw:g>

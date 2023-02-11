@@ -220,6 +220,8 @@ function show_info(id, gzip_info_json, extra_info={}) {
     document.getElementById("image_info_filename").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
     document.getElementById("image_info_channel_name").innerText = window.items[id].channel_name;
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
+    document.getElementById("image_info_edits").innerText = extra_info["active_edits_str"]
+    
     if (window.items[id].type == "SpmGridSpectrum") {
         document.getElementById("image_info_scansize_or_xaxis").innerText = window.items[id].channel2_name;
         document.getElementById("image_info_angle_or_points").innerText = window.items[id].points + " pts";

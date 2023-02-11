@@ -30,7 +30,7 @@ editing_entries = OrderedDict(
                 "s1" => Dict(
                     "type" => "float",
                     "name" => "&sigma;<sub>1</sub>",
-                    "default" => 0.10,
+                    "default" => 0.025,
                     "step" => 0.01,
                     "min" => 0.0,
                     "unit" => "nm",
@@ -38,7 +38,7 @@ editing_entries = OrderedDict(
                 "s2" => Dict(
                     "type" => "float",
                     "name" => "&sigma;<sub>2</sub>",
-                    "default" => 1.00,
+                    "default" => 0.05,
                     "step" => 0.01,
                     "min" => 0.0,
 
@@ -88,6 +88,26 @@ editing_entries = OrderedDict(
 
 
 MatrixFloat = Union{Matrix{Float32}, Matrix{Float64}}
+
+
+"""Returns a string with the active edits for the given griditem."""
+function get_active_edits_str(griditem::SpmGridItem)::String
+    if griditem.type == SpmGridImage
+        editing_entries_ = editing_entries["image"]
+    elseif griditem.type == SpmGridSpectrum
+        editing_entries_ = editing_entries["spectrum"]
+    else
+        return ""
+    end
+
+    edits = map(griditem.edits) do edit_str
+        edit = JSON.parse(edit_str)
+        haskey(edit, "off") && edit["off"] > 0 && return ""
+        editing_entries_[edit["id"]]["abbreviation"]
+    end
+    edits = filter(x-> x!= "", edits)
+    return join(edits, ", ")
+end
 
 
 """Converts nm to pixels."""

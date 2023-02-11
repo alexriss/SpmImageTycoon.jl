@@ -279,6 +279,10 @@ function export_odp(ids::Vector{String}, dir_data::String, griditems::Dict{Strin
             dict_image["bias"] = ""
         end
 
+        dict_image["edits_x"] = x
+        dict_image["edits_y"] = dict_image["channel_y"] + odp_lineheight
+        dict_image["edit_entries_str"] = get_active_edits_str(griditem)
+
         filename_display = griditem.filename_display
         filename_odp = joinpath(dir_media_odp, filename_display)
         filename_odp = replace(filename_odp, "\\" => "/")  # we seem to need forward-slashes for the ZipFile

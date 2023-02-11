@@ -361,7 +361,7 @@ function event_handlers() {
 }
 
 
-// sets up douyble click events that copy to clipboard
+// sets up double click events that copy to clipboard
 function event_handlers_clipboard() {
     // double click elements to copy to clipboard
     const els = {
