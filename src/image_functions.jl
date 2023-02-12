@@ -288,12 +288,13 @@ function reset_default!(griditem::SpmGridItem, im_spm::SpmImage)::Bool
 end
 
 
-"""calcuates a line profile"""
+"""calculates a line profile"""
 function get_line_profile(id::String, dir_data::String, griditems::Dict{String,SpmGridItem}, start_point::Vector{Float64}, end_point::Vector{Float64}, width::Float64)::Tuple{Vector{Vector{Float64}}, Vector{Float64}, Vector{Union{Float64,Missing}}, Union{Float64,Missing}, Union{Float64,Missing}}
-    filename_original = griditems[id].filename_original
+    griditem = griditems[id]
+    filename_original = griditem.filename_original
     im_spm = load_image_memcache(joinpath(dir_data, filename_original))
-    bg = background_correction_list_image[griditems[id].background_correction]
-    coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, griditems[id].channel_name, start_point, end_point, width, background=bg)
+    data, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)
+    coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, data, start_point, end_point, width, origin="upper")
 
     return coords, distances, values, start_point_value, end_point_value
 end
