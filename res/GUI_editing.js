@@ -175,6 +175,10 @@ Editing.prototype = {
 
     add_entry(key,  props_item={}, el_update=null) {
         const container = document.getElementById("editing_entry_container");
+        if (!(key in this.editing_entry_list)) {
+            console.log("Unknown editing entry: " + key);
+            return;
+        }
         const props = this.editing_entry_list[key];
         let clone;
 
@@ -269,7 +273,7 @@ Editing.prototype = {
             } else {
                 e.target.closest(".editing_entry").classList.add("inactive");
             }
-            // reclaculate timeout is done for all changes to input, so no need to do it here again
+            // recalculate timeout is done for all changes to input, so no need to do it here again
         });
 
         el.querySelectorAll("input, select").forEach((el) => {
