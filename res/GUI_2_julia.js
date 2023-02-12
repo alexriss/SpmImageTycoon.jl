@@ -113,7 +113,7 @@ function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previ
     }
 }
 
-function update_images(gzip_json_griditems) {  // "griditems" is a dictionary here
+function update_images(gzip_json_griditems, julia_queue_type="") {  // "griditems" is a dictionary here
     // updates images
 
     // let t1 = performance.now();
@@ -145,7 +145,7 @@ function update_images(gzip_json_griditems) {  // "griditems" is a dictionary he
     filter_items(Object.keys(griditems));
     check_hover_enabled()
 
-    open_jobs(-1);
+    open_jobs(-1, julia_queue_type);
 }
 
 function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {

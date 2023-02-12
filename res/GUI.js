@@ -54,6 +54,7 @@ window.keywords_modes_display_css_classes = ["is-success", "is-info", "is-danger
 
 window.timeout_filter = null;  // timeout refrence for filter function
 window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
+window.queue_edits_contrast == null  // queue object, used for edits and contrast adjustment
 
 window.t0 = 0;   // for performance measurements
 
@@ -98,13 +99,16 @@ function insertAfter(newNode, referenceNode) {
 
 // GUI functions
 
-function open_jobs(diff) {
+function open_jobs(diff, julia_queue_type="") {
     // tracks the number of open julia jobs and displays spinner as long as there are some
     window.num_open_jobs += diff;
     if (window.num_open_jobs > 0) {
         document.getElementById("spinner_title").classList.remove("is-invisible");
     } else {
         document.getElementById("spinner_title").classList.add("is-invisible");
+    }
+    if (julia_queue_type != "") {
+        window.queue_edits_contrast.remove_julia_queue(julia_queue_type);
     }
 }
 

@@ -94,7 +94,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                     set_range_selected!(ids, dir_data, griditems, range_selected, full_resolution)
                     griditems_sub = get_subset(griditems, ids)
                     json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
-                    @js_ w update_images($json_compressed);
+                    @js_ w update_images($json_compressed, "contrast");
                 catch e
                     error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
                 finally
@@ -123,7 +123,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                     griditems_sub = get_subset(griditems, ids)
                     change_griditem!(griditems, ids, dir_data, state, full_resolution)
                     json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
-                    @js_ w update_images($json_compressed);
+                    @js_ w update_images($json_compressed, "edit");
                 catch e
                     error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
                 finally

@@ -198,7 +198,7 @@ Histogram.prototype = {
         // triggers when the selected-range input fields are changed by the user
         let range_selected = this.convert_absolute_display_to_relative([this.imagezoom_range_selected_start.value, this.imagezoom_range_selected_end.value]);
         range_selected = this.limit_range_selected(range_selected);
-        this.change_item_range_timeout(window.zoom_last_selected, range_selected, timeout_ms=40);  // call julia
+        this.change_item_range_timeout(window.zoom_last_selected, range_selected, timeout_ms=5);  // call julia
     },
 
     set_range_user(event, mode="") {
@@ -268,7 +268,7 @@ Histogram.prototype = {
         }
 
         this.timeout_change_item_range = window.setTimeout(function() {
-            change_item_range(id, range_selected);  // call Julia
+            window.queue_edits_contrast.add(id, "contrast", () => change_item_range(id, range_selected));  // queue to call Julia
         }, timeout_ms);
     },
 

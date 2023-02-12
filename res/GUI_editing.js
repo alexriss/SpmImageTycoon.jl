@@ -35,6 +35,8 @@ Editing.prototype = {
             }
         });
 
+        if (window.queue_edits_contrast == null) window.queue_edits_contrast = new Queue();
+
         this.initial_setup_complete = true;
     },
 
@@ -337,12 +339,12 @@ Editing.prototype = {
         if (window.image_info_id != this.curr_id || this.updating) return;
         this.recalculate_timeout_clear();
         var that = this;
-        window.timeout_recalculate = window.setTimeout(() => that.recalculate(), 30);
+        this.timeout_recalculate = window.setTimeout(() => that.recalculate(), 5);
     },
 
     recalculate_timeout_clear() {
         if (window.timeout_recalculate != null) {
-            clearTimeout(window.timeout_recalculate);
+            clearTimeout(this.timeout_recalculate);
         }
     },
 
@@ -381,7 +383,7 @@ Editing.prototype = {
         // console.log("recalculate check");
         if (this.state_changed(curr_state, item)) {
             // console.log("recalculate changed");
-            recalculate_item(curr_id, curr_state);
+            window.queue_edits_contrast.add(curr_id, "edit", () => recalculate_item(curr_id, curr_state));
         }
         // console.log(curr_state["edits"]);
         // console.log("recalculate end");
