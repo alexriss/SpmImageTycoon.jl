@@ -10,6 +10,7 @@ editing_entries = OrderedDict(
                     "default" => 0.05,
                     "step" => 0.01,
                     "min" => 0.0,
+                    "digits" => 3,
                     "unit" => "nm",
                 )
             ),
@@ -33,6 +34,7 @@ editing_entries = OrderedDict(
                     "default" => 0.025,
                     "step" => 0.01,
                     "min" => 1e-8,
+                    "digits" => 3,
                     "unit" => "nm",
                 ),
                 "s2" => Dict(
@@ -41,7 +43,7 @@ editing_entries = OrderedDict(
                     "default" => 0.05,
                     "step" => 0.01,
                     "min" => 1e-8,
-
+                    "digits" => 3,
                     "unit" => "nm",
                 )
             ),
@@ -58,6 +60,7 @@ editing_entries = OrderedDict(
                     "default" => 0.05,
                     "step" => 0.01,
                     "min" => 1e-8,
+                    "digits" => 3,
                     "unit" => "nm",
                 )
             ),
@@ -75,8 +78,9 @@ editing_entries = OrderedDict(
                     "type" => "float",
                     "name" => "&sigma;",
                     "default" => 2,
-                    "step" => 0.1,
+                    "step" => 1,
                     "min" => 0.0,
+                    "digits" => 1,
                     "unit" => "points",
                 )
             ),

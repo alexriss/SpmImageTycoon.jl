@@ -54,7 +54,7 @@ window.keywords_modes_display_css_classes = ["is-success", "is-info", "is-danger
 
 window.timeout_filter = null;  // timeout refrence for filter function
 window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
-window.queue_edits_contrast == null  // queue object, used for edits and contrast adjustment
+window.queue_edits_range == null  // queue object, used for edits and range adjustment
 
 window.t0 = 0;   // for performance measurements
 
@@ -108,7 +108,7 @@ function open_jobs(diff, julia_queue_type="") {
         document.getElementById("spinner_title").classList.add("is-invisible");
     }
     if (julia_queue_type != "") {
-        window.queue_edits_contrast.remove_julia_queue(julia_queue_type);
+        window.queue_edits_range.remove_julia_queue(julia_queue_type);
     }
 }
 
@@ -674,7 +674,7 @@ function next_item(jump) {
             if (window.histogram_object === null) {
                 window.histogram_object = new Histogram();
             }
-            window.histogram_object.set_range_initial(window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
+            window.histogram_object.set_range_initial(el.id, window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
 
             if (window.line_profile_object === null) {
                 window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));

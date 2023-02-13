@@ -35,7 +35,7 @@ Editing.prototype = {
             }
         });
 
-        if (window.queue_edits_contrast == null) window.queue_edits_contrast = new Queue();
+        if (window.queue_edits_range == null) window.queue_edits_range = new Queue();
 
         this.initial_setup_complete = true;
     },
@@ -109,6 +109,10 @@ Editing.prototype = {
     },
 
     setup_form_entries(id, update=false) {
+        if (update && window.queue_edits_range.type_in_queue(id, "edit")) {
+            return;  // there are other operations waiting, so we don't update now
+        }
+
         const item = window.items[id];
         const entries = item.edits.map(edit => JSON.parse(edit));
 
@@ -383,7 +387,7 @@ Editing.prototype = {
         // console.log("recalculate check");
         if (this.state_changed(curr_state, item)) {
             // console.log("recalculate changed");
-            window.queue_edits_contrast.add(curr_id, "edit", () => recalculate_item(curr_id, curr_state));
+            window.queue_edits_range.add(curr_id, "edit", () => recalculate_item(curr_id, curr_state));
         }
         // console.log(curr_state["edits"]);
         // console.log("recalculate end");

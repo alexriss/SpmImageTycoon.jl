@@ -94,7 +94,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
                     set_range_selected!(ids, dir_data, griditems, range_selected, full_resolution)
                     griditems_sub = get_subset(griditems, ids)
                     json_compressed = transcode(GzipCompressor, JSON.json(griditems_sub))
-                    @js_ w update_images($json_compressed, "contrast");
+                    @js_ w update_images($json_compressed, "range_selected");
                 catch e
                     error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
                 finally

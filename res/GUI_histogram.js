@@ -137,7 +137,7 @@ Histogram.prototype = {
 
     plot_histogram(width, counts) {
         // plots a bar chart to the canvas. counts are assumed to be normalized between 0 and 1
-        
+
         // this seems to reset the canvas without any blinking
         this.canvas.width = this.canvas_width;
         this.canvas.height = this.canvas_height;
@@ -154,11 +154,17 @@ Histogram.prototype = {
         }
     },
 
-    set_range_initial(range, range_selected, unit) {
+    set_range_initial(id, range, range_selected, unit) {
         // sets the initial histogram range (and after an update from julia)
         if (this.drag) {
             return;
         }
+        console.log("range_initial");
+        if (window.queue_edits_range.queue_length(id) > 1) {
+            return;  // there are other operations waiting, so we don't update now
+        }
+        console.log("range_initial2");
+
         if (range_selected.length != 2) {
             range_selected = [0.0, 1.0];
         }
@@ -268,7 +274,7 @@ Histogram.prototype = {
         }
 
         this.timeout_change_item_range = window.setTimeout(function() {
-            window.queue_edits_contrast.add(id, "contrast", () => change_item_range(id, range_selected));  // queue to call Julia
+            window.queue_edits_range.add(id, "range_selected", () => change_item_range(id, range_selected));  // queue to call Julia
         }, timeout_ms);
     },
 

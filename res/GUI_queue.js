@@ -9,7 +9,7 @@ function Queue() {
     this.curr_type = "";
     this.types_priority = {
         "edit": 1,
-        "contrast": 0,
+        "range_selected": 0,
     }
     this.julia_queue = [];
 }
@@ -23,6 +23,7 @@ Queue.prototype = {
         }
         this.queue[id].push({type: type, func: func});
 
+        console.log("add to queue: " + type);
         this.cleanup();
         this.execute();
     },
@@ -38,11 +39,13 @@ Queue.prototype = {
             if (lqid > 1) {
                 if (this.type_eq(this.queue[id][lqid-1].type, this.queue[id][lqid-2].type)) {
                     // superceded by the last element
+                    console.log("remove from queue " + this.queue[id][lqid-2].type);
                     this.queue[id].splice(lqid-2, 1);
                     this.queued_ids.splice(i, 1);
                     changes = true;
                 } else if (this.type_gt(this.queue[id][lqid-1].type, this.queue[id][lqid-2].type)) {
                     // we switch order
+                    console.log("swap in queue " + this.queue[id][lqid-1].type + "  " + this.queue[id][lqid-2].type);
                     const swap = this.queue[id][lqid-1];
                     this.queue[id][lqid-1] = this.queue[id][lqid-2];
                     this.queue[id][lqid-2] = swap;
@@ -53,9 +56,6 @@ Queue.prototype = {
                 break;
             }
         }
-        const id = this.queued_ids[lq-1];
-        console.log(this.queue[id]);
-        console.log(changes);
     },
 
     execute() {
@@ -73,10 +73,47 @@ Queue.prototype = {
         const id = this.queued_ids.shift();
         const item = this.queue[id].shift();
         this.julia_queue.push(item.type);
+        console.log("execute " + item.type);
         item.func();
     },
 
+    type_in_queue(id, type) {
+        // returns true if type is in the queue
+        console.log("type: " + type);
+        console.log(this.queue[id]);
+        console.log(this.julia_queue);
+        if (!(id in this.queue)) {
+            console.log("false1");
+            return false;
+        }
+        
+        const q = this.queue[id];
+        for (let i = 0; i < q.length; i++) {
+            if (q.type == type) {
+                console.log("true1");
+                return true;
+            }
+        }
+
+        const jq = this.julia_queue;
+        if (jq.filter(x => x === type).length > 1) {
+            // we have at least two of the same type in the queue (the first one is the active one)
+            console.log("true2");
+            return true;
+        }
+        console.log("false_end");
+        return false;
+    },
+
+    queue_length(id) {
+        if (!(id in this.queue)) {
+            return 0;
+        }
+        return this.julia_queue.length + this.queue[id].length;
+    },
+
     remove_julia_queue(type) {
+        console.log("removing from julia queue: " + type + "");
         if (this.julia_queue[0] != type) {
             console.log("Job type mismatch: " + this.julia_queue[0] + " vs " + type + ")");
         }
@@ -100,4 +137,4 @@ Queue.prototype = {
     }
 }
 
-window.queue_edits_contrast = new Queue();
+window.queue_edits_range = new Queue();
