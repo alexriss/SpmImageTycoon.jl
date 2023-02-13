@@ -181,6 +181,11 @@ function toggle_error() {
 
 function toggle_start_project(target="project", save=false) {
     // toggles between project page and start page
+
+    if (get_view() == "start_loading" && target != "project") {
+        return;  // we do not want to interrupt the loading process
+    }
+
     if (target == "re-project") {  // undo close project
         if (window.dir_data != "") {
             target = "project";
