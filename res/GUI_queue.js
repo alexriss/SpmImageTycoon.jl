@@ -81,7 +81,7 @@ Queue.prototype = {
         
         const q = this.queue[id];
         for (let i = 0; i < q.length; i++) {
-            if (q.type == type) {
+            if (q.type === type) {
                 return true;
             }
         }

@@ -60,7 +60,7 @@ Histogram.prototype = {
 
     format_number(number, decimals=2) {
         // formats a number using a unit-prefix and a certain amount of decimals
-        return number.toFixed(2);
+        return number.toFixed(decimals);
     },
 
     convert_absolute_to_absolute_display(range) {
