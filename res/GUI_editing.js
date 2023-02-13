@@ -215,6 +215,7 @@ Editing.prototype = {
             const el_par = el_entry.querySelector('[data-id="' + key + '"]');
             if (el_par) {
                 el_par.value = par;
+                this.check_input_validity(el_par);
             } else {
                 console.log("Unknown editing entry parameter: " + key);
             }
@@ -249,13 +250,18 @@ Editing.prototype = {
                 const el_input = clone_row.querySelector(".editing_entry_par_input");
                 el_input.dataset.id = key;
                 if ("pars" in props_item && key in props_item.pars) {
-                    el_input.value = props_item.pars[key];
+                    el_input.value = this.format_number(props_item.pars[key], par);
                 } else {
-                    el_input.value = par.default;
+                    el_input.value = this.format_number(par.default, par);
                 }
+                el_input.dataset.default = par.default;
                 if ("step" in par) el_input.setAttribute("step", par.step);
-                if ("max" in par) el_input.setAttribute("max", par.max);
-                if ("min" in par) el_input.setAttribute("min", par.min);
+                // if ("max" in par) el_input.setAttribute("max", par.max);
+                // if ("min" in par) el_input.setAttribute("min", par.min);
+                // we set it in the data-attributes, because the min-attribute messes up the step
+                if ("min" in par) el_input.dataset.min = par.min;
+                if ("max" in par) el_input.dataset.max = par.max;
+                if ("digits" in par) el_input.dataset.digits = par.digits;
             } else {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;
@@ -285,6 +291,7 @@ Editing.prototype = {
         el.querySelectorAll("input, select").forEach((el) => {
             el.addEventListener("change", (e) => {
                 that.recalculate_timeout();
+                that.check_input_validity(el);
             });
         });
     },
@@ -318,7 +325,7 @@ Editing.prototype = {
             }
             if (pars_list[key].type == "float") {
                 pars[key] = el.valueAsNumber;
-                if (pars[key] == null) pars[key] = pars_list[key].default;
+                if (pars[key] == null || isNaN(pars[key])) pars[key] = pars_list[key].default;
             } else {
                 pars[key] = el.value;
             }
@@ -395,8 +402,39 @@ Editing.prototype = {
 
     get_uid() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
+    },
 
+    check_input_validity(el) {
+        if (el.type == "number") {
+            let val = el.valueAsNumber;
+            if (val == null || isNaN(val)) {
+                val = el.dataset.default;
+            }
+            if ("min" in el.dataset) {
+                const min =  parseFloat(el.dataset.min);
+                if (val < min) {
+                    val = min;
+                }
+            }
+            if ("max" in el.dataset) {
+                const max =  parseFloat(el.dataset.max);
+                if (val > max) {
+                    val = max;
+                }
+            }
+
+            el.value = this.format_number(val, el.dataset);
+        }
+    },
+
+    format_number(val, pars) {
+        if ("digits" in pars) {
+            const digits = parseInt(pars.digits);
+            const val_str = val.toFixed(digits);
+            val = val_str;
+        }
+        return val;
+    }
 
 }
 
