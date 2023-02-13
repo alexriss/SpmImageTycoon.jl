@@ -159,11 +159,9 @@ Histogram.prototype = {
         if (this.drag) {
             return;
         }
-        console.log("range_initial");
         if (window.queue_edits_range.queue_length(id) > 1) {
             return;  // there are other operations waiting, so we don't update now
         }
-        console.log("range_initial2");
 
         if (range_selected.length != 2) {
             range_selected = [0.0, 1.0];
