@@ -122,7 +122,9 @@ function update_images(gzip_json_griditems, julia_queue_type="") {  // "griditem
     let json_griditems = require("zlib").gunzipSync(new Buffer.from(gzip_json_griditems));
     let griditems = JSON.parse(json_griditems.toString("utf-8"));
 
+    let ids = [];
     for (let key in griditems) {
+        ids.push(key);
         window.items[key] = griditems[key];
         update_image(key);
         griditems[key].keywords.forEach((keyword) => {
@@ -145,7 +147,7 @@ function update_images(gzip_json_griditems, julia_queue_type="") {  // "griditem
     filter_items(Object.keys(griditems));
     check_hover_enabled()
 
-    open_jobs(-1, julia_queue_type);
+    open_jobs(-1, ids, julia_queue_type);
 }
 
 function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {
@@ -339,7 +341,9 @@ function show_info(id, gzip_info_json, extra_info={}) {
         document.getElementById("sidebar_keywords_container").appendChild(el_keyword);
     });
 
-    window.editing_object.setup_form(id, extra_info);
+    if (!document.getElementById("sidebar_imagezoomtools").classList.contains("is-hidden")) {
+        window.editing_object.setup_form(id, extra_info);
+    }  
 
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
@@ -614,7 +618,7 @@ function get_image_info(id="", zoomview=false) {
 
 function set_rating(rating, only_current=false) {
     // sets the rating for items.
-    // if "only_current" is true, then only set the rating for the item displayed int he sidebar.
+    // if "only_current" is true, then only set the rating for the item displayed in the sidebar.
     console.log("set rating to: " + rating);
 
     let ids = get_active_element_ids(only_current);

@@ -3,15 +3,13 @@
 function Queue() {
     this.queue = {};
     this.queued_ids = [];
+    this.julia_queue = {};
     this.timeout = null;
     this.timeout_wait = 5;
-    this.curr_id = "";
-    this.curr_type = "";
     this.types_priority = {
         "edit": 1,
         "range_selected": 0,
     }
-    this.julia_queue = [];
 }
 
 Queue.prototype = {
@@ -58,54 +56,77 @@ Queue.prototype = {
     execute() {
         // schedules next operation
         if (this.queued_ids.length == 0) {
-            return;
+            return;  // nothing to do
         }
 
-        if (this.julia_queue.length > 0) {
+        const id = this.queued_ids[0];
+        const item = this.queue[id][0];
+
+        if (!(id in this.julia_queue)) {
+            this.julia_queue[id] = [];
+        }
+
+        if (this.julia_queue[id].length > 0) {
             const that = this;
             window.setTimeout(() => that.execute(), that.timeout_wait);
             return;
         }
 
-        const id = this.queued_ids.shift();
-        const item = this.queue[id].shift();
-        this.julia_queue.push(item.type);
+        this.queued_ids.shift();
+        this.queue[id].shift();
+        this.julia_queue[id].push(item.type);
+
         item.func();
     },
 
     type_in_queue(id, type) {
         // returns true if type is in the queue
-        if (!(id in this.queue)) {
-            return false;
-        }
-        
-        const q = this.queue[id];
-        for (let i = 0; i < q.length; i++) {
-            if (q.type === type) {
-                return true;
+        if (id in this.queue) {
+            const q = this.queue[id];
+            for (let i = 0; i < q.length; i++) {
+                if (q[i].type === type) {
+                    return true;
+                }
             }
         }
 
-        const jq = this.julia_queue;
-        if (jq.filter(x => x === type).length > 1) {
-            // we have at least two of the same type in the queue (the first one is the active one)
-            return true;
+        if (id in this.julia_queue) {
+            const jq = this.julia_queue[id];
+            if (jq.filter(x => x === type).length > 1) {
+                // we have at least two of the same type in the queue (the first one is the active one)
+                return true;
+            }
         }
         return false;
     },
 
     queue_length(id) {
-        if (!(id in this.queue)) {
-            return 0;
+        let sum = 0;
+        if (id in this.queue) {
+            sum += this.queue[id].length;
         }
-        return this.julia_queue.length + this.queue[id].length;
+        if (id in this.julia_queue) {
+            sum += this.julia_queue[id].length;
+        }
+        return sum;
     },
 
-    remove_julia_queue(type) {
-        if (this.julia_queue[0] != type) {
-            console.log("Job type mismatch: " + this.julia_queue[0] + " vs " + type + ")");
+    remove_julia_queue(ids, type) {
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            if (!(id in this.julia_queue)) {
+                console.log("Job id mismatch: " + id + " not found.");
+                continue;
+            }
+            if (this.julia_queue[id].length === 0) {
+                console.log("Job queue mismatch: " + id + " had no scheduled jobs.");
+                continue;
+            }
+            const julia_type = this.julia_queue[id].shift();
+            if (julia_type != type) {
+                console.log("Job type mismatch: " + this.julia_queue[id][0] + " vs " + type + ")");
+            }
         }
-        this.julia_queue.shift();
     },
 
     type_eq(type1, type2) {

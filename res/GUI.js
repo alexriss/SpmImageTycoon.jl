@@ -99,7 +99,7 @@ function insertAfter(newNode, referenceNode) {
 
 // GUI functions
 
-function open_jobs(diff, julia_queue_type="") {
+function open_jobs(diff, ids=[], julia_queue_type="") {
     // tracks the number of open julia jobs and displays spinner as long as there are some
     window.num_open_jobs += diff;
     if (window.num_open_jobs > 0) {
@@ -108,7 +108,7 @@ function open_jobs(diff, julia_queue_type="") {
         document.getElementById("spinner_title").classList.add("is-invisible");
     }
     if (julia_queue_type != "") {
-        window.queue_edits_range.remove_julia_queue(julia_queue_type);
+        window.queue_edits_range.remove_julia_queue(ids, julia_queue_type);
     }
 }
 
@@ -287,12 +287,16 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
 
     if (restore_previous && get_view() == "zoom") {
         if (window.sidebar_imagezoomtools) {
-            sidebar.classList.remove("is-hidden");
+            if (sidebar.classList.contains("is-hidden")) {
+                get_image_info(window.zoom_last_selected, true);
+                sidebar.classList.remove("is-hidden");
+            }
         } else {
             sidebar.classList.add("is-hidden");
         }
     } else if (get_view() == "zoom") {
         if (sidebar.classList.contains("is-hidden")) {
+            get_image_info(window.zoom_last_selected, true);
             sidebar.classList.remove("is-hidden");
             window.sidebar_imagezoomtools = true;
         } else {
