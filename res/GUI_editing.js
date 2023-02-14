@@ -261,6 +261,7 @@ Editing.prototype = {
                 if ("min" in par) el_input.dataset.min = par.min;
                 if ("max" in par) el_input.dataset.max = par.max;
                 if ("digits" in par) el_input.dataset.digits = par.digits;
+                input_number_dragable(el_input);
             } else {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;

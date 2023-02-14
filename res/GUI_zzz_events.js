@@ -357,7 +357,8 @@ function event_handlers() {
         });
     }
 
-    event_handlers_clipboard()
+    event_handlers_clipboard();
+    input_number_dragable_all();
 }
 
 
@@ -429,4 +430,51 @@ function event_handlers_clipboard() {
             }
         });
     }
+}
+
+// for dragging input type fields
+function getFloatCtrl(el) { return(parseFloat(el.value)); }
+
+function input_number_dragable(el) {
+    var startpos;
+    var startval;
+    el.onmousedown = function(e) {
+        startpos = e.clientX;
+        startval = getFloatCtrl(el);
+        if (isNaN(startval)) startval = 0;
+
+    document.onmousemove = function(e) {
+        var delta = Math.ceil(e.clientX - startpos);      
+        scaledIntCtrl(el, startval, delta);
+    };
+
+    document.onmouseup = function() {
+        document.onmousemove = null; // remove mousemove to stop tracking
+    };
+    };
+}
+// takes current value and relative mouse coordinate as arguments
+function scaledIntCtrl(o, i, x) {
+    let incScale = 1.0;
+    if (o.hasAttribute("step")) {
+        incScale = parseFloat(o.getAttribute("step"));
+    }
+
+    const incVal = Math.round(Math.sign(x) * Math.pow(Math.abs(x)/10, 1.6));
+    const newVal = i + incVal * incScale;
+
+    if (o.hasAttribute("min") && newVal < parseFloat(o.getAttribute("min"))) return;
+    if (o.hasAttribute("max") && newVal > parseFloat(o.getAttribute("max"))) return;
+    // if (Math.abs(incVal)>1) o.value = newVal; // allow small deadzone
+    o.value = newVal; // allow small deadzone
+
+    // trigger change event
+    var event = new Event('change');
+    o.dispatchEvent(event);
+}
+
+function input_number_dragable_all() {
+    document.querySelectorAll('input[type=number][data-drag="1"]').forEach((el) => {
+        input_number_dragable(el);
+    });
 }
