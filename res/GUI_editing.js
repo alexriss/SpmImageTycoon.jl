@@ -1,7 +1,6 @@
 function Editing() {
     this.initial_setup_complete = false;
     this.curr_id = "";
-    this.timeout_recalculate = null;
     this.updating = false;
     this.editing_entry_list = {};
 }
@@ -14,7 +13,7 @@ Editing.prototype = {
         var that = this;
         document.getElementById("editing_container").querySelectorAll("select, input").forEach(el => {
             el.addEventListener("change", () => {
-                that.recalculate_timeout();
+                that.recalculate();
             });
         });
 
@@ -31,7 +30,7 @@ Editing.prototype = {
             draggable: ".editing_entry",
             ghostClass: "editing-entry-ghost",
             onUpdate: function (evt) {
-                that.recalculate_timeout();
+                that.recalculate();
             }
         });
 
@@ -277,7 +276,7 @@ Editing.prototype = {
         var that = this;
         el.querySelector(".editing_entry_delete").addEventListener("click", (e) => {
             e.target.closest(".editing_entry").remove();
-            that.recalculate_timeout();
+            that.recalculate();
         });
         el.querySelector(".editing_entry_active").addEventListener("click", (e) => {
             if (e.target.checked) {
@@ -285,12 +284,12 @@ Editing.prototype = {
             } else {
                 e.target.closest(".editing_entry").classList.add("inactive");
             }
-            // recalculate timeout is done for all changes to input, so no need to do it here again
+            // recalculate is done for all changes to input, so no need to do it here again
         });
 
         el.querySelectorAll("input, select").forEach((el) => {
             el.addEventListener("change", (e) => {
-                that.recalculate_timeout();
+                that.recalculate();
                 that.check_input_validity(el);
             });
         });
@@ -346,21 +345,8 @@ Editing.prototype = {
         return res;
     },
 
-    recalculate_timeout() {
-        if (window.image_info_id != this.curr_id || this.updating) return;
-        this.recalculate_timeout_clear();
-        var that = this;
-        this.timeout_recalculate = window.setTimeout(() => that.recalculate(), 5);
-    },
-
-    recalculate_timeout_clear() {
-        if (window.timeout_recalculate != null) {
-            clearTimeout(this.timeout_recalculate);
-        }
-    },
-
     recalculate() {
-        if (window.image_info_id != this.curr_id) return;
+        if (window.image_info_id != this.curr_id || this.updating) return;
 
         const curr_id = this.curr_id;
         const item = window.items[curr_id];
