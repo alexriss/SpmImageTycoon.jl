@@ -252,7 +252,7 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
             }
         }
     }
-    
+
     // toggle the selected sidebar
     if (show_sidebar) {
         sidebar.classList.remove("is-hidden");
@@ -260,7 +260,7 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
             get_image_info();  // update info of current or last image
         }
     } else {
-        sidebar.classList.add("is-hidden");
+        sidebar.classList.toggle("is-hidden");
     }
 
     if (what == "filter") {
