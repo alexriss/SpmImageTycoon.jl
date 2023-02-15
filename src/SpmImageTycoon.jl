@@ -1,23 +1,62 @@
 module SpmImageTycoon
 
+timings = []
+push!(timings, time())
 using Blink
+push!(timings, time())
+@warn "Blink: ", timings[end] - timings[end-1], "s\n"
 using CodecZlib
+push!(timings, time())
+@warn "CodecZlib: ", timings[end] - timings[end-1], "s\n"
 using ColorSchemes
+push!(timings, time())
+@warn "ColorSchemes: ", timings[end] - timings[end-1], "s\n"
 using DataFrames
+push!(timings, time())
+@warn "DataFrames: ", timings[end] - timings[end-1], "s\n"
 using DataStructures: OrderedDict
+push!(timings, time())
+@warn "DataStructures: ", timings[end] - timings[end-1], "s\n"
 using Dates
+push!(timings, time())
+@warn "Dates: ", timings[end] - timings[end-1], "s\n"
 using Images
+push!(timings, time())
+@warn "Images: ", timings[end] - timings[end-1], "s\n"
 using ImageFiltering
+push!(timings, time())
+@warn "ImageFiltering: ", timings[end] - timings[end-1], "s\n"
 using ImageIO
+push!(timings, time())
+@warn "ImageIO: ", timings[end] - timings[end-1], "s\n"
 using JLD2
+push!(timings, time())
+@warn "JLD2: ", timings[end] - timings[end-1], "s\n"
 using JSExpr
+push!(timings, time())
+@warn "JSExpr: ", timings[end] - timings[end-1], "s\n"
 using JSON
+push!(timings, time())
+@warn "JSON: ", timings[end] - timings[end-1], "s\n"
 using NaturalSort
+push!(timings, time())
+@warn "NaturalSort: ", timings[end] - timings[end-1], "s\n"
 using SnoopPrecompile
+push!(timings, time())
+@warn "SnoopPrecompile: ", timings[end] - timings[end-1], "s\n"
 using SpmImages
+push!(timings, time())
+@warn "SpmImages: ", timings[end] - timings[end-1], "s\n"
 using SpmSpectroscopy
+push!(timings, time())
+@warn "SpmSpectroscopy: ", timings[end] - timings[end-1], "s\n"
 using StatsBase
+push!(timings, time())
+@warn "StatsBase: ", timings[end] - timings[end-1], "s\n"
 using TOML
+push!(timings, time())
+@warn "TOML: ", timings[end] - timings[end-1], "s\n"
+
 
 export SpmGridItem, tycoon
 
@@ -788,6 +827,8 @@ end
 
 
 @precompile_setup begin
+    push!(timings, time())
+    @warn "Start precompile ", timings[end] - timings[end-1], "s\n"
     global Precompiling = true
     fname_spec = joinpath(@__DIR__ , "../test/data/Z-Spectroscopy420.dat")
     fname_img = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
@@ -805,9 +846,12 @@ end
         "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
     )
     include(joinpath(@__DIR__ , "../test/functions.jl"))
-
+    push!(timings, time())
+    @warn "Precompile setup ", timings[end] - timings[end-1], "s\n"
 
     @precompile_all_calls begin
+        push!(timings, time())
+        @warn "Precompile calls begin ", timings[end] - timings[end-1], "s\n"
         global Precompiling = true
         spec = load_spectrum(fname_spec)
         ima = load_image(fname_img, output_info=0)
@@ -820,6 +864,9 @@ end
         d = SpmImages.correct_background(df.data, SpmImages.subtract_minimum)
         normalize01!(d)
         clamp01nan!(d)
+        push!(timings, time())
+        @warn "Precompile calls a  ", timings[end] - timings[end-1], "s\n"
+    
 
         SpmImageTycoon.load_all(DIR_db_old, nothing)
         w = Window(
@@ -838,11 +885,17 @@ end
         # Blink.AtomShell.@dot w hide()
         # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
+        push!(timings, time())
+        @warn "Precompile calls b  ", timings[end] - timings[end-1], "s\n"
+
         load_config()
         if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
             generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
         end
-        
+
+        push!(timings, time())
+        @warn "Precompile calls c  ", timings[end] - timings[end-1], "s\n"
+
         loadhtml!(w, file_GUI)
         filter!(
             x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
@@ -856,10 +909,16 @@ end
         @js w load_page($versions)
         @js w show_start()
    
+        push!(timings, time())
+        @warn "Precompile calls d  ", timings[end] - timings[end-1], "s\n"
+
         set_event_handlers_basic(w)
 
         delete_files(;dir_cache=DIR_cache, fname_odp=FNAME_odp)
         load_directory(abspath(DIR_data), w, output_info=0)
+
+        push!(timings, time())
+        @warn "Precompile calls e  ", timings[end] - timings[end-1], "s\n"
 
         selected = ["Image_004.sxm"]
         sel = selector(selected)
@@ -867,12 +926,19 @@ end
 
         @js w get_image_info("Image_004.sxm")
 
+        push!(timings, time())
+        @warn "Precompile calls f  ", timings[end] - timings[end-1], "s\n"
+
         selected = ["Image_002.sxm", "Image_004.sxm"]
         sel = selector(selected)
         send_click(sel, window=w)
         send_key(["b", "b", "b", "b", "b", "c", "c", "i", "p"], window=w)
     
         items = get_items(window=w)
+
+        push!(timings, time())
+        @warn "Precompile calls g  ", timings[end] - timings[end-1], "s\n"
+
     end
 end
 
