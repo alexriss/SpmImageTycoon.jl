@@ -808,6 +808,16 @@ sup {
   display: none;  /* not needed for just one series */
 }
 
+#line_profile_clipboard {
+  cursor:pointer;
+  margin-top:11px;
+  opacity:0.4;
+}
+
+#line_profile_clipboard:hover {
+  opacity:0.6;
+}
+
 
 .editing_entry_move {
   cursor: grab;

@@ -443,16 +443,17 @@ function input_number_dragable(el) {
         startval = getFloatCtrl(el);
         if (isNaN(startval)) startval = 0;
 
-    document.onmousemove = function(e) {
-        var delta = Math.ceil(e.clientX - startpos);      
-        scaledIntCtrl(el, startval, delta);
-    };
+        document.onmousemove = function(e) {
+            var delta = Math.ceil(e.clientX - startpos);      
+            scaledIntCtrl(el, startval, delta);
+        };
 
-    document.onmouseup = function() {
-        document.onmousemove = null; // remove mousemove to stop tracking
-    };
+        document.onmouseup = function() {
+            document.onmousemove = null; // remove mousemove to stop tracking
+        };
     };
 }
+
 // takes current value and relative mouse coordinate as arguments
 function scaledIntCtrl(o, i, x) {
     let incScale = 1.0;

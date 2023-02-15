@@ -658,6 +658,9 @@ LineProfile.prototype = {
                         that.inputEvents(e);
                     });
                 });
+                document.getElementById("line_profile_clipboard").addEventListener("click", (e) => {
+                    that.export_to_clipboard();
+                });
                 this.first_setup_events = true;
             }
             this.showInfo();
@@ -665,6 +668,50 @@ LineProfile.prototype = {
         } else {
             this.unsetup();
         }
-    }
+    },
+
+    export_to_clipboard() {
+        const item = window.items[window.zoom_last_selected];
+        const channelName = item.channel_name;
+        const channelUnit = item.channel_unit;
+
+        const elStartX = document.getElementById("line_profile_start_x");
+        const elStartY = document.getElementById("line_profile_start_y");
+        const elEndX = document.getElementById("line_profile_end_x");
+        const elEndY = document.getElementById("line_profile_end_y");
+        const elLength = document.getElementById("line_profile_length");
+        const elWidth = document.getElementById("line_profile_width");
+        const elAngle = document.getElementById("line_profile_angle");
+        const elAngleGlobal = document.getElementById("line_profile_angle_global_value");
+
+        const dataLength = this.plot_object.data[0].length
+
+        let text = "d [nm]\t" + channelName + " [" + channelUnit + "]\t" + "File:\t" + item.filename_original + "\n";
+        let text_line = {
+            0: "Start:\t" + elStartX.value + "\t" + elStartY.value + "\t" + "nm",
+            1: "End:\t" + elEndX.value + "\t" + elEndY.value + "\t" + "nm",
+            2: "Length:\t" + elLength.value + "\t" + "nm",
+            3: "Width:\t" + elWidth.value + "\t" + "nm",
+            4: "Angle:\t" + elAngle.value + "\t" + "deg",
+            5: "Angle global:\t" + elAngleGlobal.innerText + "\t" + "deg",
+            6 : "",
+            7: "exported by SpmImageTycoon."
+        }
+        for (let i = 0; i < dataLength; i++) {
+            text += this.plot_object.data[0][i] + "\t" + this.plot_object.data[1][i];
+
+            if (i in text_line) {
+                text += "\t" + text_line[i];
+            }
+            text += "\n";
+        }
+        for (const [num, value] of Object.entries(text_line)) {
+            if (num >= dataLength) {
+                text += "\t\t" + value + "\n";
+            }
+        }
+        const {clipboard} = require('electron');
+        clipboard.writeText(text);
+    },
 }
 
