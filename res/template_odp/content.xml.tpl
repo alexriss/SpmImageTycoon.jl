@@ -108,6 +108,7 @@
         <style:style style:name="P3" style:family="paragraph">
             <loext:graphic-properties draw:fill="none" draw:fill-color="#ffffff"/>
             <style:paragraph-properties style:writing-mode="lr-tb"/>
+            <style:text-properties fo:font-size="16pt" style:font-size-asian="16pt" style:font-size-complex="16pt"/>
         </style:style>
         <style:style style:name="P4" style:family="paragraph">
             <loext:graphic-properties draw:fill-color="#ffffff"/>
@@ -174,16 +175,17 @@
                         <text:p>{{ title }}</text:p>
                     </draw:text-box>
                 </draw:frame>
-                <draw:frame draw:style-name="gr1" draw:text-style-name="P3" draw:layer="layout" svg:width="24.19cm" svg:height="1.2cm" svg:x="3.60cm" svg:y="19.35cm">
+                <draw:frame draw:style-name="gr1" draw:text-style-name="P3" draw:layer="layout" svg:width="24.19cm" svg:height="1.937cm" svg:x="3.6cm" svg:y="18.6cm">
                     <draw:text-box>
                         <text:p text:style-name="P2">
                             <text:span text:style-name="T1">Generated on {{ date }} by </text:span>
                             <text:span text:style-name="T2">SpmImageTycoon</text:span>
                         </text:p>
                         <text:p text:style-name="P2">
-                            <text:span text:style-name="T1">
-                                <text:a xlink:href="https://github.com/alexriss/SpmImageTycoon.jl" xlink:type="simple">https://github.com/alexriss/SpmImageTycoon.jl</text:a>
-                            </text:span>
+                            <text:span text:style-name="T1"><text:a xlink:href="https://doi.org/10.21105/joss.04644" xlink:type="simple">A. Riss. JOSS 7, 4644 (2022)</text:a></text:span>
+                        </text:p>
+                        <text:p text:style-name="P2">
+                            <text:span text:style-name="T1"><text:a xlink:href="https://github.com/alexriss/SpmImageTycoon.jl" xlink:type="simple">https://github.com/alexriss/SpmImageTycoon.jl</text:a></text:span>
                         </text:p>
                     </draw:text-box>
                 </draw:frame>
