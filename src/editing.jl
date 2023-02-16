@@ -79,6 +79,7 @@ editing_entries = OrderedDict(
                     "name" => "&sigma;",
                     "default" => 2,
                     "step" => 1,
+                    "dragstep" => 0.1,
                     "min" => 0.0,
                     "digits" => 1,
                     "unit" => "points",

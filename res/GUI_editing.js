@@ -256,6 +256,7 @@ Editing.prototype = {
                 }
                 el_input.dataset.default = par.default;
                 if ("step" in par) el_input.setAttribute("step", par.step);
+                if ("dragstep" in par) el_input.dataset.dragstep = par.dragstep;
                 // if ("max" in par) el_input.setAttribute("max", par.max);
                 // if ("min" in par) el_input.setAttribute("min", par.min);
                 // we set it in the data-attributes, because the min-attribute messes up the step
