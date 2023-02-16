@@ -31,7 +31,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 - Different types of background corrections
 - Various color palettes
 - Non-destructive edits
-- Line profiles *(experimental and not yet fully tested)*
+- Line profiles
 - Star-rating and keyword systems
 - Powerful search and filtering (e.g., by keywords, data type, location, scan size)
 - Overview and position-based filtering
