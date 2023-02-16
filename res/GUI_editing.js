@@ -395,7 +395,7 @@ Editing.prototype = {
         if (el.type == "number") {
             let val = el.valueAsNumber;
             if (val == null || isNaN(val)) {
-                val = el.dataset.default;
+                val = parseFloat(el.dataset.default);
             }
             if ("min" in el.dataset) {
                 const min =  parseFloat(el.dataset.min);
@@ -409,7 +409,6 @@ Editing.prototype = {
                     val = max;
                 }
             }
-
             el.value = this.format_number(val, el.dataset);
         }
     },
