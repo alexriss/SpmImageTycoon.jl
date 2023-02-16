@@ -10,8 +10,8 @@ Editing.prototype = {
     initial_setup() {
         if (this.initial_setup_complete) return;
 
-        var that = this;
-        document.getElementById("editing_container").querySelectorAll("select, input").forEach(el => {
+        const that = this;
+        document.getElementById("editing_entry_main").querySelectorAll("select, input").forEach(el => {
             el.addEventListener("change", () => {
                 that.recalculate();
             });
@@ -19,6 +19,7 @@ Editing.prototype = {
 
         document.getElementById("editing_entry_add").addEventListener("change", () => {
             that.add_entry_from_form();
+            that.recalculate();
         });
 
         var el_list = document.getElementById('editing_entry_container');
@@ -290,8 +291,8 @@ Editing.prototype = {
 
         el.querySelectorAll("input, select").forEach((el) => {
             el.addEventListener("change", (e) => {
-                that.recalculate();
                 that.check_input_validity(el);
+                that.recalculate();
             });
         });
     },
