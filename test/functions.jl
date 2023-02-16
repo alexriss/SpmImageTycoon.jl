@@ -153,6 +153,12 @@ function send_hover_mouse(sel::String; window=nothing)
     sleep(0.2)
 end
 
+function change_value(sel::String, val::Union{String,Bool,Real}, indices=[]; window=nothing)
+    w_ = isnothing(window) ? w : window
+    indices .-= 1  # js indices start at 0
+    @js w_ test_set_value($sel, $val, $indices)
+    sleep(0.2)
+end
 
 function setmtime(path::AbstractString, mtime::Real, atime::Real=mtime; follow_symlinks::Bool=true)
     req = Libc.malloc(_sizeof_uv_fs)

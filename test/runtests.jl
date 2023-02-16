@@ -3,6 +3,8 @@ t0 = time()
 using SpmImageTycoon
 t1 = time()
 using Printf
+using ImageIO
+using Images
 using DataStructures: OrderedDict
 import Dates
 import Base: _sizeof_uv_fs, uv_error
@@ -303,12 +305,86 @@ end
 end
 
 @testset "Rating" begin
-    # todo
+    send_key("n")  # deselect all
+    selected = ["Image_002.sxm", "Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["4"])
+    sleep(5)
+
+    send_key("n")  # deselect all
+    selected = ["Z-Spectroscopy507.dat"]
+    sel = selector(selected)
+    send_click(sel)
+    send_key(["2"])
+
+    send_key("n")  # deselect all
+    selected = ["Image_398.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+    send_hover_mouse(sel)
+    send_key("z")  # switch to zoom view
+    send_key("1")
+    sleep(0.3)
+    send_key("z")  # back to grid view
+
+    items = get_items()
+    @test compare_dicts(items, items6)
+end
+
+@testset "Editing" begin
+    send_key("n")  # deselect all
+    selected = ["Image_212.sxm"]
+    sel = selector(selected)
+    send_click(sel)
+    send_hover_mouse(sel)
+    send_key("z")  # switch to zoom view
+    send_key("t")
+
+    change_value("#editing_entry_main_channel", "Current")
+    change_value("#editing_entry_main_direction", "backward")
+    change_value("#editing_entry_main_background", "plane")
+
+    change_value("#editing_entry_add", "LoG")
+    change_value("#editing_entry_add", "Laplacian")
+    change_value("#editing_entry_add", "Gaussian")
+    change_value("#editing_entry_add", "DoG")
+
+    change_value(".editing_entry:last-child .editing_entry_active", false)
+    change_value(".editing_entry .editing_entry_par_input", 0.2, [1])
+    change_value(".editing_entry .editing_entry_par_input", 0.2, [2])
+    change_value(".editing_entry .editing_entry_par_input", -2, [2])
+
+    items = get_items()
+    @test compare_dicts(items, items7)
+
+    sleep(1)
+    im = load(joinpath(DIR_cache, "Image_212.png"))
+    @test im[10,9] ≈ RGB{N0f8}(0.839,0.424,0.424)
+    @test im[78,8] ≈ RGB{N0f8}(0.847,0.427,0.416)
+    @test im[3,6] ≈ RGB{N0f8}(0.855,0.431,0.408)
+    @test im[23,33] ≈ RGB{N0f8}(0.984,0.624,0.239)
+    @test im[90,78] ≈ RGB{N0f8}(0.851,0.427,0.412)
+
+    send_key(["ArrowRight", "ArrowRight"])  # move to "Z-Spectroscopy__012.dat"
+    sleep(3)
+    change_value("#editing_entry_main_channel", "Current")
+    change_value("#editing_entry_main_background", "linear")
+    change_value("#editing_entry_add", "G")
+    change_value("#editing_entry_add", "dy")
+
+    sleep(1)
+    svg = read(joinpath(DIR_cache, "Z-Spectroscopy__012.svg"), String)
+    @test count("<polyline", svg) == 2
+    @test occursin("95.2 48.82,96.08 49.61,95.96 50.39,96.11 51.18", svg)
+    @test occursin(",97.33 88.98,99.39 89.76,99.18 90.55,97.8 91.34,94.73 92.13,92.0 92.91,", svg)
+
+    send_key("z")  # back to grid view
 end
 
 @testset "Virtual Copy" begin
     send_key("n")  # deselect all
-    selected = ["Image_695.sxm", "Z-Spectroscopy507.dat"]
+    selected = ["Image_695.sxm", "Z-Spectroscopy507.dat", "Z-Spectroscopy__012.dat"]
     sel = selector(selected)
     send_click(sel)
     send_key(["&"])
@@ -327,7 +403,7 @@ end
     send_key(["&"])
 
     items = get_items()
-    @test compare_dicts(items, items6)
+    @test compare_dicts(items, items8)
 
     send_key("n")  # deselect all
     selected = ["Image_695.sxm_1"]
@@ -336,16 +412,16 @@ end
     send_key(["shift-Delete"])
 
     items = get_items()
-    items7 = copy(items6)
-    delete!(items7, "Image_695.sxm_1")
-    @test compare_dicts(items, items7)
+    items8_del = copy(items8)
+    delete!(items8_del, "Image_695.sxm_1")
+    @test compare_dicts(items, items8_del)
 
     # reload directory
     send_key(["ctrl-w"])
     sleep(1)
     @js w load_directory($dir_data)
     sleep(1)
-    @test compare_dicts(items, items7)
+    @test compare_dicts(items, items8_del)
 end
 
 @testset "Filtering" begin

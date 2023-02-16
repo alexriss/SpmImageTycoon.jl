@@ -66,6 +66,30 @@ function test_hover_mouse(selector) {
     });
 }
 
+function test_set_value(selector, value, indices, event="change") {
+    // sets value on all elements selected by selector (for testing purposes)
+    document.querySelectorAll(selector).forEach((el, el_i) => {
+        if (indices != null && indices.length > 0 && !indices.includes(el_i)) {
+            return;
+        }
+        if (el.tagName == "SELECT") {
+            for (let i = 0; i < el.options.length; i++) {
+                if (el.options[i].value == value || el.options[i].text == value) {
+                    el.selectedIndex = i;
+                    break;
+                }
+            }
+        } else if (el.tagName == "INPUT" && el.type == "checkbox") {
+            el.checked = value;
+        } else {
+            el.value = value;
+        }
+        if (event != "") {
+            el.dispatchEvent(new Event(event));
+        }
+    });
+}
+
 function test_sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
