@@ -835,8 +835,8 @@ end
                 :show => false
             )
         )
-        # Blink.AtomShell.@dot w hide()
-        # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
+        Blink.AtomShell.@dot w hide()
+        Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
         load_config()
         if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
