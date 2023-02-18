@@ -830,8 +830,9 @@ end
 
         SpmImageTycoon.load_all(DIR_db_old, nothing)
         griditems, _ = SpmImageTycoon.parse_files(DIR_data)
-        SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, base_dir=DIR_data)
-        SpmImageTycoon.create_image!(griditems[fname_img_base], ima, base_dir=DIR_data)
+        # these can give write permission errors, so let's remove for now
+        # SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, base_dir=DIR_data)
+        # SpmImageTycoon.create_image!(griditems[fname_img_base], ima, base_dir=DIR_data)
         SpmImageTycoon.get_spectrum_data_dict(griditems[fname_spec_base], DIR_data)
 
         w = Window(
