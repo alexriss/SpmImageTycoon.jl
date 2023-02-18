@@ -288,11 +288,24 @@ end
     send_click(sel)
     send_key(["b", "b", "b", "b", "b", "b", "b", "d", "d", "c", "c", "p", "p", "i", "R"])
 
+    last_sel = @js w window.image_info_id
+    view = @js w get_view()
+    @test last_sel == "empty.sxm"
+    @test view == "grid"
+
     send_hover_mouse(sel)
     send_key("z")  # switch to zoom view
     send_key(["p"])
     sleep(0.3)
+
+    last_sel = @js w window.image_info_id
+    view = @js w get_view()
+    @test last_sel == "empty.sxm"
+    @test view == "zoom"
+
     send_key("z")  # back to grid view
+    view = @js w get_view()
+    @test view == "grid"
 
     items = get_items()
     @test compare_dicts(items, items5)
@@ -349,9 +362,10 @@ end
     last_sel = @js w window.image_info_id
     if (last_sel != "Image_212.sxm")
         send_click(sel)
-        send_hover_mouse(sel)
+        send_hover_mouse(sel, send_event=false)
         sleep(0.5)
     end
+    last_sel = @js w window.image_info_id
     @test last_sel == "Image_212.sxm"
 
     send_key("z")  # switch to zoom view
