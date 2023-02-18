@@ -823,6 +823,11 @@ end
         normalize01!(d)
         clamp01nan!(d)
 
+        load_config()
+        if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
+            generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
+        end
+
         SpmImageTycoon.load_all(DIR_db_old, nothing)
         griditems, _ = SpmImageTycoon.parse_files(DIR_data)
         SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec)
@@ -845,11 +850,6 @@ end
         # Blink.AtomShell.@dot w hide()
         # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
-        load_config()
-        if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
-            generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
-        end
-        
         loadhtml!(w, file_GUI)
         filter!(
             x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
