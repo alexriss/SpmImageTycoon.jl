@@ -294,7 +294,7 @@ end
     send_hover_mouse(sel)
     send_key("z")  # switch to zoom view
     view = @js w get_view()
-    if view != zoom
+    if view != "zoom"
         @js w toggle_imagezoom("zoom", "empty.sxm")
     end
     sleep(0.3)
