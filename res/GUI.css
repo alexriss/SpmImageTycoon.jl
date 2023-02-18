@@ -1,6 +1,12 @@
 body {
   /* min-height: 100vh; */
   margin-bottom: 2.5rem;
+  padding-right: 0.6rem !important;
+}
+
+body, html {
+  overflow: hidden !important;
+  height: 100%;
 }
 
 .img-icon {
@@ -49,6 +55,11 @@ sup {
 }
 
 /* start page */
+
+#page_start {
+  overflow: auto;
+  height: 100%;
+}
 
 #page_start_last_dir_container li {
   word-break: break-word;
@@ -345,7 +356,7 @@ sup {
   max-width:400px;
   min-width:300px;
   padding-top: 15px;
-  position: sticky;
+  /* position: sticky; */
   top: 3rem;
   transition: 0.1s;
   background-color:#37a8ff;
