@@ -789,8 +789,10 @@ end
 
 @precompile_setup begin
     global Precompiling = true
-    fname_spec = joinpath(@__DIR__ , "../test/data/Z-Spectroscopy420.dat")
-    fname_img = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
+    fname_spec_base = "Z-Spectroscopy420.dat"
+    fname_img_base = "Image_002.sxm"
+    fname_spec = joinpath(@__DIR__ , "../test/data/", fname_spec_base)
+    fname_img = joinpath(@__DIR__ , "../test/data/", fname_img_base)
     DIR_db_old = joinpath(@__DIR__ , "../test/data/old_db/")
     DIR_data = joinpath(@__DIR__ , "../test/data/")
     DIR_cache = get_dir_cache(DIR_data) 
@@ -822,6 +824,11 @@ end
         clamp01nan!(d)
 
         SpmImageTycoon.load_all(DIR_db_old, nothing)
+        griditems, _ = SpmImageTycoon.parse_files(DIR_data)
+        SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec)
+        SpmImageTycoon.create_image!(griditems[fname_img_base], ima)
+        SpmImageTycoon.get_spectrum_data_dict(griditems[fname_spec_base], DIR_data)
+
         w = Window(
             Dict(
                 "webPreferences" => Dict(
@@ -847,37 +854,36 @@ end
         filter!(
             x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
             asset_files
-        )
-        for asset_file in asset_files
-            load!(w, asset_file)
-        end
+            )
+            for asset_file in asset_files
+                load!(w, asset_file)
+            end
         @js w set_params($dir_asset, 0, 100)
-
+        
         @js w load_page($versions)
         @js w show_start()
-   
+        
         set_event_handlers_basic(w)
-
+        
         delete_files(;dir_cache=DIR_cache, fname_odp=FNAME_odp)
         load_directory(abspath(DIR_data), w, output_info=0)
-
+        
         selected = ["Image_004.sxm"]
         sel = selector(selected)
-        send_hover_mouse(sel, send_event=false, window=w)
-
+        # send_hover_mouse(sel, send_event=false, window=w)
+        
         @js w get_image_info("Image_004.sxm")
-
+        
         selected = ["Image_002.sxm", "Image_004.sxm"]
         sel = selector(selected)
         send_click(sel, window=w)
         send_key(["b", "b", "b", "b", "b", "c", "c", "i", "p"], window=w)
-
+        
         @js w toggle_imagezoom("zoom", "Image_004.sxm")
         send_key("t", window=w)
-        send_key("ArrowRight", window=w)
-        send_key("ArrowRight", window=w)
-        send_key("ArrowRight", window=w)
-        send_key("ArrowRight", window=w)
+
+        # send_key(["ArrowRight"], window=w)  # this seems to sometimes hang, seems a bit like in compilation mode the spectrum display hangs
+
         start = Dict(:x => 1.2, :y => 1.2)
         stop = Dict(:x => 2.4, :y => 2.4)
         @js w get_line_profile("Image_398.sxm", $start, $stop, 0.2)
