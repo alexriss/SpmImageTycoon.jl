@@ -836,7 +836,7 @@ end
             )
         )
         Blink.AtomShell.@dot w hide()
-        Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
+        # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
         load_config()
         if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
@@ -871,7 +871,17 @@ end
         sel = selector(selected)
         send_click(sel, window=w)
         send_key(["b", "b", "b", "b", "b", "c", "c", "i", "p"], window=w)
-    
+
+        send_key("z", window=w)
+        send_key("t", window=w)
+        send_key("ArrowRight", window=w)
+        send_key("ArrowRight", window=w)
+        send_key("ArrowRight", window=w)
+        send_key("ArrowRight", window=w)
+        start = Dict(:x => 1.2, :y => 1.2)
+        stop = Dict(:x => 2.4, :y => 2.4)
+        @js w get_line_profile("Image_398.sxm", $start, $stop, 0.2)
+
         items = get_items(window=w)
     end
 end
