@@ -345,8 +345,13 @@ end
     sel = selector(selected)
     send_click(sel)
     send_hover_mouse(sel)
-    sleep(0.2)
+    sleep(0.5)
     last_sel = @js w window.image_info_id
+    if (last_sel != "Image_212.sxm")
+        send_click(sel)
+        send_hover_mouse(sel)
+        sleep(0.5)
+    end
     @test last_sel == "Image_212.sxm"
 
     send_key("z")  # switch to zoom view
