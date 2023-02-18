@@ -324,9 +324,13 @@ end
     send_click(sel)
     send_hover_mouse(sel)
     send_key("z")  # switch to zoom view
+    view = @js w get_view()
+    @test view == "zoom"
     send_key("1")
     sleep(0.3)
     send_key("z")  # back to grid view
+    view = @js w get_view()
+    @test view == "grid"
 
     items = get_items()
     @test compare_dicts(items, items6)
@@ -336,9 +340,12 @@ end
     send_key("n")  # deselect all
     view = @js w get_view()
     @test view == "grid"
-    
+
     selected = ["Image_212.sxm"]
     sel = selector(selected)
+    send_click(sel)
+    send_hover_mouse(sel)
+    sleep(0.5)
     send_click(sel)
     send_hover_mouse(sel)
     send_key("z")  # switch to zoom view
