@@ -74,6 +74,21 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
     <td>Spectrum display<br />(Screenshot)</td>
     <td>Spectra demo <br />(YouTube)</td>
   </tr>
+  <tr>
+    <td>
+      <a href="https://www.youtube.com/watch?v=rnk2hWuwpuI" target="_blank"><img src="http://img.youtube.com/vi/rnk2hWuwpuI/0.jpg" width="230" /></a>
+    </td>
+    <td colspan="2" align="center">
+      <i>More features coming soon...</i>
+      &nbsp;
+      <br /><br />
+    </td>
+  </tr>
+  <tr>
+    <td>Non-destructive edits<br />(YouTube)</td>
+    <td></td>
+    <td></td>
+  </tr>
 </table>
 
 It is best to play around with the app yourself, so [go ahead and install it.](#installation). Example data can be found in the [test directory](test/data).
