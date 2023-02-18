@@ -377,10 +377,13 @@ function toggle_imagezoom(target_view = "", id="") {
         gridsub.scrollTop = window.grid_last_scrolltop;
     } else {
         let el = null;
-        if ( target_view == "zoom" && id != "") {  // this is used for automated testing - here the hover doesn't work so well
+        if (target_view == "zoom" && id != "") {  // this is used for automated testing - here the hover doesn't work so well
            el = document.getElementById(id);
         } else {
            el = grid.querySelector('div.item:hover');
+           if (el == null && window.image_info_id != "") {
+               el = document.getElementById(window.image_info_id);
+           }
         }
 
         if (el != null) {
