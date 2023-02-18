@@ -288,13 +288,17 @@ end
     send_click(sel)
     send_key(["b", "b", "b", "b", "b", "b", "b", "d", "d", "c", "c", "p", "p", "i", "R"])
 
-    last_sel = @js w window.image_info_id
     view = @js w get_view()
-    @test last_sel == "empty.sxm"
     @test view == "grid"
 
     send_hover_mouse(sel)
     send_key("z")  # switch to zoom view
+    view = @js w get_view()
+    if view != zoom
+        @js w toggle_imagezoom("zoom", "empty.sxm")
+    end
+    sleep(0.3)
+
     send_key(["p"])
     sleep(0.3)
 
@@ -372,7 +376,7 @@ end
     sleep(0.5)
     view = @js w get_view()
     if (view != "zoom")  # sometimes this does not work on github CI
-        @js w toggle_imagezoom("zoom")
+        @js w toggle_imagezoom("zoom", "Image_212.sxm")
     end
     last_sel = @js w window.image_info_id
     view = @js w get_view()

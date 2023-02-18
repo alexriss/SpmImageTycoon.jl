@@ -356,7 +356,7 @@ function toggle_imagezoom_mouse(event) {
     }
 }
 
-function toggle_imagezoom(target_view = "") {
+function toggle_imagezoom(target_view = "", id="") {
     // toggles between grid and imagezoom views
 
     const grid = document.getElementById('imagegrid_container');
@@ -376,7 +376,13 @@ function toggle_imagezoom(target_view = "") {
         toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
         gridsub.scrollTop = window.grid_last_scrolltop;
     } else {
-        let el = grid.querySelector('div.item:hover');
+        let el = null;
+        if ( target_view == "zoom" && id != "") {  // this is used for automated testing - here the hover doesn't work so well
+           el = document.getElementById(id);
+        } else {
+           el = grid.querySelector('div.item:hover');
+        }
+
         if (el != null) {
             window.grid_last_scrolltop = gridsub.scrollTop;
             grid.classList.add("is-hidden");

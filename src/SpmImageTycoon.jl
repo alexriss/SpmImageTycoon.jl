@@ -872,7 +872,7 @@ end
         send_click(sel, window=w)
         send_key(["b", "b", "b", "b", "b", "c", "c", "i", "p"], window=w)
 
-        send_key("z", window=w)
+        @js w toggle_imagezoom("zoom", "Image_004.sxm")
         send_key("t", window=w)
         send_key("ArrowRight", window=w)
         send_key("ArrowRight", window=w)
