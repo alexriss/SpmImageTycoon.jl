@@ -292,7 +292,16 @@ end
     @test view == "grid"
 
     send_hover_mouse(sel)
+    sleep(0.5)
+    last_sel = @js w window.image_info_id
+    if (last_sel != "empty.sxm")
+        send_click(sel)
+        send_hover_mouse(sel, send_event=false)
+        sleep(0.5)
+    end
+    
     send_key("z")  # switch to zoom view
+    sleep(0.2)
     view = @js w get_view()
     if view != "zoom"
         @js w toggle_imagezoom("zoom", "empty.sxm")
