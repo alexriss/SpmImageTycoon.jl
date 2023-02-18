@@ -835,7 +835,7 @@ end
                 :show => false
             )
         )
-        Blink.AtomShell.@dot w hide()
+        # Blink.AtomShell.@dot w hide()
         # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
         load_config()
