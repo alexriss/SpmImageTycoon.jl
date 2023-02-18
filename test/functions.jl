@@ -147,9 +147,9 @@ function send_double_click(sel::String; window=nothing)
 end
 
 """Hovers the mouse over all elements set by the css selector."""
-function send_hover_mouse(sel::String; window=nothing)
+function send_hover_mouse(sel::String; send_event::Bool=true, window=nothing)
     w_ = isnothing(window) ? w : window
-    @js w_ test_hover_mouse($sel)
+    @js w_ test_hover_mouse($sel, $send_event)
     sleep(0.2)
 end
 

@@ -863,7 +863,7 @@ end
 
         selected = ["Image_004.sxm"]
         sel = selector(selected)
-        send_hover_mouse(sel, window=w)
+        send_hover_mouse(sel, send_event=false, window=w)
 
         @js w get_image_info("Image_004.sxm")
 

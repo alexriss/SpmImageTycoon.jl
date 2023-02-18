@@ -40,7 +40,7 @@ function test_dblclick_mouse(selector) {
     });
 }
 
-function test_hover_mouse(selector) {
+function test_hover_mouse(selector, send_event) {
     // hovers mouse on all elements selected by selector (for testing purposes)
     const event = new MouseEvent('mouseenter', {
         'view': window,
@@ -48,18 +48,20 @@ function test_hover_mouse(selector) {
         'cancelable': true
       });
     document.querySelectorAll(selector).forEach(el => {
-        // we have to move the mouse as well (dblclick handlers can rely on a hover-state()
-        el.focus();
-        const rect = el.getBoundingClientRect();
-        const posx = rect.left + 5;
-        const posy = rect.top + 5;
-        Blink.msg("send_input_event", ["mouseMove", posx, posy])
-        el.dispatchEvent(event);
+        if (send_event) {
+            // we have to move the mouse as well (dblclick handlers can rely on a hover-state()
+            el.focus();
+            const rect = el.getBoundingClientRect();
+            const posx = rect.left + 5;
+            const posy = rect.top + 5;
+            Blink.msg("send_input_event", ["mouseMove", posx, posy])
+            el.dispatchEvent(event);
 
-        // check if `hover` worked
-        const elHover = document.getElementById('imagegrid').querySelector('div.item:hover');
-        if (elHover != el) { // didn't work, we set `image_info_id` manually - bit hacky
-            window.image_info_id = el.id;
+            // check if `hover` worked
+            const elHover = document.getElementById('imagegrid').querySelector('div.item:hover');
+            if (elHover != el) { // didn't work, we set `image_info_id` manually - bit hacky
+                window.image_info_id = el.id;
+            }
         }
         // set it anyways - it does not seem to work under some circumstances
         window.image_info_id = el.id;
