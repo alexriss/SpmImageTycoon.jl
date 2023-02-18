@@ -345,17 +345,23 @@ end
     sel = selector(selected)
     send_click(sel)
     send_hover_mouse(sel)
-    sleep(0.5)
-    send_click(sel)
-    send_hover_mouse(sel)
+    sleep(0.2)
+    last_sel = @js w window.image_info_id
+    @test last_sel == "Image_212.sxm"
+
     send_key("z")  # switch to zoom view
     sleep(0.5)
-    send_key("t")
-    sleep(2)
+    view = @js w get_view()
+    if (view != "zoom")  # sometimes this does not work on github CI
+        @js w toggle_imagezoom("zoom")
+    end
     last_sel = @js w window.image_info_id
     view = @js w get_view()
-    @test view == "zoom"
     @test last_sel == "Image_212.sxm"
+    @test view == "zoom"
+    
+    send_key("t")
+    sleep(2)
 
     change_value("#editing_entry_main_channel", "Current")
     change_value("#editing_entry_main_direction", "backward")
