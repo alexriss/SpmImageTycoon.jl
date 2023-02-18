@@ -334,12 +334,21 @@ end
 
 @testset "Editing" begin
     send_key("n")  # deselect all
+    view = @js w get_view()
+    @test view == "grid"
+    
     selected = ["Image_212.sxm"]
     sel = selector(selected)
     send_click(sel)
     send_hover_mouse(sel)
     send_key("z")  # switch to zoom view
+    sleep(0.5)
     send_key("t")
+    sleep(2)
+    last_sel = @js w window.image_info_id
+    view = @js w get_view()
+    @test view == "zoom"
+    @test last_sel == "Image_212.sxm"
 
     change_value("#editing_entry_main_channel", "Current")
     change_value("#editing_entry_main_direction", "backward")
@@ -368,6 +377,11 @@ end
 
     send_key(["ArrowRight", "ArrowRight"])  # move to "Z-Spectroscopy__012.dat"
     sleep(3)
+    last_sel = @js w window.image_info_id
+    view = @js w get_view()
+    @test view == "zoom"
+    @test last_sel == "Z-Spectroscopy__012.dat"
+
     change_value("#editing_entry_main_channel", "Current")
     change_value("#editing_entry_main_background", "linear")
     change_value("#editing_entry_add", "G")

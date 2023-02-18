@@ -644,6 +644,7 @@ function set_keywords() {
 }
 
 function get_line_profile(id, start_point, end_point, width) {
+    console.log(start_point, end_point, width);
     // request line profile for a certain image
     if (get_view() != "zoom" || id == "") {
         return;
