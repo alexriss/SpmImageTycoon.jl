@@ -115,11 +115,12 @@ Editing.prototype = {
 
         const item = window.items[id];
         const entries = item.edits.map(edit => JSON.parse(edit));
-
-        const ids_curr = this.get_entry_list().map(e => e.id);
         const ids_new = entries.map(e => e.id);
         // check that all entries are the same - then we can just update them, instead delete and recreate
-        if (ids_curr.join(",") != ids_new.join(","))  update = false;
+        if (update) {
+            const ids_curr = this.get_entry_list().map(e => e.id);
+            if (ids_curr.join(",") != ids_new.join(","))  update = false;
+        }
 
         const container = document.getElementById("editing_entry_container");
         if (update) {
@@ -307,6 +308,10 @@ Editing.prototype = {
             let pars = {};
             entry["id"] = el.dataset.id;
             entry["off"] = el.querySelector(".editing_entry_active").checked ? 0 : 1;
+            if (!(entry["id"] in this.editing_entry_list)) {
+                console.log("Unknown editing entry: " + entry["id"]);
+                return;
+            }
             const props = this.editing_entry_list[entry["id"]];
             if (props.type == "table") {
                 pars = this.get_entry_pars_table(el, props.pars);
