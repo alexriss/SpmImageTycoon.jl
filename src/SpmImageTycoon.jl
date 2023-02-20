@@ -774,7 +774,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     Blink.AtomShell.@dot w show()
 
     if keep_alive
-        while active(w) && !exit_tycoon
+        while !exit_tycoon
             yield()
             sleep(0.1)
         end
