@@ -265,6 +265,13 @@ Editing.prototype = {
                 if ("max" in par) el_input.dataset.max = par.max;
                 if ("digits" in par) el_input.dataset.digits = par.digits;
                 input_number_dragable(el_input);
+            } else if (par.type == "FT_select") {
+                tpl_row = clone.getElementById("editing_entry_template_row_FT_select");
+                clone_row = tpl_row.content.cloneNode(true);
+                const img_ft = clone_row.querySelector(".editing_entry_FT_image")
+                img_ft.src = file_url(this.curr_id);
+                window.draw_rect = new DrawRects(clone_row.querySelector(".editing_entry_FT_canvas"), img_ft);
+                window.draw_rect.setup();
             } else {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;

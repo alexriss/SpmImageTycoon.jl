@@ -67,6 +67,19 @@ editing_entries = OrderedDict(
             "abbreviation" => "LoG",
             "function" => "LoG",
         ),
+        "FTF" => Dict(
+            "name" => "Fourier Filter",
+            "type" => "table",
+            "pars" => OrderedDict(
+                "r" => Dict(
+                    "type" => "FT_select",
+                    "name" => "selection",
+                    "default" => [],
+                )
+            ),
+            "abbreviation" => "FFT",
+            "function" => "FTF",
+        ),
     ),
 
     "spectrum" => OrderedDict(
@@ -277,6 +290,13 @@ function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
 
     d .= imfilter(d, Kernel.LoG(ss))
 
+    return nothing
+end
+
+
+function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+    F = fftshift(fft(d))
+    d .= @. log(abs(F * F)) + 1
     return nothing
 end
 
