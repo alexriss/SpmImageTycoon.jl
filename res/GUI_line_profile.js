@@ -406,7 +406,7 @@ LineProfile.prototype = {
 
     // main update function
     update(timer) {
-        that = window.line_profile_object;  // requestAnimationFrame sends a different "this"
+        var that = window.line_profile_object;  // requestAnimationFrame sends a different "this"
         if (window.space_pressed) {
             that.cursor = "grab";
         }
