@@ -365,7 +365,7 @@ function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{Da
     # sometimes the file is blocked, in that case we sleep for 5ms and try again
     f = nothing
     err = nothing
-    for _ in 1:20
+    for _ in 1:10
         try 
             f = open(filename, "w")
             break
@@ -377,10 +377,10 @@ function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{Da
         end
     end
     if f === nothing
-        throw(err)
+        !Precompiling && throw(err)  # we can ignore this error during precompilation
+    else
+        write(f, svg_header)
     end
-
-    write(f, svg_header)
 
     # get minimum and maximum values for all data
     extrema_x = extrema.([xy_data[!, 1] for xy_data in xy_datas if size(xy_data, 1) > 0])
@@ -440,10 +440,12 @@ function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{Da
         @views @inbounds for j in 1:length(x_data_plot)
             points *= "$(x_data_plot[j]),$(y_data_plot[j]) "
         end
-        write(f, polyline_header_1 * color * polyline_header_2 * points * polyline_footer)
+        f !== nothing && write(f, polyline_header_1 * color * polyline_header_2 * points * polyline_footer)
     end
-    write(f, svg_footer)
-    close(f)
+    if f !== nothing 
+        write(f, svg_footer)
+        close(f)
+    end
     return yxranges
 end
 

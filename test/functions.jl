@@ -20,10 +20,14 @@ function delete_files(i::Int=1; dir_cache::String="", fname_odp::String="")::Not
                 print(".")
             end
             if i > 5
-                throw(e)
+                if SpmImageTycoon.Precompiling
+                    println(" giving up.")
+                else
+                    throw(e)
+                end
             end
             sleep(1)
-            delete_files(i+1)
+            i <= 5 && delete_files(i+1)
         else
             throw(e)
         end
