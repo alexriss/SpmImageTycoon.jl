@@ -29,11 +29,12 @@ function set_params(dir_res, auto_save_minutes, overview_max_images, bg_correcti
     window.editing_entry_list = editing_entries;
 }
 
-function set_params_project(dir_data, dir_cache, dir_colorbars, filenames_colorbar) {
+function set_params_project(dir_data, dir_cache, dir_colorbars, dir_edits, filenames_colorbar) {
     //  sets the global variables needed for this current directory
     window.dir_data = dir_data;
     window.dir_cache = dir_cache;
     window.dir_colorbars = dir_colorbars;
+    window.dir_edits = dir_edits;
     window.filenames_colorbar = filenames_colorbar;
 }
 

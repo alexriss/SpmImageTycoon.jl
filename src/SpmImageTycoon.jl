@@ -317,9 +317,9 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
         # update the image or spectrum
         if griditems[id].type == SpmGridImage
             resize_to_ = full_resolution ? 0 : resize_to
-            create_image!(griditems[id], item, resize_to=resize_to, base_dir=dir_cache)    
+            create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache)    
         elseif griditems[id].type == SpmGridSpectrum
-            create_spectrum!(griditems[id], item, base_dir=dir_cache)
+            create_spectrum!(griditems[id], item, dir_cache=dir_cache)
         end
     end
     return nothing
@@ -347,9 +347,9 @@ function reset_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String
         if changed
             if griditems[id].type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(griditems[id], item, resize_to=resize_to, base_dir=dir_cache)    
+                create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache)    
             elseif griditems[id].type == SpmGridSpectrum
-                create_spectrum!(griditems[id], item, base_dir=dir_cache)
+                create_spectrum!(griditems[id], item, dir_cache=dir_cache)
             end
         end
     end
@@ -394,9 +394,9 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         if changed
             if griditem.type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(griditem, item, resize_to=resize_to_, base_dir=dir_cache)    
+                create_image!(griditem, item, resize_to=resize_to_, dir_cache=dir_cache)    
             elseif griditem.type == SpmGridSpectrum
-                create_spectrum!(griditem, item, base_dir=dir_cache)
+                create_spectrum!(griditem, item, dir_cache=dir_cache)
             end
         end
     end
@@ -686,7 +686,8 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
     dir_cache = get_dir_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
     dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
-    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar)
+    dir_edits = add_trailing_slash(get_dir_edits(dir_cache))
+    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $dir_edits, $filenames_colorbar)
     
     # only send the images with status >=0 (deleted ones are not sent, but still saved)
     griditems_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(griditems))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
@@ -832,8 +833,8 @@ end
         SpmImageTycoon.load_all(DIR_db_old, nothing)
         griditems, _ = SpmImageTycoon.parse_files(DIR_data)
         # these can give write permission errors, so let's remove for now
-        # SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, base_dir=DIR_data)
-        # SpmImageTycoon.create_image!(griditems[fname_img_base], ima, base_dir=DIR_data)
+        # SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, dir_cache=DIR_cache)
+        # SpmImageTycoon.create_image!(griditems[fname_img_base], ima, dir_cache=DIR_cache)
         SpmImageTycoon.get_spectrum_data_dict(griditems[fname_spec_base], DIR_data)
 
         w = Window(

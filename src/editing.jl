@@ -148,6 +148,19 @@ function nm_to_px(griditem::SpmGridItem, points::Tuple{Int,Int}, val::Real)::Tup
 end
 
 
+"""Generates the filename that is used for edits."""
+function get_filename_edit(filename_display::String, suffix::String="")::String
+    base, ext = splitext(filename_display)
+    return "$(base)_$(suffix)$(ext)"
+end
+
+
+"""returns the edits directory (which is a subdirectory of dir_cache"""
+function get_dir_edits(dir_cache::String)::String
+    return joinpath(dir_cache, dir_edits_name)
+end
+
+
 """converts and checks parameters corresponding to the given edit."""
 function get_params(pars::Dict, default_pars::OrderedDict)::Dict
     res = Dict()
@@ -176,7 +189,7 @@ end
 """Applies all edits to the images and spectra.
 `args` is either `MatrixFloat` (for images) or `VectroFloat`, `VectorFloat` (for spectra).
 """
-function apply_edits!(griditem::SpmGridItem, args...)::Nothing
+function apply_edits!(griditem::SpmGridItem, args...; dir_cache::String="")::Nothing
     for (i,edit) in enumerate(griditem.edits)
         edit = JSON.parse(edit)
         if "id" in keys(edit)
@@ -186,7 +199,7 @@ function apply_edits!(griditem::SpmGridItem, args...)::Nothing
                     continue
                 end
             end
-            apply_edit!(args..., griditem, edit)
+            apply_edit!(args..., griditem, edit, dir_cache=dir_cache)
             griditem.edits[i] = JSON.json(edit) # there can be updates to the parameters
         end
     end
@@ -195,7 +208,7 @@ end
 
 
 """Applies one edit to the image data."""
-function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict)::Nothing
+function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict; dir_cache::String="")::Nothing
     # get the function from the string
 
     key = edit["id"]
@@ -211,14 +224,15 @@ function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict)::Nothing
     edit["pars"] = get_params(edit["pars"], default_pars)
 
     # apply the function
-    func(d, griditem, edit["pars"])
+    n = haskey(edit, "n") ? edit["n"] : "-1"
+    func(d, griditem, edit["pars"], n, dir_cache)
 
     return nothing
 end
 
 
 """Applies one edit to the spectrum data."""
-function apply_edit!(x_data::VectorFloat, y_data::VectorFloat, griditem::SpmGridItem, edit::Dict)::Nothing
+function apply_edit!(x_data::VectorFloat, y_data::VectorFloat, griditem::SpmGridItem, edit::Dict; dir_cache::String="")::Nothing
     # get the function from the string
 
     key = edit["id"]
@@ -234,14 +248,15 @@ function apply_edit!(x_data::VectorFloat, y_data::VectorFloat, griditem::SpmGrid
     edit["pars"] = get_params(edit["pars"], default_pars)
 
     # apply the function
-    func(x_data, y_data, griditem, edit["pars"])
+    n = haskey(edit, "n") ? edit["n"] : "-1"
+    func(x_data, y_data, griditem, edit["pars"], n, dir_cache)
 
     return nothing
 end
 
 
 
-function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     s = pars["s"]
     ss = reverse(nm_to_px(griditem, size(d), s))
 
@@ -251,14 +266,14 @@ function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
 end
 
 
-function Laplacian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function Laplacian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     d .= imfilter(d, Kernel.Laplacian())
 
     return nothing
 end
 
 
-function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     s1 = pars["s1"]
     s2 = pars["s2"]
     ss1 = reverse(nm_to_px(griditem, size(d), s1))
@@ -271,7 +286,7 @@ function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
 end
 
 
-function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     s = pars["s"]
     ss = reverse(nm_to_px(griditem, size(d), s))
 
@@ -281,17 +296,28 @@ function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
 end
 
 
-function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     F = fftshift(fft(d))
+    @show n
     
     d .= @. Base.log(abs(F))  # save this to a file
+    normalize01!(d)
+    clamp01nan!(d)
+    im_arr = Gray.(d)
+    # im_arr = colorize(d, griditem.colorscheme)
+    fname = get_filename_edit(griditem.filename_display, "FT_$n")
+    fname_abs = joinpath(
+        get_dir_edits(dir_cache),
+        fname
+    )
+    save(fname_abs, im_arr)
 
     d .= real.(ifft(fftshift(F)))
     return nothing
 end
 
 
-function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     s = pars["s"]
     y .= imfilter(y, Kernel.gaussian((s, )))
 
@@ -299,7 +325,7 @@ function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::D
 end
 
 
-function diff1(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict)::Nothing
+function diff1(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     dy = diff(y)
     push!(dy, dy[end])
     y .= dy

@@ -20,7 +20,8 @@ const resize_to = 2048  # we set it very high, so probably no images will be res
 const extension_image = ".sxm"
 const extension_spectrum = ".dat"
 
-const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated image files here)
+const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated files here)
+const dir_edits_name = "edits"  # directory used for edits (julia writes all generated edit files here)
 const dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
 const dir_res = "../res/"  # relative to module directory
 

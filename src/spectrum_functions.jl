@@ -175,7 +175,7 @@ function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, gri
         filename_original = griditems[id].filename_original
         spectrum = load_spectrum_memcache(joinpath(dir_data, griditems[id].filename_original))
         griditems[id].channel_range_selected = range_selected
-        create_spectrum!(griditems[id], spectrum, base_dir=dir_cache)
+        create_spectrum!(griditems[id], spectrum, dir_cache=dir_cache)
     end
     return nothing
 end
@@ -236,7 +236,7 @@ If `sort_x_asc` is `true` then the data is sorted by x_data in ascending directi
 If `sort_x_any` is `true``, then the data is sorted by x_data in ascending direction if it is not yet sorted in ascending or descending direction.
 Returns a vector for xdata and a vector of vectors for the ydata, as well as a vector of strings for the colors.
 """
-function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_asc::Bool=false, sort_x_any::Bool=false)::Tuple{Vector{DataFrame},Vector{String}}
+function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cache::String="", sort_x_asc::Bool=false, sort_x_any::Bool=false)::Tuple{Vector{DataFrame},Vector{String}}
     channel_name = griditem.channel_name
     channel2_name = griditem.channel2_name
     channel_name_bwd = griditem.channel_name * " [bwd]"
@@ -298,7 +298,7 @@ function get_spectrum_data(griditem::SpmGridItem, spectrum::SpmSpectrum; sort_x_
             sort!(xy_data, 1)
         end
         SpmSpectroscopy.correct_background!(x_data, y_data, background_correction_list_spectrum[griditem.background_correction])
-        apply_edits!(griditem, x_data, y_data)
+        apply_edits!(griditem, x_data, y_data, dir_cache=dir_cache)
     end
 
     return xy_datas, colors
@@ -453,13 +453,13 @@ end
 """Creates and saves a svg image for channel_name vs channel2_name.
 The "filename_display" field of the SpmGridItem is updated (to the svg filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir::String="", use_existing::Bool=false)
-    if use_existing && griditem_cache_up_to_date(SpmGridItem[griditem], base_dir)
+function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cache::String="", use_existing::Bool=false)
+    if use_existing && griditem_cache_up_to_date(SpmGridItem[griditem], dir_cache)
         return nothing  # image exists, nothing to do
     end
 
     # load spectrum
-    xy_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true)  # sort x_values (asc or desc is ok), so that we get a nice line plot
+    xy_datas, colors = get_spectrum_data(griditem, spectrum, sort_x_any=true, dir_cache=dir_cache)  # sort x_values (asc or desc is ok), so that we get a nice line plot
     griditem.points = size(xy_datas[1], 1)
 
     if griditem.filename_display === ""
@@ -467,7 +467,7 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; base_dir
     else
         filename_display = griditem.filename_display
     end
-    f = joinpath(base_dir, filename_display)
+    f = joinpath(dir_cache, filename_display)
     yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
 
     lock(griditems_lock) do
@@ -570,7 +570,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         end
         griditem = griditems[id]
     end
-    t = Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
+    t = Threads.@spawn create_spectrum!(griditem, spectrum, dir_cache=dir_cache, use_existing=true)
     push!(tasks, t)
     
     # virtual copies
@@ -592,7 +592,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
             griditem.comment = comment
             griditem.status = 0
 
-            t = Threads.@spawn create_spectrum!(griditem, spectrum, base_dir=dir_cache, use_existing=true)
+            t = Threads.@spawn create_spectrum!(griditem, spectrum, dir_cache=dir_cache, use_existing=true)
             push!(tasks, t)
         end
     end

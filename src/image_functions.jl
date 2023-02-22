@@ -158,13 +158,13 @@ end
 
 
 """Gets the image data from cache (if it exists, otherwise calls the function `get_image_data`)"""
-function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
     res = missing
     key = griditem.id * "_" * griditem.channel_name * "_" * griditem.background_correction * "_" * string(griditem.edits) * "_" * string(resize_to)
     lock(memcache_imagedata_lock) do
         res = get_cache(memcache_imagedata, key)
         if res === missing
-            res = get_image_data(griditem, im_spm; resize_to=resize_to)
+            res = get_image_data(griditem, im_spm; dir_cache=dir_cache, resize_to=resize_to)
             set_cache(memcache_imagedata, key, res)
         end
     end
@@ -184,7 +184,7 @@ end
 
 
 """Get, resize, background correct and filter image data for a specific griditem. Returns a 2d array, the channel unit, minimum and maximum values."""
-function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0)::Tuple{Array{Float32,2},String}
+function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; dir_cache::String="", resize_to::Int=0)::Tuple{Array{Float32,2},String}
     channel = get_channel(im_spm, griditem.channel_name, origin="upper");
     d = channel.data
     unit = channel.unit
@@ -198,7 +198,7 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=
     end
 
     d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
-    apply_edits!(griditem, d)
+    apply_edits!(griditem, d, dir_cache=dir_cache)
 
     return d, unit
 end
@@ -207,16 +207,16 @@ end
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
 The "filename_display" field of the SpmGridItem is updated (to the png filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, base_dir::String="", use_existing::Bool=false)::Nothing
+function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", use_existing::Bool=false)::Nothing
     if use_existing
-        f = joinpath(base_dir, griditem.filename_display)
+        f = joinpath(dir_cache, griditem.filename_display)
         if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
             return nothing  # image exists, nothing to do
         end
     end
 
     # create grayscale image
-    d, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, normalize=true, clamp=true)
+    d, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, normalize=true, clamp=true)
 
     if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
@@ -229,7 +229,7 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
     else
         filename_display = griditem.filename_display
     end
-    f = joinpath(base_dir, filename_display)
+    f = joinpath(dir_cache, filename_display)
     save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
 
     lock(griditems_lock) do
@@ -253,7 +253,7 @@ function set_range_selected!(ids::Vector{String}, dir_data::String, griditems::D
         im_spm = load_image_memcache(joinpath(dir_data, filename_original))
         griditems[id].channel_range_selected = range_selected
         resize_to_ = full_resolution ? 0 : resize_to
-        create_image!(griditems[id], im_spm, resize_to=resize_to_, base_dir=dir_cache)
+        create_image!(griditems[id], im_spm, resize_to=resize_to_, dir_cache=dir_cache)
     end
     return nothing
 end
@@ -366,7 +366,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
         end
         griditem = griditems[id]
     end
-    t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+    t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
     push!(tasks, t)
     
     # virtual copies
@@ -392,7 +392,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
             griditem.comment = utf8ify(im_spm.header["Comment"])
             griditem.status = 0
 
-            t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, base_dir=dir_cache, use_existing=true)
+            t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
             push!(tasks, t)
         end
     end

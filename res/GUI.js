@@ -24,10 +24,9 @@ window.grid_last_scrolltop = 0;  // last y-scroll position in grid view (does no
 window.last_copy_from = "";  // last item that was selected as a source for copy/paste
 
 window.line_profile_object = null;  // hold the line profile object
-
 window.histogram_object = null;  // holds the histogram object
-
 window.spectrum_plot_object = null;  // hold the spectrum plot object
+window.draw_rect_objects = {};  // holds the drawRects objects (for FT Filter)
 
 window.filter_overview_selection_object = null;  // holds the selection object for overview filter
 window.filter_overview_selecting = false;  // user is currently making a selection
@@ -75,20 +74,34 @@ function create_regexp(inputstring) {
     return new RegExp(pattern, flags); 
 }
 
+function file_url_querystring(item) {
+    // returns the display filename url
+    return "?" + item.channel_name + "_" + item.channel2_name + "_" + item.background_correction + "_" + item.colorscheme +
+    "_" + item.scan_direction + 
+    "_range_" + item.channel_range_selected +
+    "_edits_" + JSON.stringify(item.edits);  
+}
+
 function file_url(id) {
     // returns the display filename url
     const item = window.items[id];
     return 'file:///' + window.dir_cache + item.filename_display +
-         "?" + item.channel_name + "_" + item.channel2_name + "_" + item.background_correction + "_" + item.colorscheme +
-         "_" + item.scan_direction + 
-         "_range_" + item.channel_range_selected +
-         "_edits_" + JSON.stringify(item.edits);  // to prevent caching and force reload
+    file_url_querystring(item); // to prevent caching and force reload
+         
 }
 
 function file_url_colorbar(id) {
     // returns the colorbar url
     const item = window.items[id];
     return 'file:///' + window.dir_colorbars + window.filenames_colorbar[item.colorscheme];
+}
+
+function file_url_edit(id, suffix) {
+    // returns the edit filename url
+    const item = window.items[id];
+    const ext = item.filename_display.substring(item.filename_display.lastIndexOf("."));  // get extension)        
+    const base = item.filename_display.substring(0, item.filename_display.lastIndexOf("."));  // get base name
+    return 'file:///' + window.dir_edits + base + "_" + suffix + ext + file_url_querystring(item);
 }
 
 function insertAfter(newNode, referenceNode) {

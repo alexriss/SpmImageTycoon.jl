@@ -2,7 +2,7 @@ function Editing() {
     this.initial_setup_complete = false;
     this.curr_id = "";
     this.updating = false;
-    this.editing_entry_list = {};
+    this.editing_entry_list = {};  // possible entries for images or spectra
 }
 
 
@@ -191,11 +191,11 @@ Editing.prototype = {
 
         if (props.type == "table") {
             if (el_update == null) {
-                clone = this.add_entry_table(key, props, props_item, el_update);
+                clone = this.add_entry_table(key, props, props_item);
                 this.add_entry_events(clone);
                 container.appendChild(clone);
             } else {
-                clone = this.update_entry_table(props_item, el_update);
+                clone = this.update_entry_table(props, props_item, el_update);
             }
         } else {
             console.log("Unknown editing entry type: " + props.type);
@@ -203,7 +203,7 @@ Editing.prototype = {
         }
     },
 
-    update_entry_table(props_item, el_entry) {
+    update_entry_table(props, props_item, el_entry) {
         const el_active = el_entry.querySelector(".editing_entry_buttons input");
         if ("off" in props_item) {
             if (props_item.off) {
@@ -211,12 +211,21 @@ Editing.prototype = {
                 el_entry.classList.add("inactive");
             }
         }
+        console.log(props_item);
+        const n = props_item["n"];
+        console.log(n);
 
-        Object.entries(props_item.pars).forEach(([key, par]) => {
+        Object.entries(props_item.pars).forEach(([key, par_item]) => {
+            const par = props.pars[key];
             const el_par = el_entry.querySelector('[data-id="' + key + '"]');
             if (el_par) {
-                el_par.value = par;
-                this.check_input_validity(el_par);
+                if (par.type === "float") {
+                    el_par.value = par_item;
+                    this.check_input_validity(el_par);
+                } else if (par.type === "FT_select") {
+                    el_par.src = file_url_edit(this.curr_id, "FT_" + n);
+                    window.draw_rect_objects[n].points.items = par_item;
+                }
             } else {
                 console.log("Unknown editing entry parameter: " + key);
             }
@@ -228,6 +237,9 @@ Editing.prototype = {
         clone = tpl.content.cloneNode(true);
         const el_entry = clone.querySelector(".editing_entry");
         el_entry.dataset.id = key;
+        const n = this.get_entry_num() + 1;
+        el_entry.dataset.n = n;
+
         clone.querySelector(".editing_entry_name").innerHTML = props.name;
         const id_button = "editing_entry_active_" + this.get_uid();
         const el_active = clone.querySelector(".editing_entry_buttons input");
@@ -241,9 +253,9 @@ Editing.prototype = {
         }
 
         const container_row = clone.querySelector(".editing_entry_container_row");
-        let tpl_row, clone_row;
+        let tpl_row, clone_row, img_ft;
         for (const [key, par] of Object.entries(props.pars)) {
-            if (par.type == "float") {
+            if (par.type === "float") {
                 tpl_row = clone.getElementById("editing_entry_template_row_float");
                 clone_row = tpl_row.content.cloneNode(true);
                 clone_row.querySelector(".editing_entry_par_name").innerHTML = par.name;
@@ -265,17 +277,25 @@ Editing.prototype = {
                 if ("max" in par) el_input.dataset.max = par.max;
                 if ("digits" in par) el_input.dataset.digits = par.digits;
                 input_number_dragable(el_input);
-            } else if (par.type == "FT_select") {
+            } else if (par.type === "FT_select") {
                 tpl_row = clone.getElementById("editing_entry_template_row_FT_select");
                 clone_row = tpl_row.content.cloneNode(true);
-                const img_ft = clone_row.querySelector(".editing_entry_FT_image")
-                img_ft.src = file_url(this.curr_id);
-                window.draw_rect = new DrawRects(clone_row.querySelector(".editing_entry_FT_canvas"), img_ft);
-                window.draw_rect.setup();
+                img_ft = clone_row.querySelector(".editing_entry_FT_image")
+                img_ft.dataset.id = key;
+                img_ft.addEventListener("load", () => {
+                    window.draw_rect_objects[n].setup();
+                    // todo: pass callback function to the object that updates the parameter (probably just recalculate), should be called everytime drag stops?
+                    if ("pars" in props_item && key in props_item.pars) {
+                        window.draw_rect_objects[n].points.items = props_item.pars[key];
+                    }
+                }, {once: true});
+                window.draw_rect_objects[n] = new DrawRects(clone_row.querySelector(".editing_entry_FT_canvas"), img_ft);
+                img_ft.src = file_url_edit(this.curr_id, "FT_" + n);
             } else {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;
             }
+
             container_row.appendChild(clone_row);
         }
         clone.querySelectorAll("template").forEach((el) => el.remove());
@@ -314,6 +334,7 @@ Editing.prototype = {
             let entry = {};
             let pars = {};
             entry["id"] = el.dataset.id;
+            entry["n"] = el.dataset.n;
             entry["off"] = el.querySelector(".editing_entry_active").checked ? 0 : 1;
             if (!(entry["id"] in this.editing_entry_list)) {
                 console.log("Unknown editing entry: " + entry["id"]);
@@ -329,17 +350,30 @@ Editing.prototype = {
         return entries;
     },
 
+    get_entry_num() {
+        // gets number of entries
+        const container = document.getElementById("editing_entry_container");
+        return container.querySelectorAll(".editing_entry").length;
+    },
+
     get_entry_pars_table(el, pars_list) {
         const pars = {};
-        el.querySelectorAll(".editing_entry_par_input").forEach((el) => {
+        const n = el.dataset.n;
+        // el.querySelectorAll(".editing_entry_par_input").forEach((el) => {
+        el.querySelectorAll("[data-id]").forEach((el) => {
             const key = el.dataset.id;
-            if (key in pars_list == false) {
+            console.log("key: " + key + " n: " + n );
+            if (key in pars_list === false) {
                 console.log("Unknown editing entry par: " + key);
                 return;
             }
-            if (pars_list[key].type == "float") {
+            if (pars_list[key].type === "float") {
                 pars[key] = el.valueAsNumber;
                 if (pars[key] == null || isNaN(pars[key])) pars[key] = pars_list[key].default;
+            } else if (pars_list[key].type === "FT_select") {
+                console.log("FT_select: " + key + " " + n);
+                pars[key] = window.draw_rect_objects[n].points.items;
+                console.log(pars[key]);
             } else {
                 pars[key] = el.value;
             }

@@ -41,6 +41,7 @@ function DrawRects(canvas_element, img_element) {
     this.h = this.canvas.height;
     this.cw = this.w / 2;  // center 
     this.ch = this.h / 2;
+    this.maxSideLength = 1024; // resolution of the canvas
     this.globalTime;
     this.pointDrag; // true is dragging a point else dragging a rect
     this.closestRect = {};
@@ -54,20 +55,23 @@ function DrawRects(canvas_element, img_element) {
     this.minDistPoint = 20;
     this.minDistRect = 5;
     this.rectStyle = {
-        rectWidth: 2,
-        strokeStyle: "green",
+        lineWidth: 2,
+        strokeStyle: "#1ad1b3",
         fillStyle: "#1ad1b360",
     };
     this.pointStyle = {
-        rectWidth: 1,
-        strokeStyle: "blue",
+        lineWidth: 1,
+        fillStyle: "#1ad1b3",
     };
-    this.highlightStyle = {
-        rectWidth: 3,
-        strokeStyle: "red",
-    };
-    console.log("DrawRects initialized");
-    console.log(this.canvas);
+    this.highlightRectStyle = {
+        lineWidth: 3,
+        fillStyle: "#1ad1b390",
+        strokeStyle: "#ef4568",
+    }
+    this.highlightPointStyle = {
+        lineWidth: 3,
+        strokeStyle: "#ef4568",
+    }
 }
 
 DrawRects.prototype = {
@@ -189,7 +193,7 @@ DrawRects.prototype = {
 
     drawPoint(point) {
         this.ctx.moveTo(point.x, point.y);
-        this.ctx.rect(point.x - 2, point.y - 2, 4, 4);
+        this.ctx.fillRect(point.x, point.y, 1, 1);
     },
 
     drawRect(rect) {
@@ -329,10 +333,16 @@ DrawRects.prototype = {
         this.ctx.stroke();
 
         // draw highlighted point or rect
-        this.setStyle(this.highlightStyle);
-        this.ctx.beginPath();
-        if (this.closestRect.p) { this.drawRect(this.closestRect.p) }
-        if (this.closestPoint.p) { this.drawPoint(this.closestPoint.p) }
+        if (this.closestRect.p) {
+            this.setStyle(this.highlightRectStyle);
+            this.ctx.beginPath();
+            this.drawRect(this.closestRect.p);
+        }
+        if (this.closestPoint.p) {
+            this.setStyle(this.highlightPointStyle);
+            this.ctx.beginPath();
+            this.drawPoint(this.closestPoint.p);
+        }
 
         this.ctx.stroke();
 
@@ -341,10 +351,8 @@ DrawRects.prototype = {
     },
 
     setup() {
-        console.log(1);
         ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.canvas.addEventListener('keydown', (e) => {
-            // console.log(e);
             if (e.key == "Delete" || e.key == "Backspace") {
                 this.delRect = true;
             }
@@ -355,6 +363,21 @@ DrawRects.prototype = {
         this.canvas.style.width = window.getComputedStyle(this.img).width;
         this.canvas.style.height = window.getComputedStyle(this.img).height;
         this.canvas.style.visibility = "visible";
+
+        let w = this.img.naturalWidth;
+        let h = this.img.naturalHeight;
+        let maxSideLength = Math.max(this.maxSideLength, Math.max(w, h));
+        if (w >= h) {
+            this.canvas.width = maxSideLength;
+            this.canvas.height = maxSideLength * h/w;
+        } else {
+            this.canvas.height = maxSideLength;
+            this.canvas.width = maxSideLength * w/h;
+        }
+        this.w = this.canvas.width;
+        this.h = this.canvas.height;
+        this.cw = this.w / 2;  // center
+        this.ch = this.h / 2;
 
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
 
