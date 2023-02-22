@@ -1,3 +1,5 @@
+# a edit key "n" will be added automatically from js (this is used as an id)
+
 editing_entries = OrderedDict(
     "image" => OrderedDict(
         "G" => Dict(
@@ -171,35 +173,20 @@ function get_params(pars::Dict, default_pars::OrderedDict)::Dict
 end
 
 
-"""Applies all edits to the image data."""
-function apply_edits!(d::MatrixFloat, griditem::SpmGridItem)::Nothing
+"""Applies all edits to the images and spectra.
+`args` is either `MatrixFloat` (for images) or `VectroFloat`, `VectorFloat` (for spectra).
+"""
+function apply_edits!(griditem::SpmGridItem, args...)::Nothing
     for (i,edit) in enumerate(griditem.edits)
         edit = JSON.parse(edit)
         if "id" in keys(edit)
+            id = edit["id"]
             if "off" in keys(edit)
                 if edit["off"] == true
                     continue
                 end
             end
-            apply_edit!(d, griditem, edit)
-            griditem.edits[i] = JSON.json(edit) # there can be updates to the parameters
-        end
-    end
-    return nothing
-end
-
-
-"""Applies all edits to the spectrum data."""
-function apply_edits!(x_data, y_data, griditem::SpmGridItem)::Nothing
-    for (i,edit) in enumerate(griditem.edits)
-        edit = JSON.parse(edit)
-        if "id" in keys(edit)
-            if "off" in keys(edit)
-                if edit["off"] == true
-                    continue
-                end
-            end
-            apply_edit!(x_data, y_data, griditem, edit)
+            apply_edit!(args..., griditem, edit)
             griditem.edits[i] = JSON.json(edit) # there can be updates to the parameters
         end
     end
@@ -296,7 +283,10 @@ end
 
 function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict)::Nothing
     F = fftshift(fft(d))
-    d .= @. log(abs(F * F)) + 1
+    
+    d .= @. Base.log(abs(F))  # save this to a file
+
+    d .= real.(ifft(fftshift(F)))
     return nothing
 end
 

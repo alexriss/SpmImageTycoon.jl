@@ -198,7 +198,7 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=
     end
 
     d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
-    apply_edits!(d, griditem)
+    apply_edits!(griditem, d)
 
     return d, unit
 end
