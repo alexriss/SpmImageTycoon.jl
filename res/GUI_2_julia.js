@@ -491,6 +491,7 @@ function change_item(what, message, jump=1) {
 
 function recalculate_item(id, state) {
     console.log("recalculate");
+    let full_resolution = false;
     if (get_view() == "zoom") {
         full_resolution = true;
     }

@@ -73,6 +73,35 @@ editing_entries = OrderedDict(
             "name" => "Fourier Filter",
             "type" => "table",
             "pars" => OrderedDict(
+                "f" => Dict(
+                    "type" => "select",
+                    "name" => "Filter",
+                    "options" => OrderedDict(
+                        "p" => "keep",
+                        "r" => "remove",
+                    ),
+                    "default" => "r",
+                ),
+                "s" => Dict(
+                    "type" => "select",
+                    "name" => "Normalization",
+                    "options" => OrderedDict(
+                        "li" => "linear",
+                        "sq" => "square root",
+                        "ln" => "logarithmic",
+                    ),
+                    "default" => "ln",
+                ),
+                "d" => Dict(
+                    "type" => "select",
+                    "name" => "Display",
+                    "options" => OrderedDict(
+                        "a" => "absolute",
+                        "r" => "real",
+                        "i" => "imaginary",
+                    ),
+                    "default" => "a",
+                ),
                 "r" => Dict(
                     "type" => "FT_select",
                     "name" => "selection",
@@ -166,18 +195,20 @@ function get_params(pars::Dict, default_pars::OrderedDict)::Dict
     res = Dict()
     for (k,v) in pars
         if haskey(default_pars, k)
-            if !isa(v, Real)
-                try
-                    v = parse(Float64, v)
-                catch
-                    v = default_pars[k]["default"]
+            if default_pars[k]["type"] == "float"
+                if !isa(v, Real)
+                    try
+                        v = parse(Float64, v)
+                    catch
+                        v = default_pars[k]["default"]
+                    end
                 end
-            end
-            if haskey(default_pars[k], "min") && v < default_pars[k]["min"]
-                v = default_pars[k]["min"]
-            end
-            if haskey(default_pars[k], "max") && v > default_pars[k]["max"]
-                v = default_pars[k]["max"]
+                if haskey(default_pars[k], "min") && v < default_pars[k]["min"]
+                    v = default_pars[k]["min"]
+                end
+                if haskey(default_pars[k], "max") && v > default_pars[k]["max"]
+                    v = default_pars[k]["max"]
+                end
             end
             res[k] = v
         end
@@ -225,7 +256,7 @@ function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict; dir_cach
 
     # apply the function
     n = haskey(edit, "n") ? edit["n"] : "-1"
-    func(d, griditem, edit["pars"], n, dir_cache)
+    @time func(d, griditem, edit["pars"], n, dir_cache)
 
     return nothing
 end
@@ -297,14 +328,34 @@ end
 
 
 function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
-    F = fftshift(fft(d))
+    F = rfft(d)
     @show n
     
-    d .= @. Base.log(abs(F))  # save this to a file
-    normalize01!(d)
-    clamp01nan!(d)
-    im_arr = Gray.(d)
-    # im_arr = colorize(d, griditem.colorscheme)
+    
+    norm_func = x -> x
+    if haskey(pars, "s")
+        if pars["s"] == "ln"
+            norm_func = x -> Base.log(abs(x) + 1e-16)
+        elseif pars["s"] == "sq"
+            norm_func = x -> sqrt(abs(x))
+        end
+    end
+    disp_func = x -> abs(x)
+    if haskey(pars, "d")
+        if pars["d"] == "r"
+            disp_func = x -> real(x)
+        elseif pars["d"] == "i"
+            disp_func = x -> imag(x)
+        end
+    end
+
+    F .= fftshift(F, 2)
+    F_norm = @. norm_func(disp_func(F))  # save this to a file
+
+    normalize01!(F_norm)
+    # clamp01nan!(F_norm)
+    im_arr = Gray.(F_norm)
+    # im_arr = colorize(F_norm, griditem.colorscheme)
     fname = get_filename_edit(griditem.filename_display, "FT_$n")
     fname_abs = joinpath(
         get_dir_edits(dir_cache),
@@ -312,7 +363,16 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
     )
     save(fname_abs, im_arr)
 
-    d .= real.(ifft(fftshift(F)))
+    if haskey(pars, "f")
+        if pars["f"] == "p"  # keep/pass
+            mask = falses(size(F))
+            F[1:10, 5:15] .= 0
+        else
+            mask = trues(size(F))
+        end
+    end
+
+    d .= irfft(fftshift(F, 2), size(d, 1))
     return nothing
 end
 

@@ -87,6 +87,15 @@
                       </td>
                     </tr>
                     </template>
+                    <template id="editing_entry_template_row_select">
+                      <tr>
+                        <th width="50%" class="abbreviate editing_entry_par_name">par.name</th>
+                        <td colspan="2">
+                          <select class="is-small editing_entry_par_select" data-id="">
+                          </select>
+                        </td>
+                      </tr>
+                    </template>
                     <template id="editing_entry_template_row_FT_select">
                       <tr>
                         <td colspan="3">
@@ -96,6 +105,14 @@
                               <canvas class="editing_entry_FT_canvas" tabindex="-1"></canvas>
                             </section>
                           </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          x / y
+                        </td>
+                        <td class="has-text-right">
+                          <a class="editing_entry_FT_clear_all">clear all</a>
                         </td>
                       </tr>
                       </template>  

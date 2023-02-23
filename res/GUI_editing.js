@@ -40,6 +40,15 @@ Editing.prototype = {
         this.initial_setup_complete = true;
     },
 
+    set_img_src(el, id, n, repeat=0) {
+        el.src = file_url_edit(id, "FT_" + n);
+        // if (repeat > 1) return;  // we tried two times, the image should be there
+        // const that = this;
+        // window.setTimeout(() => {
+        //     that.set_img_src(el, id, n, repeat+1);  // sometimes the image generation is slow, so we call it again
+        // }, 60);
+    },
+
     setup_form(id, extra_info) {
         if (window.image_info_id != id) return;  // there was some other event already
         this.updating = true;
@@ -123,6 +132,7 @@ Editing.prototype = {
         }
 
         const container = document.getElementById("editing_entry_container");
+        console.log("update: " + update);
         if (update) {
             const container = document.getElementById("editing_entry_container");
             let entries_form = [];
@@ -211,9 +221,7 @@ Editing.prototype = {
                 el_entry.classList.add("inactive");
             }
         }
-        console.log(props_item);
         const n = props_item["n"];
-        console.log(n);
 
         Object.entries(props_item.pars).forEach(([key, par_item]) => {
             const par = props.pars[key];
@@ -222,9 +230,11 @@ Editing.prototype = {
                 if (par.type === "float") {
                     el_par.value = par_item;
                     this.check_input_validity(el_par);
+                } else if (par.type === "select") {
+                    el_par.value = par_item;
                 } else if (par.type === "FT_select") {
-                    el_par.src = file_url_edit(this.curr_id, "FT_" + n);
-                    window.draw_rect_objects[n].points.items = par_item;
+                    this.set_img_src(el_par, this.curr_id, n);
+                    window.draw_rect_objects[n].loadPoints(par_item);
                 }
             } else {
                 console.log("Unknown editing entry parameter: " + key);
@@ -233,6 +243,7 @@ Editing.prototype = {
     },
 
     add_entry_table(key, props, props_item={}) {
+        const that = this;
         const tpl = document.getElementById("editing_entry_template_table");
         clone = tpl.content.cloneNode(true);
         const el_entry = clone.querySelector(".editing_entry");
@@ -277,20 +288,40 @@ Editing.prototype = {
                 if ("max" in par) el_input.dataset.max = par.max;
                 if ("digits" in par) el_input.dataset.digits = par.digits;
                 input_number_dragable(el_input);
+            } else if (par.type === "select") {
+                tpl_row = clone.getElementById("editing_entry_template_row_select");
+                clone_row = tpl_row.content.cloneNode(true);
+                clone_row.querySelector(".editing_entry_par_name").innerHTML = par.name;
+                const el_select = clone_row.querySelector(".editing_entry_par_select");
+                el_select.dataset.id = key;
+                for (const [key, val] of Object.entries(par.options)) {
+                    const el_option = document.createElement("option");
+                    el_option.value = key;
+                    el_option.innerHTML = val;
+                    el_select.appendChild(el_option);
+                }
+                if ("pars" in props_item && key in props_item.pars) {
+                    el_select.value = props_item.pars[key];
+                } else {
+                    el_select.value = par.default;
+                }
             } else if (par.type === "FT_select") {
                 tpl_row = clone.getElementById("editing_entry_template_row_FT_select");
                 clone_row = tpl_row.content.cloneNode(true);
                 img_ft = clone_row.querySelector(".editing_entry_FT_image")
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
-                    window.draw_rect_objects[n].setup();
+                    window.draw_rect_objects[n].setup(callback= () => that.recalculate());
                     // todo: pass callback function to the object that updates the parameter (probably just recalculate), should be called everytime drag stops?
                     if ("pars" in props_item && key in props_item.pars) {
-                        window.draw_rect_objects[n].points.items = props_item.pars[key];
+                        window.draw_rect_objects[n].loadPoints(props_item.pars[key]);
                     }
                 }, {once: true});
                 window.draw_rect_objects[n] = new DrawRects(clone_row.querySelector(".editing_entry_FT_canvas"), img_ft);
-                img_ft.src = file_url_edit(this.curr_id, "FT_" + n);
+                this.set_img_src(img_ft, this.curr_id, n);
+                clone_row.querySelector(".editing_entry_FT_clear_all").addEventListener("click", () => {
+                    window.draw_rect_objects[n].clearAll();
+                });
             } else {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;
@@ -362,7 +393,6 @@ Editing.prototype = {
         // el.querySelectorAll(".editing_entry_par_input").forEach((el) => {
         el.querySelectorAll("[data-id]").forEach((el) => {
             const key = el.dataset.id;
-            console.log("key: " + key + " n: " + n );
             if (key in pars_list === false) {
                 console.log("Unknown editing entry par: " + key);
                 return;
@@ -370,10 +400,10 @@ Editing.prototype = {
             if (pars_list[key].type === "float") {
                 pars[key] = el.valueAsNumber;
                 if (pars[key] == null || isNaN(pars[key])) pars[key] = pars_list[key].default;
+            } else if (pars_list[key].type === "select") {
+                pars[key] = el.value;
             } else if (pars_list[key].type === "FT_select") {
-                console.log("FT_select: " + key + " " + n);
-                pars[key] = window.draw_rect_objects[n].points.items;
-                console.log(pars[key]);
+                pars[key] = window.draw_rect_objects[n].savePoints();
             } else {
                 pars[key] = el.value;
             }
@@ -395,6 +425,7 @@ Editing.prototype = {
     },
 
     recalculate() {
+        console.log("recalculate: " + this.curr_id + " " + window.image_info_id + " " + this.updating);
         if (window.image_info_id != this.curr_id || this.updating) return;
 
         const curr_id = this.curr_id;
@@ -426,13 +457,9 @@ Editing.prototype = {
             }
         }
 
-        // console.log("recalculate check");
         if (this.state_changed(curr_state, item)) {
-            // console.log("recalculate changed");
             window.queue_edits_range.add(curr_id, "edit", () => recalculate_item(curr_id, curr_state));
         }
-        // console.log(curr_state["edits"]);
-        // console.log("recalculate end");
     },
 
     get_uid() {

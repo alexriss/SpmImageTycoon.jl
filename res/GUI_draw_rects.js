@@ -6,6 +6,8 @@ function DrawRects(canvas_element, img_element) {
     this.first_setup = false;
     this.first_setup_events = false;
 
+    this.callback = null;  // callback function when changes occur
+
     this.imgScansize = [0, 0]  // needed for conversions etc
     this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f, ...)
     this.unit_exponent = 0;  // exonent for the unit
@@ -171,6 +173,36 @@ DrawRects.prototype = {
         closestRect.p = undefined;
     },
 
+    savePoints() {
+        // saves points to array (compressed, i.e. only point 1 and 3 of every rect)
+        // also converts array of objects to array of arrays
+        var points = [...this.points.items]; // create copy to minimize race conditions
+        var pointsCompressed = [];
+        for (var i = 0; i < points.length; i += 4) {
+            pointsCompressed.push([points[i].x, points[i].y]);
+            pointsCompressed.push([points[i + 2].x, points[i + 2].y]);
+        }
+        return pointsCompressed;
+    },
+
+    loadPoints(points) {
+        // loads points from array (compressed, i.e. only point 1 and 3 of every rect)
+        // also converts array of arrays to array of objects
+        var pointsExpanded = [];
+        for (var i = 0; i < points.length; i += 2) {
+            pointsExpanded.push({x: points[i][0], y: points[i][1]});
+            pointsExpanded.push({x: points[i][0], y: points[i + 1][1]});
+            pointsExpanded.push({x: points[i + 1][0], y: points[i + 1][1]});
+            pointsExpanded.push({x: points[i + 1][0], y: points[i][1]});
+        }
+        this.points.items = pointsExpanded;
+    },
+
+    clearAll() {
+        this.points.items = [];
+        if (this.callback !== null) this.callback();
+    },
+
     getCursor(closestPoint, closestRect) {
         cursor = "crosshair";
         if (closestPoint.p) {
@@ -241,6 +273,10 @@ DrawRects.prototype = {
                 mouse.drag = false;
                 mouse.dragEnd = true;
             }
+        }
+
+        if (e.type === "mouseup") {
+            if (this.callback !== null) this.callback();
         }
     },
 
@@ -350,7 +386,7 @@ DrawRects.prototype = {
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
     },
 
-    setup() {
+    setup(callback=null) {
         ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.canvas.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
@@ -378,6 +414,8 @@ DrawRects.prototype = {
         this.h = this.canvas.height;
         this.cw = this.w / 2;  // center
         this.ch = this.h / 2;
+
+        this.callback = callback;
 
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
 

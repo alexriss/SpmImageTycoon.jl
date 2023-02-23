@@ -957,3 +957,7 @@ sup {
   height: 100%; 
   outline: none;  /* remove the dotted outline associated with tabindex (we need it to capture keydown events) */
 }
+
+#editing_container editing_entry_FT_clear_all  { 
+  opacity:0.6;
+}
