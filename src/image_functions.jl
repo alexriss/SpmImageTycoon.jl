@@ -159,11 +159,19 @@ end
 
 """Gets the image data from cache (if it exists, otherwise calls the function `get_image_data`)"""
 function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+    @show "get image data cache"
     res = missing
+    usecache = true
     key = griditem.id * "_" * griditem.channel_name * "_" * griditem.background_correction * "_" * string(griditem.edits) * "_" * string(resize_to)
+    for notallowed in memcache_disable_imagedata
+        if contains(key, notallowed)
+            usecache = false
+            break
+        end
+    end
     lock(memcache_imagedata_lock) do
-        res = get_cache(memcache_imagedata, key)
-        if res === missing
+        usecache && (res = get_cache(memcache_imagedata, key))
+        if ismissing(res)
             res = get_image_data(griditem, im_spm; dir_cache=dir_cache, resize_to=resize_to)
             set_cache(memcache_imagedata, key, res)
         end
@@ -198,6 +206,7 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; dir_cache::Stri
     end
 
     d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
+    @show "apply edits"
     apply_edits!(griditem, d, dir_cache=dir_cache)
 
     return d, unit

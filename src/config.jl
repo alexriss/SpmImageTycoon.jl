@@ -51,6 +51,12 @@ memcache_mb_spectradata = 20 # size of memory cache for spectral data (in mb)
 memcache_mb_images = 50 # size of memory cache for images (in mb)
 memcache_mb_imagedata = 20 # size of memory cache for imagedata (in mb)
 
+# keys that contain these string will be excluded from caching
+# this is necessary as some edits (such as FT-Filtering) generate files during the edits
+# we might be able to solve this by using unique filenames (such as filename + "_FT_n_" + hash(all_edits_string).
+# But then we would generate a lot of images. So for now we disable the cache.
+memcache_disable_imagedata = ["\\\"FTF\\\""] 
+
 last_directories = String[]  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
 
