@@ -328,6 +328,10 @@ end
 
 
 function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+    # todo: replace NaNs with minumum value before doing the FFT (save their positions)
+    # then, at the end, after the reverse FFT replace the previous NaN-positions with NaNs again
+    # nans = isnan.(d)
+    # vmin = minimum(skipnan(d))
     F = rfft(d)
     @show n
     
@@ -363,13 +367,49 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
     )
     save(fname_abs, im_arr)
 
-    if haskey(pars, "f")
+    if haskey(pars, "f") && haskey(pars, "r") && length(pars["r"]) > 0
+        fac_x, fac_y = size(F, 2) / 1e6, size(F, 1) / 1e6  # the 1e6 is the export scale specified in the js file
+
         if pars["f"] == "p"  # keep/pass
-            mask = falses(size(F))
-            F[1:10, 5:15] .= 0
-        else
             mask = trues(size(F))
+            paint = false
+        else
+            mask = falses(size(F))
+            paint = true
         end
+        
+        if length(pars["r"]) % 2 == 1  # should never happen, though
+            pop!(pars["r"])
+        end
+        for i in 1:2:length(pars["r"])
+            x_range = (pars["r"][i][1], pars["r"][i+1][1]) .* fac_x
+            y_range = (pars["r"][i][2], pars["r"][i+1][2]) .* fac_y
+            x_range = round.(Int, x_range) .+ 1  # convert to 1 based index
+            y_range = round.(Int, y_range) .+ 1  # convert to 1 based index
+
+            # check order
+            if (x_range[2] < x_range[1])
+                x_range = x_range[2], x_range[1]
+            end
+            if (y_range[2] < y_range[1])
+                y_range = y_range[2], y_range[1]
+            end
+
+            # check bounds
+            x_range = map(x_range) do x
+                (x < 1) && (x = 1)
+                (x > size(F, 2)) && (x = size(F, 2))
+                x
+            end
+            y_range = map(y_range) do y
+                (y < 1) && (y = 1)
+                (y > size(F, 1)) && (y = size(F, 1))
+                y
+            end
+            
+            mask[y_range[1]:y_range[2], x_range[1]:x_range[2]] .= paint
+        end
+        F[mask] .= 0
     end
 
     d .= irfft(fftshift(F, 2), size(d, 1))

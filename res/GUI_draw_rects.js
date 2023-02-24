@@ -43,7 +43,8 @@ function DrawRects(canvas_element, img_element) {
     this.h = this.canvas.height;
     this.cw = this.w / 2;  // center 
     this.ch = this.h / 2;
-    this.maxSideLength = 1024; // resolution of the canvas
+    this.maxSideLength = 1000; // resolution of the canvas
+    this.exportScale = 1e6; // max scale to export point coordinates
     this.globalTime;
     this.pointDrag; // true is dragging a point else dragging a rect
     this.closestRect = {};
@@ -175,25 +176,37 @@ DrawRects.prototype = {
 
     savePoints() {
         // saves points to array (compressed, i.e. only point 1 and 3 of every rect)
+        // normalizes the coordinates to [0, 1]
         // also converts array of objects to array of arrays
         var points = [...this.points.items]; // create copy to minimize race conditions
+        const scaleX = this.exportScale / this.canvas.width;
+        const scaleY = this.exportScale / this.canvas.height;
         var pointsCompressed = [];
+        var x, y;
         for (var i = 0; i < points.length; i += 4) {
-            pointsCompressed.push([points[i].x, points[i].y]);
-            pointsCompressed.push([points[i + 2].x, points[i + 2].y]);
+            x = Math.round(points[i].x * scaleX);
+            y = Math.round(points[i].y * scaleY);
+            pointsCompressed.push([x, y]);
+            x = Math.round(points[i + 2].x * scaleX);
+            y = Math.round(points[i + 2].y * scaleY);
+            pointsCompressed.push([x, y]);
         }
         return pointsCompressed;
     },
 
     loadPoints(points) {
         // loads points from array (compressed, i.e. only point 1 and 3 of every rect)
+        // changes scale according to this.exportScale
         // also converts array of arrays to array of objects
+        const scaleX = this.canvas.width / this.exportScale;
+        const scaleY = this.canvas.height / this.exportScale;
+        
         var pointsExpanded = [];
         for (var i = 0; i < points.length; i += 2) {
-            pointsExpanded.push({x: points[i][0], y: points[i][1]});
-            pointsExpanded.push({x: points[i][0], y: points[i + 1][1]});
-            pointsExpanded.push({x: points[i + 1][0], y: points[i + 1][1]});
-            pointsExpanded.push({x: points[i + 1][0], y: points[i][1]});
+            pointsExpanded.push({x: points[i][0] * scaleX, y: points[i][1] * scaleY});
+            pointsExpanded.push({x: points[i][0] * scaleX, y: points[i + 1][1] * scaleY});
+            pointsExpanded.push({x: points[i + 1][0] * scaleX, y: points[i + 1][1] * scaleY});
+            pointsExpanded.push({x: points[i + 1][0] * scaleX, y: points[i][1] * scaleY});
         }
         this.points.items = pointsExpanded;
     },
@@ -261,9 +274,15 @@ DrawRects.prototype = {
         this.mouse.x = mousepos.x;
         this.mouse.y = mousepos.y;
 
+
         const lb = mouse.button;
         mouse.button = e.type === "mousedown" ? true : e.type === "mouseup" ? false : mouse.button;
-        if (lb !== mouse.button) {
+        const outside = e.type === "mouseout";
+        if (outside) {
+            mouse.drag = false;
+            mouse.dragEnd = true;
+        }
+        else if (lb !== mouse.button) {
             if (mouse.button) {
                 mouse.drag = true;
                 mouse.dragStart = true;
@@ -387,7 +406,7 @@ DrawRects.prototype = {
     },
 
     setup(callback=null) {
-        ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+        ["down", "up", "move", "out"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.canvas.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
                 this.delRect = true;
