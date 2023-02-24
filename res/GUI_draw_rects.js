@@ -281,8 +281,7 @@ DrawRects.prototype = {
         if (outside) {
             mouse.drag = false;
             mouse.dragEnd = true;
-        }
-        else if (lb !== mouse.button) {
+        } else if (lb !== mouse.button) {
             if (mouse.button) {
                 mouse.drag = true;
                 mouse.dragStart = true;
@@ -422,23 +421,30 @@ DrawRects.prototype = {
             this.img.classList.remove("fullheight");
             this.img.classList.add("fullwidth");
             this.img.style.height = "auto";
+            this.canvas.classList.remove("fullheight");
+            this.canvas.classList.add("fullwidth");
+            this.canvas.style.height = "auto";
+
         } else {
             this.canvas.height = maxSideLength;
             this.canvas.width = maxSideLength * w/h;
             this.img.classList.remove("fullwidth");
             this.img.classList.add("fullheight");
             this.img.style.height = this.img.parentElement.clientWidth * Math.min(h/w, 1.1) + "px";
+            this.canvas.classList.remove("fullwidth");
+            this.canvas.classList.add("fullheight");
+            this.canvas.style.height = this.img.style.height;
         }
         this.w = this.canvas.width;
         this.h = this.canvas.height;
         this.cw = this.w / 2;  // center
         this.ch = this.h / 2;
 
-        this.canvas.style.left = window.getComputedStyle(this.img).left;
-        this.canvas.style.top = window.getComputedStyle(this.img).top;
-        this.canvas.style.width = window.getComputedStyle(this.img).width;
-        this.canvas.style.height = window.getComputedStyle(this.img).height;
-        this.canvas.style.visibility = "visible";
+        // this.canvas.style.left = window.getComputedStyle(this.img).left;
+        // this.canvas.style.top = window.getComputedStyle(this.img).top;
+        // this.canvas.style.width = window.getComputedStyle(this.img).width;
+        // this.canvas.style.height = window.getComputedStyle(this.img).height;
+        // this.canvas.style.visibility = "visible";
 
         this.callback = callback;
 
