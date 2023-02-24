@@ -265,7 +265,7 @@ Editing.prototype = {
         }
 
         const container_row = clone.querySelector(".editing_entry_container_row");
-        let tpl_row, clone_row, img_ft;
+        let tpl_row, clone_row, img_ft, el_lambdaX, el_lambdaY;
         for (const [key, par] of Object.entries(props.pars)) {
             if (par.type === "float") {
                 tpl_row = clone.getElementById("editing_entry_template_row_float");
@@ -310,15 +310,18 @@ Editing.prototype = {
                 tpl_row = clone.getElementById("editing_entry_template_row_FT_select");
                 clone_row = tpl_row.content.cloneNode(true);
                 img_ft = clone_row.querySelector(".editing_entry_FT_image")
+                el_lambdaX = clone_row.querySelector(".editing_entry_FT_lambda_x");
+                el_lambdaY = clone_row.querySelector(".editing_entry_FT_lambda_y");
+                el_lambdaA = clone_row.querySelector(".editing_entry_FT_lambda_a");
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
-                    window.draw_rect_objects[n].setup(callback=() => that.recalculate());
+                    window.draw_rect_objects[n].setup(callback=() => that.recalculate(), scansize=item.scansize);
                     // todo: pass callback function to the object that updates the parameter (probably just recalculate), should be called everytime drag stops?
                     if ("pars" in props_item && key in props_item.pars) {
                         window.draw_rect_objects[n].loadPoints(props_item.pars[key]);
                     }
                 }, {once: true});
-                window.draw_rect_objects[n] = new DrawRects(clone_row.querySelector(".editing_entry_FT_canvas"), img_ft);
+                window.draw_rect_objects[n] = new DrawRects(clone_row.querySelector(".editing_entry_FT_canvas"), img_ft, el_lambdaX, el_lambdaY, el_lambdaA);
                 this.set_img_src(img_ft, this.curr_id, n);
                 clone_row.querySelector(".editing_entry_FT_clear_all").addEventListener("click", () => {
                     window.draw_rect_objects[n].clearAll();

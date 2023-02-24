@@ -1,13 +1,18 @@
-function DrawRects(canvas_element, img_element) {
+function DrawRects(canvas_element, img_element, lambdaX_element, lambdaY_element, lambdaA_element) {
     var self = this;
+    this.first_setup = false;
+
     this.canvas = canvas_element;
     this.img = img_element;
     this.ctx = this.canvas.getContext("2d");
-    this.first_setup = false;
-
+    this.lambdaX = lambdaX_element;
+    this.lambdaY = lambdaY_element;
+    this.lambdaA = lambdaA_element;
+    
     this.callback = null;  // callback function when changes occur
 
     this.imgPixelsize = [0, 0]  // needed for conversions etc
+    this.scansize = [0, 0]  // needed for conversions etc
     this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f, ...)
     this.unit_exponent = 0;  // exponent for the unit
 
@@ -263,6 +268,43 @@ DrawRects.prototype = {
         };
     },
 
+    displayLambda(mousepos) {
+        if (this.scansize[0] === 0 || this.scansize[1] === 0 ||
+            this.imgPixelsize[0] === 0 || this.imgPixelsize[1] === 0 ||
+            this.canvas.width === 0 || this.canvas.height === 0) {
+            return;
+        }
+        
+        const xRel = (mousepos.x / this.canvas.width - 0.5) * 2;  // goes from -1 to 1
+        const yRel = mousepos.y / this.canvas.height; // goes from 0 to 1
+
+        const maxFreqX = 0.5 / this.scansize[0] * this.imgPixelsize[0];  // max freq is 0.5 / pixel
+        const maxFreqY = 1 / this.scansize[1] * this.imgPixelsize[1];  // max freq is 0.5 / pixel, but pixelsize[1] is 1/2 of the original image pixelsize
+        const freqX = maxFreqX * xRel;
+        const freqY = maxFreqY * yRel;
+        let resX = "";
+        if (Math.abs(freqX) < 1e-6) {
+            resX = "&infin;";
+        } else {
+            resX = (1 / freqX).toFixed(3);
+        }
+        let resY = "";
+        if (freqY < 1e-6) {
+            resY = "&infin;";
+        } else {
+            resY = (1 / freqY).toFixed(3);
+        }
+        let resA = "";
+        if (Math.abs(freqX) < 1e-6 || freqY < 1e-6) {
+            resA = "&infin;";
+        } else {
+            resA = (1 / Math.sqrt(freqX**2 + freqY**2)).toFixed(3);
+        }
+        this.lambdaX.innerHTML = resX;
+        this.lambdaY.innerHTML = resY;
+        this.lambdaA.innerHTML = resA;
+    },
+
     mouseEvents(e) {
         if (e.shiftKey || e.ctrlKey || window.space_pressed) {
             return;  // modifier keys will be used for dragging
@@ -273,6 +315,7 @@ DrawRects.prototype = {
         this.mouse.x = mousepos.x;
         this.mouse.y = mousepos.y;
 
+        this.displayLambda(mousepos);
 
         const lb = mouse.button;
         mouse.button = e.type === "mousedown" ? true : e.type === "mouseup" ? false : mouse.button;
@@ -296,6 +339,11 @@ DrawRects.prototype = {
         }
         if (e.type === "mouseup" || outside) {
             if (this.callback !== null) this.callback();
+        }
+        if (e.type === "mouseout") {
+            this.lambdaX.parentElement.classList.add("is-invisible");
+        } else {
+            this.lambdaX.parentElement.classList.remove("is-invisible");
         }
     },
 
@@ -405,13 +453,14 @@ DrawRects.prototype = {
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
     },
 
-    setup(callback=null) {
+    setup(callback=null, scansize=[0,0]) {
         ["down", "up", "move", "out"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.canvas.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
                 this.delRect = true;
             }
         });
+        this.scansize = scansize;
         this.setupImage();
         this.callback = callback;
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
