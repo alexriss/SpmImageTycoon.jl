@@ -14,6 +14,7 @@ using JLD2
 using JSExpr
 using JSON
 using NaturalSort
+using SkipNan
 using SnoopPrecompile
 using SpmImages
 using SpmSpectroscopy
