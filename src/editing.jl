@@ -329,12 +329,18 @@ end
 
 function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
     # todo: replace NaNs with minumum value before doing the FFT (save their positions)
-    # then, at the end, after the reverse FFT replace the previous NaN-positions with NaNs again
-    # nans = isnan.(d)
-    # vmin = minimum(skipnan(d))
+    # then, at the end, after the reverse FFT we could replace the previous NaN-positions with NaNs again
+    # this, however, messes up the (next) FT of the images, so we will not set them to NaNs again
+    nans = isnan.(d)
+    dskip = skipnan(d)
+    if isempty(dskip) # all NaNs
+        return nothing
+    end
+    vmin = minimum(skipnan(d))
+    d[nans] .= vmin
+
     F = rfft(d)
     @show n
-    
     
     norm_func = x -> x
     if haskey(pars, "s")
@@ -414,6 +420,7 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
     end
 
     d .= irfft(fftshift(F, 2), size(d, 1))
+    # d[nans] .= NaN  # do not set as NaN again, see comment at the beginning of this function
     return nothing
 end
 
