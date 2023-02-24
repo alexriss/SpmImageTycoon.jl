@@ -382,6 +382,7 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
             pop!(pars["r"])
         end
         for i in 1:2:length(pars["r"])
+            (length(pars["r"][i]) === 2 && isa(pars["r"][i], Array)) || continue
             x_range = (pars["r"][i][1], pars["r"][i+1][1]) .* fac_x
             y_range = (pars["r"][i][2], pars["r"][i+1][2]) .* fac_y
             x_range = round.(Int, x_range) .+ 1  # convert to 1 based index
