@@ -244,6 +244,7 @@ Editing.prototype = {
 
     add_entry_table(key, props, props_item={}) {
         const that = this;
+        const item = window.items[this.curr_id];
         const tpl = document.getElementById("editing_entry_template_table");
         clone = tpl.content.cloneNode(true);
         const el_entry = clone.querySelector(".editing_entry");
@@ -311,7 +312,7 @@ Editing.prototype = {
                 img_ft = clone_row.querySelector(".editing_entry_FT_image")
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
-                    window.draw_rect_objects[n].setup(callback= () => that.recalculate());
+                    window.draw_rect_objects[n].setup(callback=() => that.recalculate());
                     // todo: pass callback function to the object that updates the parameter (probably just recalculate), should be called everytime drag stops?
                     if ("pars" in props_item && key in props_item.pars) {
                         window.draw_rect_objects[n].loadPoints(props_item.pars[key]);

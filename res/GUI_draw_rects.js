@@ -4,13 +4,12 @@ function DrawRects(canvas_element, img_element) {
     this.img = img_element;
     this.ctx = this.canvas.getContext("2d");
     this.first_setup = false;
-    this.first_setup_events = false;
 
     this.callback = null;  // callback function when changes occur
 
-    this.imgScansize = [0, 0]  // needed for conversions etc
+    this.imgPixelsize = [0, 0]  // needed for conversions etc
     this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f, ...)
-    this.unit_exponent = 0;  // exonent for the unit
+    this.unit_exponent = 0;  // exponent for the unit
 
     this.Point2 = (x, y) => ({ x, y });  // creates a point
     this.setStyle = (style) => this.eachOf(Object.keys(style), key => { this.ctx[key] = style[key] });
@@ -277,11 +276,7 @@ DrawRects.prototype = {
 
         const lb = mouse.button;
         mouse.button = e.type === "mousedown" ? true : e.type === "mouseup" ? false : mouse.button;
-        const outside = e.type === "mouseout";
-        if (outside) {
-            mouse.drag = false;
-            mouse.dragEnd = true;
-        } else if (lb !== mouse.button) {
+        if (lb !== mouse.button) {
             if (mouse.button) {
                 mouse.drag = true;
                 mouse.dragStart = true;
@@ -292,8 +287,14 @@ DrawRects.prototype = {
                 mouse.dragEnd = true;
             }
         }
-
-        if (e.type === "mouseup") {
+        
+        const outside = e.type === "mouseout";
+        if (outside) {
+            mouse.drag = false;
+            mouse.dragEnd = true;
+            mouse.button = false;
+        }
+        if (e.type === "mouseup" || outside) {
             if (this.callback !== null) this.callback();
         }
     },
@@ -411,9 +412,22 @@ DrawRects.prototype = {
                 this.delRect = true;
             }
         });
+        this.setupImage();
+        this.callback = callback;
+        requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
+    },
 
+    setupImage() {
+        if (this.first_setup) {
+            return;
+        }
         let w = this.img.naturalWidth;
         let h = this.img.naturalHeight;
+        if (w === 0 || h === 0) {
+            window.setTimeout(() => this.setupImage(), 100);    // wait for image to load
+        }
+
+        this.imgPixelsize = [w, h];
         let maxSideLength = Math.max(this.maxSideLength, Math.max(w, h));
         if (w >= h) {
             this.canvas.width = maxSideLength;
@@ -445,11 +459,9 @@ DrawRects.prototype = {
         // this.canvas.style.width = window.getComputedStyle(this.img).width;
         // this.canvas.style.height = window.getComputedStyle(this.img).height;
         // this.canvas.style.visibility = "visible";
-
-        this.callback = callback;
-
-        requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
-
+        this.canvas.classList.remove("is-invisible");
+        this.img.classList.remove("is-invisible");
+        this.first_setup = true;
     }
 }
 
