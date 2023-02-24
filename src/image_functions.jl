@@ -159,7 +159,6 @@ end
 
 """Gets the image data from cache (if it exists, otherwise calls the function `get_image_data`)"""
 function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
-    @show "get image data cache"
     res = missing
     usecache = true
     key = griditem.id * "_" * griditem.channel_name * "_" * griditem.background_correction * "_" * string(griditem.edits) * "_" * string(resize_to)
