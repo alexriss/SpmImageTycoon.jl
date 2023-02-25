@@ -170,9 +170,12 @@ DrawRects.prototype = {
         if (closestRect.p !== undefined) {
             this.points.del(closestRect.i[0], 4);
             closestRect.p = undefined;
+            if (this.callback !== null) this.callback();
         } else if (closestPoint.p !== undefined) {
             const idx = this.getFirstPoint(closestPoint.i);
             this.points.del(idx, 4);
+            closestPoint.p = undefined;
+            if (this.callback !== null) this.callback();
         }
     },
 
