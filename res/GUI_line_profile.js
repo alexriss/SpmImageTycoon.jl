@@ -192,8 +192,14 @@ LineProfile.prototype = {
         var mousepos = this.getMousePos(this.canvas, e)
         this.mouse.x = mousepos.x;
         this.mouse.y = mousepos.y;
-        const lb = this.mouse.button;
-        this.mouse.button = e.type === "mousedown" ? true : e.type === "mouseup" ? false : this.mouse.button;
+
+        const lb = mouse.button;
+        if (e.type === "mousedown" && e.button === 0) {
+            mouse.button = true;
+        } else if (e.type === "mouseup" && e.button === 0) {
+            mouse.button = false;
+
+        }
         if (lb !== this.mouse.button) {
             if (this.mouse.button) {
                 this.mouse.drag = true;
@@ -206,6 +212,13 @@ LineProfile.prototype = {
                 this.showInfo();
             }
         }
+
+        if (e.type === "mouseout") {
+            mouse.drag = false;
+            mouse.dragEnd = true;
+            mouse.button = false;
+        }
+
         if (this.mouse.drag) {
             this.showInfo();
         }
@@ -651,7 +664,7 @@ LineProfile.prototype = {
             }
 
             if (!this.first_setup_events) {
-                ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+                ["down", "up", "move", "out"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
                 const that = this;
                 document.querySelectorAll("#table_line_profile input").forEach((el) => {
                     el.addEventListener("change", (e) => {
