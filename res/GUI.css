@@ -932,6 +932,7 @@ sup {
 #editing_container div.editing_entry_FT_container {
   width: 100%;
   position:relative;
+  overflow: hidden;
 }
 
 #editing_container div.editing_entry_FT_container section { 

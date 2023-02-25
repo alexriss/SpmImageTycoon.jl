@@ -1,16 +1,17 @@
 const { cp } = require("fs");
 
-function DrawRects(canvas_element, img_element, container_element, lambdaX_element, lambdaY_element, lambdaA_element) {
+function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, elLambdaY, elLambdaA) {
     var self = this;
     this.first_setup = false;
 
-    this.canvas = canvas_element;
-    this.img = img_element;
-    this.container = container_element;
+    this.canvas = elCanvas;
+    this.img = elImg;
+    this.container = elContainer;
+    this.eventContainer = elEventContainer;
     this.ctx = this.canvas.getContext("2d");
-    this.lambdaX = lambdaX_element;
-    this.lambdaY = lambdaY_element;
-    this.lambdaA = lambdaA_element;
+    this.lambdaX = elLambdaX;
+    this.lambdaY = elLambdaY;
+    this.lambdaA = elLambdaA;
     
     this.callback = null;  // callback function when changes occur
 
@@ -337,7 +338,9 @@ DrawRects.prototype = {
 
         const lb = mouse.button;
         if (e.type === "mousedown" && e.button === 0) {
-            mouse.button = true;
+            if (new Date().getTime() - window.dblClickLast > 200) {
+                mouse.button = true;
+            }
         } else if (e.type === "mouseup" && e.button === 0) {
             mouse.button = false;
         }
@@ -477,8 +480,8 @@ DrawRects.prototype = {
     },
 
     setup(callback=null, scansize=[0,0], imgPixelsize=[0,0], maxFreq=[0,0]) {
-        ["down", "up", "move", "out"].forEach(name => this.container.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
-        this.container.addEventListener('keydown', (e) => {
+        ["down", "up", "move", "out"].forEach(name => this.eventContainer.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+        this.eventContainer.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
                 this.delRect = true;
             }
@@ -534,6 +537,7 @@ DrawRects.prototype = {
         // this.canvas.style.visibility = "visible";
         this.canvas.classList.remove("is-invisible");
         this.img.classList.remove("is-invisible");
+        window.zoom_drag_objects["editing_FT"] = new ZoomDrag(this.container, "editing_FT");
         this.first_setup = true;
     }
 }

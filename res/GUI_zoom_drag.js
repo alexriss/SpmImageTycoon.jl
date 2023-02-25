@@ -1,24 +1,48 @@
 // for imagezoom
 
-function zoom_drag_setup(divMain) {
-
+function ZoomDrag(divMain, type="imagezoom") {
+    const that = this;
+    
     // config
     let scale = 1;  // initial scale
-    const factor = 0.2;
-    const max_scale = 10;
-    const min_scale = 0.1;
+    var factor = 0.2;
+    var max_scale = 10;
+    var min_scale = 0.1;
 
-    window.scale = scale;  // need a global variable here
+    this.scale = scale;  // need a global variable here
+    this.divMain = divMain;
+
+    var funcPreventClick;
+    if (type === "imagezoom") {
+        funcPreventClick = (event) => {
+            if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
+                if (!event.shiftKey && !event.ctrlKey && !event.altKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
+                    return true
+                }
+            }
+            return false;
+        }
+    } else if (type === "editing_FT") {
+        funcPreventClick = (event) => {
+            if (!event.shiftKey && !event.ctrlKey && !event.altKey && !window.space_pressed) {  // dragging only with modifier
+                return true
+            }
+            return false;
+        }
+        factor = 0.18;
+        max_scale = 10;
+        min_scale = 0.5;
+    } else {
+        funcPreventClick = (event) => { return false; }
+    }
 
     // drag the section
     for (const divSection of divMain.getElementsByTagName('section')) {
         // when mouse is pressed store the current mouse x,y
         let previousX, previousY;
         divSection.addEventListener('mousedown', (event) => {
-            if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
-                if (!event.shiftKey && !event.ctrlKey && !event.altKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
-                    return;
-                }
+            if (funcPreventClick(event)) {
+                return;
             }
             previousX = event.pageX;
             previousY = event.pageY;
@@ -28,10 +52,8 @@ function zoom_drag_setup(divMain) {
         divSection.addEventListener('mousemove', (event) => {
             // only do this when the primary mouse button is pressed (event.buttons = 1)
             if (event.buttons) {
-                if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
-                    if (!event.shiftKey && !event.ctrlKey && !event.altKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
-                        return;
-                    }
+                if (funcPreventClick(event)) {
+                    return;
                 }
 
                 let dragX = 0;
@@ -73,26 +95,26 @@ function zoom_drag_setup(divMain) {
                 y: e.clientY - rect.top + offset.y
             };
 
-            zoom_point = { x: image_loc.x / window.scale, y: image_loc.y / window.scale };
+            zoom_point = { x: image_loc.x / that.scale, y: image_loc.y / that.scale };
 
             // apply zoom
-            window.scale += delta * factor * window.scale;
-            window.scale = Math.max(min_scale, Math.min(max_scale, window.scale));
+            that.scale += delta * factor * that.scale;
+            that.scale = Math.max(min_scale, Math.min(max_scale, that.scale));
 
-            if (window.scale < 1) {
+            if (that.scale < 1) {
                 divSection.style.transformOrigin = "center";
             } else {
                 divSection.style.transformOrigin = "0 0";
             }
 
-            zoom_point_new = { x: zoom_point.x * window.scale, y: zoom_point.y * window.scale };
+            zoom_point_new = { x: zoom_point.x * that.scale, y: zoom_point.y * that.scale };
 
             newScroll = {
                 x: zoom_point_new.x - (e.clientX - rect.left),
                 y: zoom_point_new.y - (e.clientY - rect.top)
             };
 
-            divSection.style.transform = `scale(${window.scale}, ${window.scale})`;
+            divSection.style.transform = `scale(${that.scale}, ${that.scale})`;
             divMain.scrollTop = newScroll.y;
             divMain.scrollLeft = newScroll.x;
         }
@@ -100,25 +122,24 @@ function zoom_drag_setup(divMain) {
 
     // reset on doubleclick
     divMain.addEventListener('dblclick', (e) => {
-        if (window.sidebar_imagezoomtools && !document.getElementById("line_profile").classList.contains("is-hidden")) {
-            if (!e.shiftKey && !e.ctrlKey && !e.altKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
-                return;
-            }
-        }
         if (!e.ctrlKey) {
-            zoom_drag_reset(divMain);
+            this.zoom_drag_reset(divMain);
         }
     })
 }
 
-function zoom_drag_reset(divMain) {
-    window.scale = 1
-    for (const divSection of divMain.getElementsByTagName('section')) {
-        divSection.style.transform = "scale(1, 1)";
+ZoomDrag.prototype = {
+    zoom_drag_reset() {
+        this.scale = 1;
+        for (const divSection of this.divMain.getElementsByTagName('section')) {
+            divSection.style.transform = "scale(1, 1)";
+        }
+        this.divMain.scrollTop = 0;
+        this.divMain.scrollLeft = 0;
     }
-    divMain.scrollTop = 0;
-    divMain.scrollLeft = 0;
 }
+
+
 
 
 

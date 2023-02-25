@@ -14,12 +14,15 @@ window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
 window.overview_max_images = 0  // maximum number of images to display in the filter overview (set by julia)
 
 window.space_pressed = false;  // true if user is holding space down (for dragging etc)
+window.dblClickLast = new Date().getTime(); // last time a double click was registered
 
 window.last_selected = "";  // last selected item
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
 window.grid_last_scrolltop = 0;  // last y-scroll position in grid view (does not seem to be properly restored when hiding/showing grid view)
+
+window.zoom_drag_objects = {};  // holds the zoom-drag objects (zoomview and editing FT)
 
 window.last_copy_from = "";  // last item that was selected as a source for copy/paste
 
@@ -410,12 +413,12 @@ function toggle_imagezoom(target_view = "", id="") {
 
             const zoom_content = document.getElementById('imagezoom_content');
             if (!window.zoom_control_setup) {
-                zoom_drag_setup(zoom_content);
+                window.zoom_drag_objects["imagezoom"] = new ZoomDrag(zoom_content);
                 window.zoom_control_setup = true;
             }
             if (window.zoom_last_selected != el.id) {
                 // document.getElementById('imagezoom_image').src = file_url(el.id);
-                zoom_drag_reset(zoom_content);
+                window.zoom_drag_objects["imagezoom"].zoom_drag_reset();
             }
             window.zoom_last_selected = el.id;
             next_item(0); // sets the img src and displays colorbar etc

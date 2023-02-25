@@ -195,7 +195,9 @@ LineProfile.prototype = {
 
         const lb = this.mouse.button;
         if (e.type === "mousedown" && e.button === 0) {
-            this.mouse.button = true;
+            if (new Date().getTime() - window.dblClickLast > 200) {
+                this.mouse.button = true;
+            }
         } else if (e.type === "mouseup" && e.button === 0) {
             this.mouse.button = false;
 

@@ -330,8 +330,8 @@ Editing.prototype = {
                     }
                 }, {once: true});
                 window.draw_rect_objects[n] = new DrawRects(
-                    clone_row.querySelector(".editing_entry_FT_canvas"), img_ft, img_ft.closest("tr"),
-                    el_lambdaX, el_lambdaY, el_lambdaA
+                    clone_row.querySelector(".editing_entry_FT_canvas"), img_ft, clone_row.querySelector(".editing_entry_FT_container"),
+                    img_ft.closest("tr"), el_lambdaX, el_lambdaY, el_lambdaA
                 );
                 this.set_img_src(img_ft, this.curr_id, n);
                 clone_row.querySelector(".editing_entry_FT_clear_all").addEventListener("click", () => {

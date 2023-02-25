@@ -137,6 +137,10 @@ document.addEventListener("keyup", function (event) {
     }
 });
 
+document.addEventListener("dblclick", function (event) {
+    window.dblClickLast = new Date().getTime();
+});
+
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', afterDOMLoaded);
