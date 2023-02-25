@@ -84,6 +84,10 @@ DrawRects.prototype = {
         }
     },
 
+    getFirstPoint(pointIdx) {
+        return (pointIdx / 4 >> 0) * 4;
+    },
+
     getPointsFromRect(rectIdx) {
         var start = 4 * rectIdx;
         if (this.points.items.length < start + 4) {
@@ -162,12 +166,14 @@ DrawRects.prototype = {
         rect[updateY].y = closestPoint.p.y;
     },
 
-    deleteRect(closestRect) {
-        if (closestRect.p === undefined) {
-            return;
+    deleteRect(closestRect, closestPoint) {
+        if (closestRect.p !== undefined) {
+            this.points.del(closestRect.i[0], 4);
+            closestRect.p = undefined;
+        } else if (closestPoint.p !== undefined) {
+            const idx = this.getFirstPoint(closestPoint.i);
+            this.points.del(idx, 4);
         }
-        this.points.del(closestRect.i[0], 4);
-        closestRect.p = undefined;
     },
 
     savePoints() {
@@ -452,7 +458,7 @@ DrawRects.prototype = {
             }
         } else {
             if (this.delRect) {
-                this.deleteRect(this.closestRect);
+                this.deleteRect(this.closestRect, this.closestPoint);
                 this.delRect = false;
             }
 
