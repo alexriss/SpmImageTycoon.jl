@@ -229,7 +229,7 @@ DrawRects.prototype = {
             fillStyle: col1,
         };
         this.highlightRectStyle = {
-            lineWidth: 5,
+            lineWidth: 4,
             fillStyle: col1 + "90",
             strokeStyle: col2,
         }
@@ -268,7 +268,9 @@ DrawRects.prototype = {
         this.ctx.moveTo(rect[0].x, rect[0].y);
         const w = rect[2].x - rect[0].x;
         const h = rect[2].y - rect[0].y;
-        this.ctx.fillRect(rect[0].x, rect[0].y, w, h);
+        this.ctx.rect(rect[0].x, rect[0].y, w, h);
+        this.ctx.fill();
+        this.ctx.stroke();
     },
 
     drawRects(that) {
