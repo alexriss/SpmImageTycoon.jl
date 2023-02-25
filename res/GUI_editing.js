@@ -55,7 +55,11 @@ Editing.prototype = {
         this.updating = true;
 
         let update_entries = false;
-        if (id == this.curr_id) update_entries = true;
+        if (id === this.curr_id) {
+            update_entries = true;  // we are updating the same image, so we keep the entries
+        } else {
+            window.draw_rect_objects = {};  // lets get rid of the old objects, so that they don't interfere
+        }
         this.curr_id = id;
         this.setup_form_main_entry(id, extra_info);
         this.setup_form_editing_entry_list(id);
@@ -225,7 +229,6 @@ Editing.prototype = {
 
         Object.entries(props_item.pars).forEach(([key, par_item]) => {
             const par = props.pars[key];
-
             if (par.type === "info") {
                 that.info[key] = par_item;
                 return;
@@ -234,12 +237,17 @@ Editing.prototype = {
             if (el_par) {
                 if (par.type === "float") {
                     el_par.value = par_item;
-                    this.check_input_validity(el_par);
+                    that.check_input_validity(el_par);
                 } else if (par.type === "select") {
                     el_par.value = par_item;
                 } else if (par.type === "FT_select") {
-                    this.set_img_src(el_par, this.curr_id, n);
-                    window.draw_rect_objects[n].loadPoints(par_item);
+                    that.set_img_src(el_par, that.curr_id, n);
+                    if (window.draw_rect_objects[n]) {
+                        window.draw_rect_objects[n].loadPoints(par_item);
+                        window.draw_rect_objects[n].setInfo(that.info);
+                    } else {
+                        console.log("No draw_rect_objects for n: " + n);
+                    }
                 }
             } else {
                 console.log("Unknown editing entry parameter: " + key);
@@ -320,10 +328,8 @@ Editing.prototype = {
                 el_lambdaA = clone_row.querySelector(".editing_entry_FT_lambda_a");
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
-                    const ps = ("ps" in that.info) ? that.info["ps"] : [0,0];
-                    const mf = ("mf" in that.info) ? that.info["mf"] : [0,0];
                     window.draw_rect_objects[n].setup(
-                        callback=() => that.recalculate(), scansize=item.scansize, imgPixelsize=ps, maxFreq=mf
+                        callback=() => that.recalculate(), scansize=item.scansize, info=that.info
                     );
                     if ("pars" in props_item && key in props_item.pars) {
                         window.draw_rect_objects[n].loadPoints(props_item.pars[key]);
@@ -421,6 +427,15 @@ Editing.prototype = {
         const pars = {};
         const n = el.dataset.n;
         // el.querySelectorAll(".editing_entry_par_input").forEach((el) => {
+
+        for (const key in pars_list) {
+            if (pars_list[key].type === "info") {
+                if (key in that.info) {
+                    pars[key] = that.info[key];
+                }
+            }
+        }
+
         el.querySelectorAll("[data-id]").forEach((el) => {
             const key = el.dataset.id;
             if (key in pars_list === false) {
@@ -438,15 +453,6 @@ Editing.prototype = {
                 pars[key] = el.value;
             }
         });
-
-        for (const key in pars_list) {
-            if (pars_list[key].type === "info") {
-                if (key in that.info) {
-                    pars[key] = that.info[key];
-                }
-            }
-        }
-        
         return pars;
     },
 

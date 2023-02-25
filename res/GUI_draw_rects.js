@@ -344,7 +344,8 @@ DrawRects.prototype = {
         } else if (e.type === "mouseup" && e.button === 0) {
             mouse.button = false;
         }
-
+        
+        var update = false;
         if (lb !== mouse.button) {
             if (mouse.button) {
                 mouse.drag = true;
@@ -352,18 +353,21 @@ DrawRects.prototype = {
                 mouse.dragStartX = mouse.x;
                 mouse.dragStartY = mouse.y;
             } else {
+                update = true;
                 mouse.drag = false;
                 mouse.dragEnd = true;
             }
         }
         
-        const outside = e.type === "mouseout";
-        if (outside) {
+        if (e.type === "mouseout") {
+            if (mouse.drag) {
+                update = true;
+            }
             mouse.drag = false;
             mouse.dragEnd = true;
             mouse.button = false;
         }
-        if (e.type === "mouseup" || outside) {
+        if (update) {
             if (this.callback !== null) this.callback();
         }
         if (e.type === "mouseout") {
@@ -479,7 +483,15 @@ DrawRects.prototype = {
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
     },
 
-    setup(callback=null, scansize=[0,0], imgPixelsize=[0,0], maxFreq=[0,0]) {
+    setInfo(info) {
+        const ps = ("ps" in info) ? info["ps"] : [0,0];
+        const mf = ("mf" in info) ? info["mf"] : [0,0];
+        this.imgPixelsize = ps;
+        this.maxFreq = mf;
+        console.log("setInfo", ps, mf);
+    },
+
+    setup(callback=null, scansize=[0,0], info={}) {
         ["down", "up", "move", "out"].forEach(name => this.eventContainer.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.eventContainer.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
@@ -487,8 +499,8 @@ DrawRects.prototype = {
             }
         });
         this.scansize = scansize;
-        this.imgPixelsize = imgPixelsize;
-        this.maxFreq = maxFreq;
+
+        this.setInfo(info);
         this.setupImage();
         this.callback = callback;
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
