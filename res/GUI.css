@@ -358,7 +358,7 @@ sup {
   padding-top: 15px;
   /* position: sticky; */
   top: 3rem;
-  transition: 0.1s;
+  transition: 0.15s;
   background-color:#37a8ff;
   border-left:1px solid #afdafa;
 }
@@ -922,6 +922,10 @@ sup {
 
 #editing_container .editing_entry.inactive {
   opacity:0.5;
+}
+
+#editing_container .editing_entry_collapse {
+  transition: 0.5s;
 }
 
 #editing_container .editing_entry.inactive header {

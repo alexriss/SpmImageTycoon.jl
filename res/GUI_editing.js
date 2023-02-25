@@ -225,6 +225,14 @@ Editing.prototype = {
                 el_entry.classList.add("inactive");
             }
         }
+        const divCollapse = el_entry.querySelector(".editing_entry_collapse");
+        if ("exp" in props_item) {
+            if (props_item.exp) {
+                divCollapse.classList.remove("is-hidden");
+            } else {
+                divCollapse.classList.add("is-hidden");
+            }
+        }
         const n = props_item["n"];
 
         Object.entries(props_item.pars).forEach(([key, par_item]) => {
@@ -274,6 +282,14 @@ Editing.prototype = {
             if (props_item.off) {
                 el_active.checked = false;
                 el_entry.classList.add("inactive");
+            }
+        }
+        const divCollapse = el_entry.querySelector(".editing_entry_collapse");
+        if ("exp" in props_item) {
+            if (props_item.exp) {
+                divCollapse.classList.remove("is-hidden");
+            } else {
+                divCollapse.classList.add("is-hidden");
             }
         }
 
@@ -383,12 +399,18 @@ Editing.prototype = {
             }
             // recalculate is done for all changes to input, so no need to do it here again
         });
-
         el.querySelectorAll("input, select").forEach((el) => {
             el.addEventListener("change", (e) => {
                 that.check_input_validity(el);
                 that.recalculate();
             });
+        });
+
+        // collapse/expand
+        const divCollapse = el.querySelector(".editing_entry_collapse");
+        el.querySelector(".editing_entry_collapse_click").addEventListener("click", (e) => {
+            divCollapse.classList.toggle("is-hidden");
+            that.recalculate();
         });
     },
 
@@ -402,6 +424,7 @@ Editing.prototype = {
             entry["id"] = el.dataset.id;
             entry["n"] = el.dataset.n;
             entry["off"] = el.querySelector(".editing_entry_active").checked ? 0 : 1;
+            entry["exp"] = el.querySelector(".editing_entry_collapse").classList.contains("is-hidden") ? 0 : 1;
             if (!(entry["id"] in this.editing_entry_list)) {
                 console.log("Unknown editing entry: " + entry["id"]);
                 return;
