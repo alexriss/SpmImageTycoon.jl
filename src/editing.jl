@@ -267,7 +267,7 @@ function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::AbstractDict; 
 
     # apply the function
     n = haskey(edit, "n") ? edit["n"] : "-1"
-    @time func(d, griditem, edit["pars"], n, dir_cache)
+    func(d, griditem, edit["pars"], n, dir_cache)
 
     return nothing
 end
@@ -354,7 +354,6 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::Strin
     d[nans] .= vmin
 
     F = rfft(d)
-    @show n
     
     norm_func = x -> x
     if haskey(pars, "s")

@@ -470,7 +470,7 @@ Editing.prototype = {
     },
 
     recalculate() {
-        console.log("recalculate: " + this.curr_id + " " + window.image_info_id + " " + this.updating);
+        // console.log("recalculate: " + this.curr_id + " " + window.image_info_id + " " + this.updating);
         if (window.image_info_id != this.curr_id || this.updating) return;
 
         const curr_id = this.curr_id;

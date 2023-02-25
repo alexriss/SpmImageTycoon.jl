@@ -490,7 +490,6 @@ DrawRects.prototype = {
         const mf = ("mf" in info) ? info["mf"] : [0,0];
         this.imgPixelsize = ps;
         this.maxFreq = mf;
-        console.log("setInfo", ps, mf);
     },
 
     setup(callback=null, scansize=[0,0], info={}) {

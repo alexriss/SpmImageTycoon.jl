@@ -205,7 +205,6 @@ function get_image_data(griditem::SpmGridItem, im_spm::SpmImage; dir_cache::Stri
     end
 
     d = SpmImages.correct_background(d, background_correction_list_image[griditem.background_correction])
-    @show "apply edits"
     apply_edits!(griditem, d, dir_cache=dir_cache)
 
     return d, unit
