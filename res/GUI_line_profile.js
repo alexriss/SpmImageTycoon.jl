@@ -186,7 +186,7 @@ LineProfile.prototype = {
     mouseEvents(e) {
         //this.mouse.x = e.pageX;
         //this.mouse.y = e.pageY;
-        if (e.shiftKey || e.ctrlKey || window.space_pressed) {
+        if (e.shiftKey || e.ctrlKey || e.altKey || window.space_pressed) {
             return;  // modifier keys will be used for dragging
         }
         var mousepos = this.getMousePos(this.canvas, e)

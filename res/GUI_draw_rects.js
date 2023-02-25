@@ -336,7 +336,7 @@ DrawRects.prototype = {
     },
 
     mouseEvents(e) {
-        if (e.shiftKey || e.ctrlKey || window.space_pressed) {
+        if (e.shiftKey || e.ctrlKey || e.altKey || window.space_pressed) {
             return;  // modifier keys will be used for dragging
         }
 
