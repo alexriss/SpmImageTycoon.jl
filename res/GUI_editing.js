@@ -337,6 +337,13 @@ Editing.prototype = {
                 clone_row.querySelector(".editing_entry_FT_clear_all").addEventListener("click", () => {
                     window.draw_rect_objects[n].clearAll();
                 });
+                // bit hacky, but we want to change the colors depending on the filter type
+                const elFilterType = clone.querySelector('[data-id="f"]');
+                if (elFilterType) {
+                    elFilterType.addEventListener("change", () => {
+                        window.draw_rect_objects[n].setColors(elFilterType.value);
+                    });
+                }
             } else if (par.type === "info") {
                 if ("pars" in props_item && key in props_item.pars) {
                     this.info[key] = props_item.pars[key];
