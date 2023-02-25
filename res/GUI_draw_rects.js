@@ -1,3 +1,5 @@
+const { cp } = require("fs");
+
 function DrawRects(canvas_element, img_element, lambdaX_element, lambdaY_element, lambdaA_element) {
     var self = this;
     this.first_setup = false;
@@ -13,6 +15,8 @@ function DrawRects(canvas_element, img_element, lambdaX_element, lambdaY_element
 
     this.imgPixelsize = [0, 0]  // needed for conversions etc
     this.scansize = [0, 0]  // needed for conversions etc
+    this.maxFreq = [0., 0.]  // needed for conversions etc
+
     this.unit_prefix = "";  // prefix for unit (i.e. m, µ, p, f, ...)
     this.unit_exponent = 0;  // exponent for the unit
 
@@ -61,24 +65,10 @@ function DrawRects(canvas_element, img_element, lambdaX_element, lambdaY_element
     this.delRect = false;
     this.minDistPoint = 20;
     this.minDistRect = 5;
-    this.rectStyle = {
-        lineWidth: 2,
-        strokeStyle: "#1ad1b3",
-        fillStyle: "#1ad1b360",
-    };
-    this.pointStyle = {
-        lineWidth: 1,
-        fillStyle: "#1ad1b3",
-    };
-    this.highlightRectStyle = {
-        lineWidth: 3,
-        fillStyle: "#1ad1b390",
-        strokeStyle: "#ef4568",
-    }
-    this.highlightPointStyle = {
-        lineWidth: 3,
-        strokeStyle: "#ef4568",
-    }
+
+    this.col1 = "#4288c2";
+    this.col2 = "#bf365a";
+    this.setColors("p");
 }
 
 DrawRects.prototype = {
@@ -220,6 +210,33 @@ DrawRects.prototype = {
         if (this.callback !== null) this.callback();
     },
 
+    setColors(type) {
+        var col1 = this.col1;
+        var col2 = this.col2;
+        if (type === "r") { // remove-type
+            col1 = this.col2;
+            col2 = this.col1;
+        }
+        this.rectStyle = {
+            lineWidth: 3,
+            strokeStyle: col1,
+            fillStyle: col1 + "90",
+        };
+        this.pointStyle = {
+            lineWidth: 1,
+            fillStyle: col1,
+        };
+        this.highlightRectStyle = {
+            lineWidth: 5,
+            fillStyle: col1 + "90",
+            strokeStyle: col2,
+        }
+        this.highlightPointStyle = {
+            lineWidth: 5,
+            strokeStyle: col2,
+        }
+    },
+
     getCursor(closestPoint, closestRect) {
         cursor = "crosshair";
         if (closestPoint.p) {
@@ -278,8 +295,8 @@ DrawRects.prototype = {
         const xRel = (mousepos.x / this.canvas.width - 0.5) * 2;  // goes from -1 to 1
         const yRel = mousepos.y / this.canvas.height; // goes from 0 to 1
 
-        const maxFreqX = 0.5 / this.scansize[0] * this.imgPixelsize[0];  // max freq is 0.5 / pixel
-        const maxFreqY = 1 / this.scansize[1] * this.imgPixelsize[1];  // max freq is 0.5 / pixel, but pixelsize[1] is 1/2 of the original image pixelsize
+        const maxFreqX = this.maxFreq[0] / this.scansize[0] * this.imgPixelsize[0];  // max freq is ~0.5 / pixel
+        const maxFreqY = this.maxFreq[1] / this.scansize[1] * this.imgPixelsize[1];  // max freq is ~0.5 / pixel
         const freqX = maxFreqX * xRel;
         const freqY = maxFreqY * yRel;
         let resX = "";
@@ -453,7 +470,7 @@ DrawRects.prototype = {
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
     },
 
-    setup(callback=null, scansize=[0,0]) {
+    setup(callback=null, scansize=[0,0], imgPixelsize=[0,0], maxFreq=[0,0]) {
         ["down", "up", "move", "out"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.canvas.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
@@ -461,6 +478,8 @@ DrawRects.prototype = {
             }
         });
         this.scansize = scansize;
+        this.imgPixelsize = imgPixelsize;
+        this.maxFreq = maxFreq;
         this.setupImage();
         this.callback = callback;
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
@@ -476,7 +495,6 @@ DrawRects.prototype = {
             window.setTimeout(() => this.setupImage(), 100);    // wait for image to load
         }
 
-        this.imgPixelsize = [w, h];
         let maxSideLength = Math.max(this.maxSideLength, Math.max(w, h));
         if (w >= h) {
             this.canvas.width = maxSideLength;
@@ -513,5 +531,3 @@ DrawRects.prototype = {
         this.first_setup = true;
     }
 }
-
-// todo: if mouse position outside of canvas, then drag should stop

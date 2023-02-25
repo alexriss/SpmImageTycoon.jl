@@ -3,6 +3,7 @@ function Editing() {
     this.curr_id = "";
     this.updating = false;
     this.editing_entry_list = {};  // possible entries for images or spectra
+    this.info = {};  // extra info sent in pars
 }
 
 
@@ -121,7 +122,6 @@ Editing.prototype = {
         if (update && window.queue_edits_range.type_in_queue(id, "edit")) {
             return;  // there are other operations waiting, so we don't update now
         }
-
         const item = window.items[id];
         const entries = item.edits.map(edit => JSON.parse(edit));
         const ids_new = entries.map(e => e.id);
@@ -132,7 +132,6 @@ Editing.prototype = {
         }
 
         const container = document.getElementById("editing_entry_container");
-        console.log("update: " + update);
         if (update) {
             const container = document.getElementById("editing_entry_container");
             let entries_form = [];
@@ -214,6 +213,7 @@ Editing.prototype = {
     },
 
     update_entry_table(props, props_item, el_entry) {
+        const that = this;
         const el_active = el_entry.querySelector(".editing_entry_buttons input");
         if ("off" in props_item) {
             if (props_item.off) {
@@ -225,6 +225,11 @@ Editing.prototype = {
 
         Object.entries(props_item.pars).forEach(([key, par_item]) => {
             const par = props.pars[key];
+
+            if (par.type === "info") {
+                that.info[key] = par_item;
+                return;
+            }
             const el_par = el_entry.querySelector('[data-id="' + key + '"]');
             if (el_par) {
                 if (par.type === "float") {
@@ -315,8 +320,11 @@ Editing.prototype = {
                 el_lambdaA = clone_row.querySelector(".editing_entry_FT_lambda_a");
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
-                    window.draw_rect_objects[n].setup(callback=() => that.recalculate(), scansize=item.scansize);
-                    // todo: pass callback function to the object that updates the parameter (probably just recalculate), should be called everytime drag stops?
+                    const ps = ("ps" in that.info) ? that.info["ps"] : [0,0];
+                    const mf = ("mf" in that.info) ? that.info["mf"] : [0,0];
+                    window.draw_rect_objects[n].setup(
+                        callback=() => that.recalculate(), scansize=item.scansize, imgPixelsize=ps, maxFreq=mf
+                    );
                     if ("pars" in props_item && key in props_item.pars) {
                         window.draw_rect_objects[n].loadPoints(props_item.pars[key]);
                     }
@@ -326,11 +334,17 @@ Editing.prototype = {
                 clone_row.querySelector(".editing_entry_FT_clear_all").addEventListener("click", () => {
                     window.draw_rect_objects[n].clearAll();
                 });
+            } else if (par.type === "info") {
+                if ("pars" in props_item && key in props_item.pars) {
+                    this.info[key] = props_item.pars[key];
+                } else {
+                    this.info[key] = par.default;
+                }
+                continue;
             } else {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;
             }
-
             container_row.appendChild(clone_row);
         }
         clone.querySelectorAll("template").forEach((el) => el.remove());
@@ -392,6 +406,7 @@ Editing.prototype = {
     },
 
     get_entry_pars_table(el, pars_list) {
+        const that = this;
         const pars = {};
         const n = el.dataset.n;
         // el.querySelectorAll(".editing_entry_par_input").forEach((el) => {
@@ -412,6 +427,15 @@ Editing.prototype = {
                 pars[key] = el.value;
             }
         });
+
+        for (const key in pars_list) {
+            if (pars_list[key].type === "info") {
+                if (key in that.info) {
+                    pars[key] = that.info[key];
+                }
+            }
+        }
+        
         return pars;
     },
 
