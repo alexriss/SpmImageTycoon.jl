@@ -1,11 +1,12 @@
 const { cp } = require("fs");
 
-function DrawRects(canvas_element, img_element, lambdaX_element, lambdaY_element, lambdaA_element) {
+function DrawRects(canvas_element, img_element, container_element, lambdaX_element, lambdaY_element, lambdaA_element) {
     var self = this;
     this.first_setup = false;
 
     this.canvas = canvas_element;
     this.img = img_element;
+    this.container = container_element;
     this.ctx = this.canvas.getContext("2d");
     this.lambdaX = lambdaX_element;
     this.lambdaY = lambdaY_element;
@@ -335,7 +336,12 @@ DrawRects.prototype = {
         this.displayLambda(mousepos);
 
         const lb = mouse.button;
-        mouse.button = e.type === "mousedown" ? true : e.type === "mouseup" ? false : mouse.button;
+        if (e.type === "mousedown" && e.button === 0) {
+            mouse.button = true;
+        } else if (e.type === "mouseup" && e.button === 0) {
+            mouse.button = false;
+        }
+
         if (lb !== mouse.button) {
             if (mouse.button) {
                 mouse.drag = true;
@@ -471,8 +477,8 @@ DrawRects.prototype = {
     },
 
     setup(callback=null, scansize=[0,0], imgPixelsize=[0,0], maxFreq=[0,0]) {
-        ["down", "up", "move", "out"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
-        this.canvas.addEventListener('keydown', (e) => {
+        ["down", "up", "move", "out"].forEach(name => this.container.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+        this.container.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
                 this.delRect = true;
             }
