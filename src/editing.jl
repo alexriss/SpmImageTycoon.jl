@@ -1,4 +1,5 @@
 # a edit key "n" will be added automatically from js (this is used as an id)
+# pars of type `info` will not be displayed - they are used for communication between js and julia
 
 editing_entries = OrderedDict(
     "image" => OrderedDict(
@@ -73,6 +74,16 @@ editing_entries = OrderedDict(
             "name" => "Fourier Filter",
             "type" => "table",
             "pars" => OrderedDict(
+                "ps" => Dict(
+                    "type" => "info",
+                    "name" => "Pixel size",
+                    "default" => [0, 0],
+                ),
+                "mf" => Dict(
+                    "type" => "info",
+                    "name" => "Maximum frequency",
+                    "default" => [0, 0],
+                ),
                 "f" => Dict(
                     "type" => "select",
                     "name" => "Filter",
@@ -231,7 +242,7 @@ function apply_edits!(griditem::SpmGridItem, args...; dir_cache::String="")::Not
                 end
             end
             apply_edit!(args..., griditem, edit, dir_cache=dir_cache)
-            griditem.edits[i] = JSON.json(edit) # there can be updates to the parameters
+            griditem.edits[i] = JSON.json(edit)  # there can be updates to the parameters
         end
     end
     return nothing
@@ -328,7 +339,10 @@ end
 
 
 function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
-    # todo: replace NaNs with minumum value before doing the FFT (save their positions)
+    pars["ps"] = reverse(size(d))  # pixel size of original image, in x/y order
+    pars["mf"] = last.(rfftfreq.(pars["ps"])) # maximum frequency, in x/y order
+
+    # replace NaNs with minumum value before doing the FFT (save their positions)
     # then, at the end, after the reverse FFT we could replace the previous NaN-positions with NaNs again
     # this, however, messes up the (next) FT of the images, so we will not set them to NaNs again
     nans = isnan.(d)
