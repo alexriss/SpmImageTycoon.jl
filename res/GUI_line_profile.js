@@ -193,11 +193,11 @@ LineProfile.prototype = {
         this.mouse.x = mousepos.x;
         this.mouse.y = mousepos.y;
 
-        const lb = mouse.button;
+        const lb = this.mouse.button;
         if (e.type === "mousedown" && e.button === 0) {
-            mouse.button = true;
+            this.mouse.button = true;
         } else if (e.type === "mouseup" && e.button === 0) {
-            mouse.button = false;
+            this.mouse.button = false;
 
         }
         if (lb !== this.mouse.button) {
@@ -214,9 +214,9 @@ LineProfile.prototype = {
         }
 
         if (e.type === "mouseout") {
-            mouse.drag = false;
-            mouse.dragEnd = true;
-            mouse.button = false;
+            this.mouse.drag = false;
+            this.mouse.dragEnd = true;
+            this.mouse.button = false;
         }
 
         if (this.mouse.drag) {
