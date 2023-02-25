@@ -70,7 +70,7 @@ function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, el
 
     this.col1 = "#4288c2";
     this.col2 = "#bf365a";
-    this.setColors("p");
+    this.setColors("r");
 }
 
 DrawRects.prototype = {

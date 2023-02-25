@@ -340,6 +340,7 @@ Editing.prototype = {
                 // bit hacky, but we want to change the colors depending on the filter type
                 const elFilterType = clone.querySelector('[data-id="f"]');
                 if (elFilterType) {
+                    window.draw_rect_objects[n].setColors(elFilterType.value);
                     elFilterType.addEventListener("change", () => {
                         window.draw_rect_objects[n].setColors(elFilterType.value);
                     });
