@@ -169,7 +169,7 @@ function get_active_edits_str(griditem::SpmGridItem)::String
     end
 
     edits = map(griditem.edits) do edit_str
-        edit = JSON.parse(edit_str)
+        edit = JSON.parse(edit_str, dicttype=OrderedDict)
         haskey(edit, "off") && edit["off"] > 0 && return ""
         if !haskey(editing_entries_, edit["id"])
             @warn "Unknown edit id: $(edit["id"])"
@@ -202,8 +202,8 @@ end
 
 
 """converts and checks parameters corresponding to the given edit."""
-function get_params(pars::Dict, default_pars::OrderedDict)::Dict
-    res = Dict()
+function get_params(pars::AbstractDict, default_pars::OrderedDict)::OrderedDict
+    res = OrderedDict()
     for (k,v) in pars
         if haskey(default_pars, k)
             if default_pars[k]["type"] == "float"
@@ -233,7 +233,7 @@ end
 """
 function apply_edits!(griditem::SpmGridItem, args...; dir_cache::String="")::Nothing
     for (i,edit) in enumerate(griditem.edits)
-        edit = JSON.parse(edit)
+        edit = JSON.parse(edit, dicttype=OrderedDict)
         if "id" in keys(edit)
             id = edit["id"]
             if "off" in keys(edit)
@@ -250,7 +250,7 @@ end
 
 
 """Applies one edit to the image data."""
-function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::Dict; dir_cache::String="")::Nothing
+function apply_edit!(d::MatrixFloat, griditem::SpmGridItem, edit::AbstractDict; dir_cache::String="")::Nothing
     # get the function from the string
 
     key = edit["id"]
@@ -274,7 +274,7 @@ end
 
 
 """Applies one edit to the spectrum data."""
-function apply_edit!(x_data::VectorFloat, y_data::VectorFloat, griditem::SpmGridItem, edit::Dict; dir_cache::String="")::Nothing
+function apply_edit!(x_data::VectorFloat, y_data::VectorFloat, griditem::SpmGridItem, edit::AbstractDict; dir_cache::String="")::Nothing
     # get the function from the string
 
     key = edit["id"]
@@ -298,7 +298,7 @@ end
 
 
 
-function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     s = pars["s"]
     ss = reverse(nm_to_px(griditem, size(d), s))
 
@@ -308,14 +308,14 @@ function Gaussian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, 
 end
 
 
-function Laplacian(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function Laplacian(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     d .= imfilter(d, Kernel.Laplacian())
 
     return nothing
 end
 
 
-function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     s1 = pars["s1"]
     s2 = pars["s2"]
     ss1 = reverse(nm_to_px(griditem, size(d), s1))
@@ -328,7 +328,7 @@ function DoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
 end
 
 
-function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     s = pars["s"]
     ss = reverse(nm_to_px(griditem, size(d), s))
 
@@ -338,7 +338,7 @@ function LoG(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
 end
 
 
-function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     pars["ps"] = reverse(size(d))  # pixel size of original image, in x/y order
     pars["mf"] = last.(rfftfreq.(pars["ps"])) # maximum frequency, in x/y order
 
@@ -439,7 +439,7 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_c
 end
 
 
-function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     s = pars["s"]
     y .= imfilter(y, Kernel.gaussian((s, )))
 
@@ -447,7 +447,7 @@ function Gaussian(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::D
 end
 
 
-function diff1(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::Dict, n::String, dir_cache::String)::Nothing
+function diff1(x::VectorFloat, y::VectorFloat, griditem::SpmGridItem, pars::AbstractDict, n::String, dir_cache::String)::Nothing
     dy = diff(y)
     push!(dy, dy[end])
     y .= dy
