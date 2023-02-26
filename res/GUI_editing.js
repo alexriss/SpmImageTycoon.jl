@@ -410,7 +410,7 @@ Editing.prototype = {
         const divCollapse = el.querySelector(".editing_entry_collapse");
         el.querySelector(".editing_entry_collapse_click").addEventListener("click", (e) => {
             divCollapse.classList.toggle("is-hidden");
-            that.recalculate();
+            that.recalculate();  // we want to save the collapse-state
         });
     },
 
