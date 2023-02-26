@@ -231,7 +231,7 @@ DrawRects.prototype = {
         this.rectStyle = {
             lineWidth: 3,
             strokeStyle: col1,
-            fillStyle: col1 + "90",
+            fillStyle: col1 + "80",
         };
         this.pointStyle = {
             lineWidth: 1,
@@ -274,6 +274,8 @@ DrawRects.prototype = {
     },
 
     drawRect(rect) {
+        this.ctx.beginPath();
+        this.setStyle(this.rectStyle);
         this.ctx.moveTo(rect[0].x, rect[0].y);
         const w = rect[2].x - rect[0].x;
         const h = rect[2].y - rect[0].y;
@@ -283,7 +285,7 @@ DrawRects.prototype = {
     },
 
     drawRects(that) {
-        this.eachRect((rect, i) => that.drawRect(rect))
+        this.eachRect((rect, i) => that.drawRect(rect));
     },
 
     drawPoints(that) {
@@ -467,19 +469,14 @@ DrawRects.prototype = {
 
         }
         // draw all points and rects
-        this.setStyle(this.rectStyle);
-        this.ctx.beginPath();
-        points.drawRects(this);
-        this.ctx.stroke();
-        this.setStyle(this.pointStyle);
-        this.ctx.beginPath();
-        points.draw(this);
-        this.ctx.stroke();
+        points.drawRects(this);  // beginPath and setStyle are called inside the function (otherwise opacity is messed up)
+
+        // this.setStyle(this.pointStyle);
+        // this.ctx.beginPath();
+        //  points.draw(this);
 
         // draw highlighted point or rect
         if (this.closestRect.p) {
-            this.setStyle(this.highlightRectStyle);
-            this.ctx.beginPath();
             this.drawRect(this.closestRect.p);
         }
         if (this.closestPoint.p) {
@@ -488,7 +485,6 @@ DrawRects.prototype = {
             this.drawPoint(this.closestPoint.p);
         }
 
-        this.ctx.stroke();
 
         this.canvas.style.cursor = this.cursor;
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
