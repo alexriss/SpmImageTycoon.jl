@@ -847,7 +847,7 @@ end
             )
             SpmImageTycoon. change_griditem!(griditems, ["Image_004.sxm"], DIR_data, state, true)
         catch e
-            pass
+            
         end
 
         w = Window(
