@@ -6,6 +6,7 @@ using ColorSchemes
 using DataFrames
 using DataStructures: OrderedDict
 using Dates
+using DSP
 using FFTW
 using Images
 using ImageFiltering

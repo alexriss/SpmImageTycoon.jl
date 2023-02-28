@@ -73,6 +73,7 @@ editing_entries = OrderedDict(
         "FTF" => Dict(
             "name" => "Fourier Filter",
             "type" => "table",
+            "more" => [4, 7],
             "pars" => OrderedDict(
                 "ps" => Dict(
                     "type" => "info",
@@ -92,6 +93,35 @@ editing_entries = OrderedDict(
                         "r" => "remove",
                     ),
                     "default" => "r",
+                ),
+                "w" => Dict(
+                    "type" => "select",
+                    "name" => "Window",
+                    "options" => OrderedDict(
+                        "" => "none",
+                        "hn" => "hanning",
+                        "hm" => "hamming",
+                        "tk" => "tukey",
+                        "cs" => "cosine",
+                        "lc" => "lanczos",
+                        "tr" => "triangular",
+                        "ba" => "bartlett",
+                        "ga" => "gaussian",
+                        "bh" => "bartlett-hann",
+                        "bl" => "blackman",
+                        "ka" => "kaiser",
+                    ),
+                    "default" => "",
+                ),
+                "wf" => Dict(
+                    "type" => "float",
+                    "name" => "Window factor",
+                    "default" => 1.00,
+                    "step" => 0.1,
+                    "min" => 0.0,
+                    "max" => 1000000,
+                    "digits" => 2,
+                    "unit" => "",
                 ),
                 "s" => Dict(
                     "type" => "select",
@@ -389,47 +419,92 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::Strin
     if haskey(pars, "f") && haskey(pars, "r") && length(pars["r"]) > 0
         fac_x, fac_y = size(F, 2) / 1e6, size(F, 1) / 1e6  # the 1e6 is the export scale specified in the js file
 
-        if pars["f"] == "p"  # keep/pass
-            mask = trues(size(F))
-            paint = false
-        else
-            mask = falses(size(F))
-            paint = true
-        end
-        
+        mask = zeros(size(F))
+
         if length(pars["r"]) % 2 == 1  # should never happen, though
             pop!(pars["r"])
         end
         for i in 1:2:length(pars["r"])
             (length(pars["r"][i]) === 2 && isa(pars["r"][i], Array)) || continue
-            x_range = (pars["r"][i][1], pars["r"][i+1][1]) .* fac_x
-            y_range = (pars["r"][i][2], pars["r"][i+1][2]) .* fac_y
+            x_range = [pars["r"][i][1], pars["r"][i+1][1]] .* fac_x
+            y_range = [pars["r"][i][2], pars["r"][i+1][2]] .* fac_y
             x_range = round.(Int, x_range) .+ 1  # convert to 1 based index
             y_range = round.(Int, y_range) .+ 1  # convert to 1 based index
 
             # check order
             if (x_range[2] < x_range[1])
-                x_range = x_range[2], x_range[1]
+                x_range[1], x_range[2] = x_range[2], x_range[1]
             end
             if (y_range[2] < y_range[1])
-                y_range = y_range[2], y_range[1]
+                y_range[1], y_range[2] = y_range[2], y_range[1]
             end
 
-            # check bounds
-            x_range = map(x_range) do x
-                (x < 1) && (x = 1)
-                (x > size(F, 2)) && (x = size(F, 2))
-                x
+            # window
+            nx, ny = x_range[2] - x_range[1] + 1, y_range[2] - y_range[1] + 1
+            window_size = (ny, nx)
+            if !haskey(pars, "w")
+                w = ones(window_size)
+                pars["w"] = ""
+            elseif pars["w"] == "hn"
+                w = DSP.Windows.hanning(window_size)
+            elseif pars["w"] == "hm"
+                w = DSP.Windows.hamming(window_size)
+            elseif pars["w"] == "tk"
+                w = DSP.Windows.tukey(window_size, 0.5)
+            elseif pars["w"] == "cs"
+                w = DSP.Windows.cosine(window_size)
+            elseif pars["w"] == "lc"
+                w = DSP.Windows.lanczos(window_size)
+            elseif pars["w"] == "tr"
+                w = DSP.Windows.triang(window_size)
+            elseif pars["w"] == "ba"
+                w = DSP.Windows.bartlett(window_size)
+            elseif pars["w"] == "ga"
+                w = DSP.Windows.gaussian(window_size, 0.4)
+            elseif pars["w"] == "bh"
+                w = DSP.Windows.bartlett_hann(window_size)
+            elseif pars["w"] == "bl"
+                w = DSP.Windows.blackman(window_size)
+            elseif pars["w"] == "ka"
+                w = DSP.Windows.kaiser(window_size, 3)
+            else
+                w = ones(window_size)
+                pars["w"] = ""
             end
-            y_range = map(y_range) do y
-                (y < 1) && (y = 1)
-                (y > size(F, 1)) && (y = size(F, 1))
-                y
+
+            haskey(pars, "wf") && (w .*= pars["wf"])
+
+            # check bounds
+            if all(x_range .< 1) || all(y_range .< 1)
+                continue
+            end
+            if all(x_range .> size(F, 2)) || all(y_range .> size(F, 1))
+                continue
             end
             
-            mask[y_range[1]:y_range[2], x_range[1]:x_range[2]] .= paint
+            if (x_range[1] < 1)
+                w = @view w[:, 1-x_range[1]+1:end]
+                x_range[1] = 1
+            end
+            if (x_range[2] > size(F, 2))
+                w = @view w[:, 1:end-(x_range[2]-size(F, 2))]
+                x_range[2] = size(F, 2)
+            end
+            if (y_range[1] < 1)
+                w = @view w[1-y_range[1]+1:end, :]
+                y_range[1] = 1
+            end
+            if (y_range[2] > size(F, 1))
+                w = @view w[1:end-(y_range[2]-size(F, 1)), :]
+                y_range[2] = size(F, 1)
+            end
+            
+            mask[y_range[1]:y_range[2], x_range[1]:x_range[2]] .+= w
         end
-        F[mask] .= 0
+
+        clamp!(mask, 0.0, 1.0)
+        haskey(pars, "f") && (pars["f"] == "r") && (@. mask = 1.0 - mask)
+        F .*= mask
     end
 
     d .= irfft(fftshift(F, 2), size(d, 1))
