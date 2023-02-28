@@ -838,6 +838,17 @@ end
         # SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, dir_cache=DIR_cache)
         # SpmImageTycoon.create_image!(griditems[fname_img_base], ima, dir_cache=DIR_cache)
         SpmImageTycoon.get_spectrum_data_dict(griditems[fname_spec_base], DIR_data)
+        try  # there might be some write errors, so let's wrap it in a try-block
+            state = Dict{String, Any}("edits" => Any[
+                "{\"id\":\"FTF\",\"n\":\"1\",\"off\":0,\"exp\":1,\"pars\":{\"ps\":[144,144],\"mf\":[0.5,0.5],\"f\":\"r\",\"w\":\"\",\"wf\":1,\"s\":\"ln\",\"d\":\"a\",\"r\":[[444779,97294],[516654,197127],[538510,19546],[615733,114572],[919854,21529],[919854,21529]]}}",
+                "{\"id\":\"FTF\",\"n\":\"2\",\"off\":0,\"exp\":1,\"pars\":{\"ps\":[144,144],\"mf\":[0.5,0.5],\"f\":\"p\",\"w\":\"hn\",\"wf\":1,\"s\":\"li\",\"d\":\"r\",\"r\":[[282630,209644],[443513,402923]]}}",
+                "{\"id\":\"G\",\"n\":\"3\",\"off\":0,\"exp\":1,\"pars\":{\"s\":0.05}}"],
+                "channel_name" => "Frequency Shift", "background_correction" => "none"
+            )
+            SpmImageTycoon. change_griditem!(griditems, ["Image_004.sxm"], DIR_data, state, true)
+        catch e
+            pass
+        end
 
         w = Window(
             Dict(
