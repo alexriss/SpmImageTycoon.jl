@@ -382,6 +382,7 @@ Editing.prototype = {
             }
 
             // make expandable and collapsible par rows
+            console.log(1)
             if ("more" in props && props.more.length === 2) {
                 if (i_row == props.more[0]) {
                     const tpl_row_more = clone.getElementById("editing_entry_template_row_more");
@@ -426,16 +427,18 @@ Editing.prototype = {
         const rowsCollapse = el.querySelectorAll('[data-more="1"]');
         const rowsCollapseClickCollapse = el.querySelector(".editing_entry_more_collapse");
         const rowsCollapseClickExpand = el.querySelector(".editing_entry_more_expand");
-        rowsCollapseClickCollapse.addEventListener("click", (e) => {
-            rowsCollapse.forEach((el) => el.classList.add("is-hidden"));
-            rowsCollapseClickCollapse.classList.add("is-hidden");
-            rowsCollapseClickExpand.classList.remove("is-hidden");
-        });
-        rowsCollapseClickExpand.addEventListener("click", (e) => {
-            rowsCollapse.forEach((el) => el.classList.remove("is-hidden"));
-            rowsCollapseClickCollapse.classList.remove("is-hidden");
-            rowsCollapseClickExpand.classList.add("is-hidden");
-        });
+        if (rowsCollapseClickCollapse !== null && rowsCollapseClickExpand !== null && rowsCollapse.length > 0) {
+            rowsCollapseClickCollapse.addEventListener("click", (e) => {
+                rowsCollapse.forEach((el) => el.classList.add("is-hidden"));
+                rowsCollapseClickCollapse.classList.add("is-hidden");
+                rowsCollapseClickExpand.classList.remove("is-hidden");
+            });
+            rowsCollapseClickExpand.addEventListener("click", (e) => {
+                rowsCollapse.forEach((el) => el.classList.remove("is-hidden"));
+                rowsCollapseClickCollapse.classList.remove("is-hidden");
+                rowsCollapseClickExpand.classList.add("is-hidden");
+            });
+        }
 
         // collapse/expand entry
         const divCollapse = el.querySelector(".editing_entry_collapse");
