@@ -977,6 +977,28 @@ sup {
   outline: none;  /* remove the dotted outline associated with tabindex (we need it to capture keydown events) */
 }
 
-#editing_container editing_entry_FT_clear_all  { 
-  opacity:0.6;
+#editing_container .editing_entry_FT_footer td {
+  height:1.0rem;
+  border: none;
+}
+
+#editing_container .editing_entry_more_click_container {
+  position:relative;
+  opacity:0.8;
+  top: -0.32rem;
+}
+
+#editing_container .editing_entry_FT_clear_all  { 
+  opacity:0.8;
+}
+
+#editing_container .editing_entry_more, #editing_container .editing_entry_more td{
+  height:0.6rem;
+  line-height: 0;
+  border: none;
+}
+
+#editing_container .editing_entry_more_click_container a {
+  background-color: #eef6fc;
+  padding-left: 10px;
 }

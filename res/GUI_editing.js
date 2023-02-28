@@ -294,8 +294,10 @@ Editing.prototype = {
         }
 
         const container_row = clone.querySelector(".editing_entry_container_row");
-        let tpl_row, clone_row, img_ft, el_lambdaX, el_lambdaY;
+        let tpl_row, clone_row, clone_row_more, img_ft, el_lambdaX, el_lambdaY;
+        let i_row = 0;
         for (const [key, par] of Object.entries(props.pars)) {
+            i_row++;  // we increase here, so that the first row is 1 as in julia
             if (par.type === "float") {
                 tpl_row = clone.getElementById("editing_entry_template_row_float");
                 clone_row = tpl_row.content.cloneNode(true);
@@ -378,6 +380,20 @@ Editing.prototype = {
                 console.log("Unknown editing entry par type: " + par.type);
                 continue;
             }
+
+            // make expandable and collapsible par rows
+            if ("more" in props && props.more.length === 2) {
+                if (i_row == props.more[0]) {
+                    const tpl_row_more = clone.getElementById("editing_entry_template_row_more");
+                    clone_row_more = tpl_row_more.content.cloneNode(true);   
+                    container_row.appendChild(clone_row_more); 
+                }
+                if (i_row >= props.more[0] && i_row <= props.more[1]) {
+                    clone_row.querySelector("tr").dataset.more = "1";
+                    clone_row.querySelector("tr").classList.add("is-hidden");
+                }
+            }
+            
             container_row.appendChild(clone_row);
         }
         clone.querySelectorAll("template").forEach((el) => el.remove());
@@ -406,7 +422,22 @@ Editing.prototype = {
             });
         });
 
-        // collapse/expand
+        // collapse/expand rows-more
+        const rowsCollapse = el.querySelectorAll('[data-more="1"]');
+        const rowsCollapseClickCollapse = el.querySelector(".editing_entry_more_collapse");
+        const rowsCollapseClickExpand = el.querySelector(".editing_entry_more_expand");
+        rowsCollapseClickCollapse.addEventListener("click", (e) => {
+            rowsCollapse.forEach((el) => el.classList.add("is-hidden"));
+            rowsCollapseClickCollapse.classList.add("is-hidden");
+            rowsCollapseClickExpand.classList.remove("is-hidden");
+        });
+        rowsCollapseClickExpand.addEventListener("click", (e) => {
+            rowsCollapse.forEach((el) => el.classList.remove("is-hidden"));
+            rowsCollapseClickCollapse.classList.remove("is-hidden");
+            rowsCollapseClickExpand.classList.add("is-hidden");
+        });
+
+        // collapse/expand entry
         const divCollapse = el.querySelector(".editing_entry_collapse");
         el.querySelector(".editing_entry_collapse_click").addEventListener("click", (e) => {
             divCollapse.classList.toggle("is-hidden");
