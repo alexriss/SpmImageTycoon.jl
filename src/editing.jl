@@ -73,7 +73,7 @@ editing_entries = OrderedDict(
         "FTF" => Dict(
             "name" => "Fourier Filter",
             "type" => "table",
-            "more" => [4, 7],
+            "more" => [4, 8],
             "pars" => OrderedDict(
                 "ps" => Dict(
                     "type" => "info",
@@ -142,6 +142,14 @@ editing_entries = OrderedDict(
                         "i" => "imaginary",
                     ),
                     "default" => "a",
+                ),
+                "c" => Dict(
+                    "type" => "select",
+                    "name" => "Color",
+                    "options" => OrderedDict(
+                        keys(colorscheme_list_pre) .=> keys(colorscheme_list_pre),
+                    ),
+                    "default" => "gray",
                 ),
                 "r" => Dict(
                     "type" => "FT_select",
@@ -408,7 +416,12 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::Strin
 
     normalize01!(F_norm)
     # clamp01nan!(F_norm)
-    im_arr = Gray.(F_norm)
+    if haskey(pars, "c") && (pars["c"] != "gray") && (pars["c"] in keys(colorscheme_list_pre))
+        im_arr = colorize(F_norm, pars["c"])
+    else
+        im_arr = Gray.(F_norm)
+    end
+
     # im_arr = colorize(F_norm, griditem.colorscheme)
     fname = get_filename_edit(griditem.filename_display, "FT_$n")
     fname_abs = joinpath(
