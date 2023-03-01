@@ -388,25 +388,35 @@ function FTF(d::MatrixFloat, griditem::SpmGridItem, pars::AbstractDict, n::Strin
     norm_func = x -> x
     if haskey(pars, "s")
         if pars["s"] == "ln"
-            norm_func = x -> Base.log(abs(x) + 1e-16)
+            norm_func = x -> Base.log(x)  # since we set the minimum value to slightly above zero (below), we do not need to use the `abs`
         elseif pars["s"] == "sq"
-            norm_func = x -> sqrt(abs(x))
+            norm_func = x -> sqrt(x)  # since we set the minimum value to slightly above zero (below), we do not need to use the `abs`
         end
     end
     disp_func = x -> abs(x)
+    add_min = false  # `abs` is always positive, so no need to add the minimum value
     if haskey(pars, "d")
         if pars["d"] == "r"
             disp_func = x -> real(x)
+            add_min = true
         elseif pars["d"] == "i"
             disp_func = x -> imag(x)
+            add_min = true
         end
     end
 
+    del = eltype(d)(1e-16)
     F .= fftshift(F, 2)
-    F_norm = @. norm_func(disp_func(F))  # save this to a file
+    if add_min
+        F_norm = disp_func.(F)
+        del = del - minimum(skipnan(F_norm))
+        @. F_norm = norm_func(F_norm + del)  # save this to a file
+    else
+        F_norm = @. disp_func(norm_func(F + del))
+    end
 
     normalize01!(F_norm)
-    # clamp01nan!(F_norm)
+    clamp01nan!(F_norm)
     im_arr = Gray.(F_norm)
     # im_arr = colorize(F_norm, griditem.colorscheme)
     fname = get_filename_edit(griditem.filename_display, "FT_$n")
