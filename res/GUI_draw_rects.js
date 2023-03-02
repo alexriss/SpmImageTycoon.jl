@@ -1,6 +1,6 @@
 const { cp } = require("fs");
 
-function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, elLambdaY, elLambdaA) {
+function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, elLambdaY, elLambdaA, elAngle) {
     var self = this;
     this.first_setup = false;
 
@@ -12,6 +12,7 @@ function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, el
     this.lambdaX = elLambdaX;
     this.lambdaY = elLambdaY;
     this.lambdaA = elLambdaA;
+    this.lambdaAngle = elAngle;
     
     this.callback = null;  // callback function when changes occur
 
@@ -314,6 +315,7 @@ DrawRects.prototype = {
         const maxFreqY = this.maxFreq[1] / this.scansize[1] * this.imgPixelsize[1];  // max freq is ~0.5 / pixel
         const freqX = maxFreqX * xRel;
         const freqY = maxFreqY * yRel;
+
         let resX = "";
         if (Math.abs(freqX) < 1e-6) {
             resX = "&infin;";
@@ -332,9 +334,17 @@ DrawRects.prototype = {
         } else {
             resA = (1 / Math.sqrt(freqX**2 + freqY**2)).toFixed(3);
         }
+        let resAngle = "";
+        if (resX !== "&infin;" && resY !== "&infin;") {
+            const angle = ((Math.atan2(resY, resX) * 180 / Math.PI) + 90) % 180;
+            resAngle = angle.toFixed(1);
+        } else {
+            resAngle = "-";
+        }
         this.lambdaX.innerHTML = resX;
         this.lambdaY.innerHTML = resY;
         this.lambdaA.innerHTML = resA;
+        this.lambdaAngle.innerHTML = resAngle;
     },
 
     mouseEvents(e) {

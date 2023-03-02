@@ -294,7 +294,7 @@ Editing.prototype = {
         }
 
         const container_row = clone.querySelector(".editing_entry_container_row");
-        let tpl_row, clone_row, clone_row_more, img_ft, el_lambdaX, el_lambdaY;
+        let tpl_row, clone_row, clone_row_more, img_ft, el_lambdaX, el_lambdaY, el_lambdaA, el_lambdaAngle;
         let i_row = 0;
         for (const [key, par] of Object.entries(props.pars)) {
             i_row++;  // we increase here, so that the first row is 1 as in julia
@@ -345,6 +345,7 @@ Editing.prototype = {
                 el_lambdaX = clone_row.querySelector(".editing_entry_FT_lambda_x");
                 el_lambdaY = clone_row.querySelector(".editing_entry_FT_lambda_y");
                 el_lambdaA = clone_row.querySelector(".editing_entry_FT_lambda_a");
+                el_lambdaAngle = clone_row.querySelector(".editing_entry_FT_lambda_angle");
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
                     window.draw_rect_objects[n].setup(
@@ -356,7 +357,7 @@ Editing.prototype = {
                 }, {once: true});
                 window.draw_rect_objects[n] = new DrawRects(
                     clone_row.querySelector(".editing_entry_FT_canvas"), img_ft, clone_row.querySelector(".editing_entry_FT_container"),
-                    img_ft.closest("tr"), el_lambdaX, el_lambdaY, el_lambdaA
+                    img_ft.closest("tr"), el_lambdaX, el_lambdaY, el_lambdaA, el_lambdaAngle
                 );
                 this.set_img_src(img_ft, this.curr_id, n);
                 clone_row.querySelector(".editing_entry_FT_clear_all").addEventListener("click", () => {
