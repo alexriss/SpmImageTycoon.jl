@@ -932,6 +932,11 @@ sup {
   background-color: #d0e6f6;
 }
 
+/* made bigger than td, so that is is more convenient for the mouse dragging */
+#editing_container .editing_entry_FT_container_events {
+  margin: -50px;
+  padding: 50px;
+}
 
 #editing_container div.editing_entry_FT_container {
   width: 100%;

@@ -1,7 +1,4 @@
-const { cp } = require("fs");
-
 function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, elLambdaY, elLambdaA, elAngle) {
-    var self = this;
     this.first_setup = false;
 
     this.canvas = elCanvas;
@@ -304,7 +301,8 @@ DrawRects.prototype = {
     displayLambda(mousepos) {
         if (this.scansize[0] === 0 || this.scansize[1] === 0 ||
             this.imgPixelsize[0] === 0 || this.imgPixelsize[1] === 0 ||
-            this.canvas.width === 0 || this.canvas.height === 0) {
+            this.canvas.width === 0 || this.canvas.height === 0 ||
+            mousepos.y < 0) {  // only y is clipped, because it would invert the frequency
             return;
         }
         
@@ -353,7 +351,7 @@ DrawRects.prototype = {
         }
 
         var mouse = this.mouse;
-        var mousepos = this.getMousePos(this.canvas, e)
+        var mousepos = this.getMousePos(this.canvas, e);
         this.mouse.x = mousepos.x;
         this.mouse.y = mousepos.y;
 
@@ -382,7 +380,7 @@ DrawRects.prototype = {
             }
         }
         
-        if (e.type === "mouseout") {
+        if (mousepos.x < -40 || mousepos.x > this.canvas.width + 40 || mousepos.y < -40 || mousepos.y > this.canvas.height + 40) {
             if (mouse.drag) {
                 update = true;
             }
@@ -393,7 +391,8 @@ DrawRects.prototype = {
         if (update) {
             if (this.callback !== null) this.callback();
         }
-        if (e.type === "mouseout") {
+
+        if (mousepos.x < 0 || mousepos.x > this.canvas.width || mousepos.y < 0 || mousepos.y > this.canvas.height) {
             this.lambdaX.parentElement.classList.add("is-invisible");
         } else {
             this.lambdaX.parentElement.classList.remove("is-invisible");
@@ -508,7 +507,7 @@ DrawRects.prototype = {
     },
 
     setup(callback=null, scansize=[0,0], info={}) {
-        ["down", "up", "move", "out"].forEach(name => this.eventContainer.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+        ["down", "up", "move"].forEach(name => this.eventContainer.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.eventContainer.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
                 this.delRect = true;
