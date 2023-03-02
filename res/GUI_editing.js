@@ -337,6 +337,7 @@ Editing.prototype = {
                 } else {
                     el_select.value = par.default;
                 }
+                el_select.dataset.default = par.default;
             } else if (par.type === "FT_select") {
                 tpl_row = clone.getElementById("editing_entry_template_row_FT_select");
                 clone_row = tpl_row.content.cloneNode(true);
@@ -382,7 +383,6 @@ Editing.prototype = {
             }
 
             // make expandable and collapsible par rows
-            console.log(1)
             if ("more" in props && props.more.length === 2) {
                 if (i_row == props.more[0]) {
                     const tpl_row_more = clone.getElementById("editing_entry_template_row_more");
@@ -420,6 +420,18 @@ Editing.prototype = {
             el.addEventListener("change", (e) => {
                 that.check_input_validity(el);
                 that.recalculate();
+            });
+        });
+
+        // double click name to reset to default
+        el.querySelectorAll(".editing_entry_par_name").forEach((el) => {
+            el.addEventListener("dblclick", (e) => {
+                const el_input_select = e.target.closest("tr").querySelector(".editing_entry_par_select, .editing_entry_par_input");
+                if (el_input_select !== null && "default" in el_input_select.dataset) {
+                    el_input_select.value = el_input_select.dataset.default;
+                    that.check_input_validity(el_input_select);
+                    that.recalculate();
+                }
             });
         });
 
