@@ -349,7 +349,7 @@ Editing.prototype = {
                 img_ft.dataset.id = key;
                 img_ft.addEventListener("load", () => {
                     window.draw_rect_objects[n].setup(
-                        callback=() => that.recalculate(), scansize=item.scansize, info=that.info
+                        callback=() => that.recalculate(), scansize=item.scansize, info=that.info, nObj=n,
                     );
                     if ("pars" in props_item && key in props_item.pars) {
                         window.draw_rect_objects[n].loadPoints(props_item.pars[key]);

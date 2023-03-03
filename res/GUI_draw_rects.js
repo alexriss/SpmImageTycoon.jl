@@ -11,6 +11,7 @@ function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, el
     this.lambdaA = elLambdaA;
     this.lambdaAngle = elAngle;
     
+    this.zoom = 1.0;  // zoom of the div, will be set by ZoomDrag
     this.callback = null;  // callback function when changes occur
 
     this.imgPixelsize = [0, 0]  // needed for conversions etc
@@ -417,9 +418,9 @@ DrawRects.prototype = {
 
         if (mouse.drag === false) {
             this.closestRect.p = undefined;
-            this.closestPoint = points.getClosest(mouse, this.minDistPoint);
+            this.closestPoint = points.getClosest(mouse, Math.ceil(this.minDistPoint / this.zoom));
             if (this.closestPoint.p === undefined) {
-                this.closestRect = points.getClosestRect(this, mouse, this.minDistRect);
+                this.closestRect = points.getClosestRect(this, mouse, Math.ceil(this.minDistRect / this.zoom));
             }
 
             this.cursor = this.getCursor(this.closestPoint, this.closestRect);
@@ -506,7 +507,7 @@ DrawRects.prototype = {
         this.maxFreq = mf;
     },
 
-    setup(callback=null, scansize=[0,0], info={}) {
+    setup(callback=null, scansize=[0,0], info={}, nObj=-1) {
         ["down", "up", "move"].forEach(name => this.eventContainer.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
         this.eventContainer.addEventListener('keydown', (e) => {
             if (e.key == "Delete" || e.key == "Backspace") {
@@ -516,19 +517,19 @@ DrawRects.prototype = {
         this.scansize = scansize;
 
         this.setInfo(info);
-        this.setupImage();
+        this.setupImage(nObj);
         this.callback = callback;
         requestAnimationFrame((t)=>this.update(t));  // we need to do this, because otherwise `requestAnimationFrame` will send a different `this` context
     },
 
-    setupImage() {
+    setupImage(nObj) {
         if (this.first_setup) {
             return;
         }
         let w = this.img.naturalWidth;
         let h = this.img.naturalHeight;
         if (w === 0 || h === 0) {
-            window.setTimeout(() => this.setupImage(), 100);    // wait for image to load
+            window.setTimeout(() => this.setupImage(nObj), 100);    // wait for image to load
         }
 
         let maxSideLength = Math.max(this.maxSideLength, Math.max(w, h));
@@ -564,7 +565,7 @@ DrawRects.prototype = {
         // this.canvas.style.visibility = "visible";
         this.canvas.classList.remove("is-invisible");
         this.img.classList.remove("is-invisible");
-        window.zoom_drag_objects["editing_FT"] = new ZoomDrag(this.container, "editing_FT");
+        window.zoom_drag_objects["editing_FT_" + nObj] = new ZoomDrag(this.container, "editing_FT", this);
         this.first_setup = true;
     }
 }

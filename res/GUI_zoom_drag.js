@@ -1,6 +1,6 @@
 // for imagezoom
 
-function ZoomDrag(divMain, type="imagezoom") {
+function ZoomDrag(divMain, type="imagezoom", assocObj=null) {
     const that = this;
     
     // config
@@ -11,6 +11,7 @@ function ZoomDrag(divMain, type="imagezoom") {
 
     this.scale = scale;  // need a global variable here
     this.divMain = divMain;
+    this.assocObj = assocObj;  // the associated object should get zoom information from here
 
     var funcPreventClick;
     if (type === "imagezoom") {
@@ -117,6 +118,10 @@ function ZoomDrag(divMain, type="imagezoom") {
             divSection.style.transform = `scale(${that.scale}, ${that.scale})`;
             divMain.scrollTop = newScroll.y;
             divMain.scrollLeft = newScroll.x;
+
+            if (that.assocObj !== null) {
+                that.assocObj.zoom = that.scale;
+            }
         }
     })
 
