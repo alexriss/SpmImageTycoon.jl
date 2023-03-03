@@ -67,8 +67,8 @@ function DrawRects(elCanvas, elImg, elContainer, elEventContainer, elLambdaX, el
     this.minDistPoint = 20;
     this.minDistRect = 5;
 
-    this.col1 = "#4288c2";
-    this.col2 = "#bf365a";
+    this.col1 = "#70EE9C";
+    this.col2 = "#f6c28b";
     this.setColors("r");
 }
 
@@ -230,7 +230,7 @@ DrawRects.prototype = {
         this.rectStyle = {
             lineWidth: 3,
             strokeStyle: col1,
-            fillStyle: col1 + "80",
+            fillStyle: col1 + "50",
         };
         this.pointStyle = {
             lineWidth: 1,
@@ -238,7 +238,7 @@ DrawRects.prototype = {
         };
         this.highlightRectStyle = {
             lineWidth: 4,
-            fillStyle: col1 + "90",
+            fillStyle: col1 + "60",
             strokeStyle: col2,
         }
         this.highlightPointStyle = {
