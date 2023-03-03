@@ -30,7 +30,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
 - Various color palettes
-- Non-destructive edits
+- Non-destructive edits: Gaussian, Laplacian, Fourier Filter, etc.
 - Line profiles
 - Star-rating and keyword systems
 - Powerful search and filtering (e.g., by keywords, data type, location, scan size)
