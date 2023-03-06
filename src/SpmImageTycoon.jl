@@ -237,8 +237,8 @@ function get_scan_range(griditems::Dict{String, SpmGridItem})::Tuple{Vector{Floa
 end
 
 
-"""Changes the griditem fieldnames. Cycles/toggles the respective property."""
-function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, what::String, jump::Int=1)::Nothing
+"""Changes the griditem fieldnames. Cycles/toggles the respective property. Returns if caching is safe."""
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, what::String, jump::Int=1)::Bool
     # multiple dispatch for update functions
     if what == "channel"
         next_channel_name!(griditem, item, jump)
@@ -254,15 +254,16 @@ function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpe
         next_invert!(griditem, item)
     else
         println("Unknown property to change: ", what)  # this should never happen, though
-        return nothing
+        return true
     end
-    return nothing
+    return true
 end
 
 
-"""Changes the griditem fieldnames. Changes multiple properties to specific values."""
-function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, state::Dict, jump::Int)::Nothing
+"""Changes the griditem fieldnames. Changes multiple properties to specific values. Returns if caching is safe."""
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, state::Dict, jump::Int)::Bool
     # set new properties for griditem - we also do some checks
+    cache_safe = true
     for (k,v) in state
         if k =="channel_name"
             v_orig = v
@@ -289,10 +290,13 @@ function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpe
                 griditem.background_correction = v
             end
         elseif k == "edits"
+            if griditem.edits != v
+                cache_safe = false
+            end
             griditem.edits = v
         end
     end
-    return nothing
+    return cache_safe
 end
 
 
@@ -314,14 +318,14 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
             continue
         end
 
-        pre_change_griditem!(griditems[id], item, what, jump)
+        cache_safe = pre_change_griditem!(griditems[id], item, what, jump)
 
         # update the image or spectrum
         if griditems[id].type == SpmGridImage
             resize_to_ = full_resolution ? 0 : resize_to
-            create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache)    
+            create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache, cache_safe=cache_safe)    
         elseif griditems[id].type == SpmGridSpectrum
-            create_spectrum!(griditems[id], item, dir_cache=dir_cache)
+            create_spectrum!(griditems[id], item, dir_cache=dir_cache, cache_safe=cache_safe)
         end
     end
     return nothing
@@ -379,6 +383,7 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         end
 
         changed = false
+        cache_safe = true
         for p in properties
             v = getfield(griditems[id_from], p)
 
@@ -389,6 +394,9 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
             if v != getfield(griditem, p)
                 setfield!(griditem, p, v)
                 changed = true
+                if (p == :edits) && changed
+                    cache_safe = false
+                end
             end
         end
 
@@ -396,9 +404,9 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         if changed
             if griditem.type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(griditem, item, resize_to=resize_to_, dir_cache=dir_cache)    
+                create_image!(griditem, item, resize_to=resize_to_, dir_cache=dir_cache, cache_safe=cache_safe)    
             elseif griditem.type == SpmGridSpectrum
-                create_spectrum!(griditem, item, dir_cache=dir_cache)
+                create_spectrum!(griditem, item, dir_cache=dir_cache, cache_safe=cache_safe)
             end
         end
     end

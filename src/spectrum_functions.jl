@@ -453,7 +453,8 @@ end
 """Creates and saves a svg image for channel_name vs channel2_name.
 The "filename_display" field of the SpmGridItem is updated (to the svg filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cache::String="", use_existing::Bool=false)
+function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cache::String="", cache_safe::Bool=true, use_existing::Bool=false)
+    # cache_safe is currently not used for spectra
     if use_existing && griditem_cache_up_to_date(SpmGridItem[griditem], dir_cache)
         return nothing  # image exists, nothing to do
     end

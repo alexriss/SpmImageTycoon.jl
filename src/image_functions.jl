@@ -27,7 +27,7 @@ Returns the bin width (normalized for bin positions between 0 and 1) and relativ
 function get_histogram(griditem::SpmGridItem, dir_data::String)::Tuple{Float32,Vector{Float32}}
     im_spm = load_image_memcache(joinpath(dir_data, griditem.filename_original))
     dir_cache = get_dir_cache(dir_data)
-    d = vec(get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, normalize=false, clamp=false)[1])
+    d = vec(get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, cache_safe=true, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
     N = length(d)
@@ -159,14 +159,18 @@ end
 
 
 """Gets the image data from cache (if it exists, otherwise calls the function `get_image_data`)"""
-function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
+function get_image_data_cache(griditem::SpmGridItem, im_spm::SpmImage;
+    resize_to::Int=0, dir_cache::String="", cache_safe::Bool=true, normalize::Bool=true, clamp::Bool=false)::Tuple{Array{Float32,2},String,Float32,Float32}
     res = missing
     usecache = true
     key = griditem.id * "_" * griditem.channel_name * "_" * griditem.background_correction * "_" * string(griditem.edits) * "_" * string(resize_to)
-    for notallowed in memcache_disable_imagedata
-        if contains(key, notallowed)
-            usecache = false
-            break
+    
+    if !cache_safe  # this occurs when there are edits in the image - some edits have to generate images (such as the FT filter)
+        for notallowed in memcache_disable_imagedata
+            if contains(key, notallowed)
+                usecache = false
+                break
+            end
         end
     end
     lock(memcache_imagedata_lock) do
@@ -215,7 +219,7 @@ end
 """Creates and saves a png image from the specified channel_name in the image. If necessary, the image size is decreased to the specified size.
 The "filename_display" field of the SpmGridItem is updated (to the png filename without the directory prefix)
 if use_existing is true, then an updated image will only be generated if the last-modified date of the image does not correspon to the one save in the db."""
-function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", use_existing::Bool=false)::Nothing
+function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0, dir_cache::String="", cache_safe::Bool=true, use_existing::Bool=false)::Nothing
     if use_existing
         f = joinpath(dir_cache, griditem.filename_display)
         if unix2datetime(mtime(f)) == griditem.filename_display_last_modified  # mtime will give 0 for files that do not exist (so we do not need to check if file exists)
@@ -224,7 +228,7 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
     end
 
     # create grayscale image
-    d, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, normalize=true, clamp=true)
+    d, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, cache_safe=cache_safe, normalize=true, clamp=true)
 
     if griditem.colorscheme == "gray"  # special case, we dont need the actual colorscheme
         im_arr = Gray.(d)
@@ -302,7 +306,7 @@ function get_line_profile(id::String, dir_data::String, griditems::Dict{String,S
     filename_original = griditem.filename_original
     im_spm = load_image_memcache(joinpath(dir_data, filename_original))
     dir_cache = get_dir_cache(dir_data)
-    data, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, normalize=false, clamp=false)
+    data, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, cache_safe=true, normalize=false, clamp=false)
     coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, data, start_point, end_point, width, origin="upper")
 
     return coords, distances, values, start_point_value, end_point_value
