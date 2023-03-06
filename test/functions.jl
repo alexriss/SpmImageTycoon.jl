@@ -63,7 +63,12 @@ function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end
-            if !all(abs.(v1 .- v2) .< tol)
+            if length(v1) > 0 && isa(v1[1], Number)
+                if !all(abs.(v1 .- v2) .< tol)
+                    println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
+                    return false
+                end
+            elseif !all(v1 .== v2)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 return false
             end

@@ -438,6 +438,63 @@ end
     @test occursin("95.2 48.82,96.08 49.61,95.96 50.39,96.11 51.18", svg)
     @test occursin(",97.33 88.98,99.39 89.76,99.18 90.55,97.8 91.34,94.73 92.13,92.0 92.91,", svg)
 
+    # Fourier filter
+    send_key(["ArrowLeft"])  # move to "Image_695.sxm"
+    change_value("#editing_entry_main_background", "plane")
+    change_value("#editing_entry_add", "FTF")
+    sleep(1)
+    send_click(".editing_entry_more_expand")
+    im = load(joinpath(DIR_cache, "edits/Image_695_FT_1.png"))
+    @test size(im) === (129, 256)
+    @test im[11,2] ≈ Gray{N0f8}(0.38)
+    @test im[23,101] ≈ Gray{N0f8}(0.361)
+    @test im[78,78] ≈ Gray{N0f8}(0.31)
+
+    # Fourier filter with mask
+    change_value("[data-id=\"c\"]", "thermal")
+    change_value("[data-id=\"d\"]", "i")  # display imaginary
+    change_value("[data-id=\"s\"]", "sq")  # square root normalization
+    change_value("[data-id=\"wf\"]", 1.1)  # window factor
+    change_value("[data-id=\"w\"]", "hn")  # window hanning
+    rects = [[377267, -303410], [377267, -303410], [408813, -196786], [594933, 505684], [329949, -2352], [456132, 135633]]
+    @js w window.draw_rect_objects[1].loadPoints($rects)
+    change_value("[data-id=\"wf\"]", 1.2)  # window factor, again, to trigger recalculations
+    sleep(2)
+
+    im = load(joinpath(DIR_cache, "Image_695.png"))
+    @test size(im) === (256, 256)
+    @test im[200,2] ≈ RGB{N0f8}(0.392,0.667,0.784)
+    @test im[123,45] ≈ RGB{N0f8}(0.365,0.639,0.776)
+    @test im[78,69] ≈ RGB{N0f8}(0.235,0.247,0.506)
+
+    im = load(joinpath(DIR_cache, "edits/Image_695_FT_1.png"))
+    @test size(im) === (129, 256)
+    @test im[2,200] ≈ RGB{N0f8}(0.024,0.165,0.271)
+    @test im[123,45] ≈ RGB{N0f8}(0.016,0.145,0.22)
+    @test im[78,69] ≈ RGB{N0f8}(0.016,0.145,0.224)
+
+
+    change_value("#editing_entry_add", "FTF")
+    send_click(".editing_entry_more_expand")
+    change_value("[data-id=\"f\"]", "p", [2])  # filter keep
+    change_value("[data-id=\"d\"]", "r", [2])  # display real
+    rects = [[601242, 113485], [629633, 169933], [285785, 132301], [370958, 282830]]
+    @js w window.draw_rect_objects[2].loadPoints($rects)
+    change_value("[data-id=\"wf\"]", "aaa", [2])  # window factor, should be set to 1.00 automatically (and trigger recalculations)
+    sleep(2)
+
+    im = load(joinpath(DIR_cache, "Image_695.png"))
+    @test size(im) === (256, 256)
+    @test im[128,50] ≈ RGB{N0f8}(0.259,0.475,0.718)
+    @test im[69,69] ≈ RGB{N0f8}(0.353,0.627,0.769)
+    @test im[12,200] ≈ RGB{N0f8}(0.247,0.427,0.698)
+
+    im = load(joinpath(DIR_cache, "edits/Image_695_FT_2.png"))
+    @test size(im) === (129, 256)
+    @test im[26,128] ≈ Gray{N0f8}(0.0)  # should be cut
+    @test im[50,50] ≈ Gray{N0f8}(0.62)
+    @test im[129,256] ≈ Gray{N0f8}(0.584)
+
     send_key("z")  # back to grid view
 end
 
@@ -462,7 +519,7 @@ end
     send_key(["&"])
 
     items = get_items()
-    @test compare_dicts(items, items8)
+    @test compare_dicts(items, items8) 
 
     send_key("n")  # deselect all
     selected = ["Image_695.sxm_1"]
