@@ -452,7 +452,9 @@ end
 
     # Fourier filter with mask
     change_value("[data-id=\"c\"]", "thermal")
-    change_value("[data-id=\"d\"]", "i")  # display imaginary
+    change_value("[data-id=\"d\"]", "r")   # display real
+    change_value("[data-id=\"d\"]", "a")   # display abs
+    change_value("[data-id=\"d\"]", "i")   # display imaginary (we switch a few times to test if the image is regenerated and the cache does not interfere)
     change_value("[data-id=\"s\"]", "sq")  # square root normalization
     change_value("[data-id=\"wf\"]", 1.1)  # window factor
     change_value("[data-id=\"w\"]", "hn")  # window hanning
