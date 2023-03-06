@@ -26,7 +26,8 @@ end
 Returns the bin width (normalized for bin positions between 0 and 1) and relative bin counts."""
 function get_histogram(griditem::SpmGridItem, dir_data::String)::Tuple{Float32,Vector{Float32}}
     im_spm = load_image_memcache(joinpath(dir_data, griditem.filename_original))
-    d = vec(get_image_data_cache(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)[1])
+    dir_cache = get_dir_cache(dir_data)
+    d = vec(get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, normalize=false, clamp=false)[1])
 
     filter!(!isnan, d)
     N = length(d)
@@ -300,7 +301,8 @@ function get_line_profile(id::String, dir_data::String, griditems::Dict{String,S
     griditem = griditems[id]
     filename_original = griditem.filename_original
     im_spm = load_image_memcache(joinpath(dir_data, filename_original))
-    data, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, normalize=false, clamp=false)
+    dir_cache = get_dir_cache(dir_data)
+    data, unit, vmin, vmax = get_image_data_cache(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, normalize=false, clamp=false)
     coords, distances, values, start_point_value, end_point_value = line_profile(im_spm, data, start_point, end_point, width, origin="upper")
 
     return coords, distances, values, start_point_value, end_point_value
