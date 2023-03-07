@@ -43,11 +43,13 @@ Editing.prototype = {
 
     set_img_src(el, id, n, repeat=0) {
         el.src = file_url_edit(id, "FT_" + n);
-        // if (repeat > 1) return;  // we tried two times, the image should be there
-        // const that = this;
-        // window.setTimeout(() => {
-        //     that.set_img_src(el, id, n, repeat+1);  // sometimes the image generation is slow, so we call it again
-        // }, 60);
+        if (repeat > 1) return;  // we tried two times, the image should be there
+
+        // we reload the image one more time, sometimes generation takes longer (and it doesn't hurt to reload)
+        const that = this;
+        window.setTimeout(() => {
+            that.set_img_src(el, id, n, repeat+1);  // sometimes the image generation is slow, so we call it again
+        }, 60);
     },
 
     setup_form(id, extra_info) {
