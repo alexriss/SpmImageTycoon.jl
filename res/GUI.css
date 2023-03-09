@@ -125,12 +125,6 @@ sup {
   vertical-align: middle;
 }
 
-.imagegrid div.item.active {
-  /* outline: 6px solid #2a5aa1; */
-  box-shadow: 0px 0px 8px 7px  #234b88;
-  transform: scale(0.92);
-}
-
 .imagegrid div.item.active:before {
   background-color: #2a5aa1;
   color: white;
@@ -151,6 +145,12 @@ sup {
   transform: scale(1.0);
 }
 
+.imagegrid div.item.active {
+  /* outline: 6px solid #2a5aa1; */
+  box-shadow: 0px 0px 8px 7px  #234b88;
+  transform: scale(0.92);
+}
+
 /* .imagegrid.hover_enabled div.item:not(.active):hover    we do not need the not-active now, because hover_enabled takes care of it */
 .imagegrid.hover_enabled div.item:hover {
   /* outline: 6px solid #d1607c; */
@@ -164,11 +164,23 @@ sup {
 
 .imagegrid div.item.active:hover {
   /* outline: 6px solid #a5475f; */
-  box-shadow: 0px 0px 3px 7px #1c3c6d;
+  box-shadow: 0px 0px 3px 7px #1c3d6e;
 }
 
-.imagegrid div.item.is-marked {
-  box-shadow: 0px 0px 3px 7px #f0ecaf;
+.imagegrid div.item.is-marked:after {
+  background-color: #00d182ac;
+  color: white;
+  content: "\2605";
+  position: absolute;
+  margin: 0px;
+  top: 0px;
+  right: 0px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  text-align: center;
+  line-height: 24px;
+  font-size: 16px;
 }
 
 .unselectable {
