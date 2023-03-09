@@ -111,6 +111,6 @@ function filter_overview_setup() {
         window.filter_overview_selecting = false;
 
         filter_overview_display_num_selected();
-        filter_items();
+        window.filter_items_object.filter_items();
     });
 }

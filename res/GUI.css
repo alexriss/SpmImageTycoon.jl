@@ -167,6 +167,10 @@ sup {
   box-shadow: 0px 0px 3px 7px #1c3c6d;
 }
 
+.imagegrid div.item.is-marked {
+  box-shadow: 0px 0px 3px 7px #f0ecaf;
+}
+
 .unselectable {
   user-drag: none; 
   user-select: none;

@@ -54,9 +54,9 @@ window.keywords_modes = ["set", "add", "remove"];   // different modes for editi
 window.keywords_modes_display = ["set", "add", "remove"];  // these descriptions are shown to the user
 window.keywords_modes_display_css_classes = ["is-success", "is-info", "is-danger"];  // tcss classes for the respective modes
 
-window.timeout_filter = null;  // timeout refrence for filter function
-window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
 window.queue_edits_range == null  // queue object, used for edits and range adjustment
+
+window.filter_items_object = null;  // holds the FilterItems object
 
 window.t0 = 0;   // for performance measurements
 

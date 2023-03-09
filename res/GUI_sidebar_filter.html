@@ -12,6 +12,17 @@
 
       <table id="sidebar_filter_table" class="table is-fullwidth is-size-7 mb-2 pd-0">
         <tr>
+          <th class="has-text-weight-bold">Mode</th>
+          <td class="pr-1">
+            <select class="pl-1 pr-1 select is-small has-text-weight-bold" id="filter_mode">
+              <option value="in">keep</option>
+              <option value="out">remove</option>
+              <option value="mark">highlight</option>
+            </select>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
           <th>Rating</th>
           <td>
             <div class="columns">
@@ -152,7 +163,7 @@
           <td class="px-0"><button id="button_delete_filter_overview" class="delete"></button></td>
         </tr>
         <tr>
-          <td colspan="4" class="has-text-right pt-3"><button id="button_delete_all_filters" class="button is-small" type="reset">Clear all</button></td>
+          <td colspan="4" class="has-text-right pt-2 pr-0"><button id="button_delete_all_filters" class="button is-small px-4" type="reset">Clear all</button></td>
         </tr>
         <tr>
           <td colspan="4" class="pt-3 has-text-grey">

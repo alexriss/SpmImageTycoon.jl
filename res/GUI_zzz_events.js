@@ -226,8 +226,12 @@ function event_handlers() {
     resizeObserver.observe(document.getElementById('imagezoom_content'));
 
     // filter sidebar
+    if (window.filter_items_object == null) {
+        window.filter_items_object = new FilterItems();
+    }
+
     document.querySelectorAll('#sidebar_filter_table input,select').forEach((el) => {
-        el.addEventListener("input", filter_timeout);
+        el.addEventListener("input", () => window.filter_items_object.filter_items());
     });
 
     document.getElementById('filter_info_show_more').addEventListener('click', function() {
@@ -267,28 +271,28 @@ function event_handlers() {
                 document.getElementById('filter_rating_0').checked = true;
                 document.getElementById('filter_rating_comparator').value= ">=";
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             })
         } else if (el.id == "button_delete_filter_type") {
             el.addEventListener('click', function(e) {
                 document.getElementById('filter_type').value = "any";
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         } else if (el.id == "button_delete_filter_selected") {
             el.addEventListener('click', function(e) {
                 document.getElementById('filter_selected').checked = false;
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         } else if (el.id == "button_delete_filter_overview") {
             el.addEventListener('click', function(e) {
                 filter_overview_clear_selection();
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         } else {
@@ -296,7 +300,7 @@ function event_handlers() {
             el.addEventListener('click', function(e) {
                 document.getElementById(id_field).value = '';
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         }
@@ -304,7 +308,7 @@ function event_handlers() {
 
     document.getElementById('button_delete_all_filters').addEventListener('click', function() {
         clear_all_filters();
-        filter_items();
+        window.filter_items_object.filter_items();
     });
 
     // sidebar accordion
