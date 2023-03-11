@@ -477,9 +477,7 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cach
     try
         yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
     catch e
-        @show typeof(e)
         if isa(e, SystemError) || isa(e, Base.IOError)
-            @show "trying temp dir"
             f = joinpath(get_dir_temp_cache_cache(dir_cache), filename_display)
             yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
             griditem.status = 10
@@ -594,23 +592,22 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
     # virtual copies
     if haskey(virtual_copies_dict, id)
         for virtual_copy in virtual_copies_dict[id]
-            griditem = griditems[virtual_copy.id]
             # update fields here, too - however, most of these fields should stay unchanged
-            griditem.type = SpmGridSpectrum
-            griditem.filename_original = filename_original
-            griditem.created = created
-            griditem.last_modified = last_modified
+            virtual_copy.type = SpmGridSpectrum
+            virtual_copy.filename_original = filename_original
+            virtual_copy.created = created
+            virtual_copy.last_modified = last_modified
             # griditem.recorded = start_time  # dont re-set; the first time it was set was probably the most accurate
-            griditem.center = spectrum.position .* 1e9  # convert to nm
-            griditem.bias = spectrum.bias
-            griditem.z_feedback = spectrum.z_feedback
-            griditem.z_feedback_setpoint = z_feedback_setpoint
-            griditem.z_feedback_setpoint_unit = z_feedback_setpoint_unit
-            griditem.z = spectrum.position[3]
-            griditem.comment = comment
-            griditem.status = 0
+            virtual_copy.center = spectrum.position .* 1e9  # convert to nm
+            virtual_copy.bias = spectrum.bias
+            virtual_copy.z_feedback = spectrum.z_feedback
+            virtual_copy.z_feedback_setpoint = z_feedback_setpoint
+            virtual_copy.z_feedback_setpoint_unit = z_feedback_setpoint_unit
+            virtual_copy.z = spectrum.position[3]
+            virtual_copy.comment = comment
+            virtual_copy.status = 0
 
-            t = Threads.@spawn create_spectrum!(griditem, spectrum, dir_cache=dir_cache, use_existing=true)
+            t = Threads.@spawn create_spectrum!(virtual_copy, spectrum, dir_cache=dir_cache, use_existing=true)
             push!(tasks, t)
         end
     end

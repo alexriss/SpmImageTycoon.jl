@@ -567,7 +567,6 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
                 end
             end
         else
-            @show "parsing file: $filename_original"
             if endswith(filename_original, extension_image)
                 ts = parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)

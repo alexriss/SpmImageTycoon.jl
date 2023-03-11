@@ -395,27 +395,26 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
     # virtual copies
     if haskey(virtual_copies_dict, id)
         for virtual_copy in virtual_copies_dict[id]
-            griditem = griditems[virtual_copy.id]
             # update fields here, too - however, most of these fields should stay unchanged
-            griditem.type = SpmGridImage
-            griditem.filename_original = filename_original
-            griditem.created = created
-            griditem.last_modified = last_modified
-            griditem.recorded = im_spm.start_time
-            griditem.scansize = im_spm.scansize
-            griditem.scansize_unit = im_spm.scansize_unit
-            griditem.center = im_spm.center
-            griditem.angle = im_spm.angle
-            griditem.scan_direction = scan_direction
-            griditem.bias = im_spm.bias
-            griditem.z_feedback = im_spm.z_feedback
-            griditem.z_feedback_setpoint = im_spm.z_feedback_setpoint
-            griditem.z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
-            griditem.z = im_spm.z
-            griditem.comment = utf8ify(im_spm.header["Comment"])
-            griditem.status = 0
+            virtual_copy.type = SpmGridImage
+            virtual_copy.filename_original = filename_original
+            virtual_copy.created = created
+            virtual_copy.last_modified = last_modified
+            virtual_copy.recorded = im_spm.start_time
+            virtual_copy.scansize = im_spm.scansize
+            virtual_copy.scansize_unit = im_spm.scansize_unit
+            virtual_copy.center = im_spm.center
+            virtual_copy.angle = im_spm.angle
+            virtual_copy.scan_direction = scan_direction
+            virtual_copy.bias = im_spm.bias
+            virtual_copy.z_feedback = im_spm.z_feedback
+            virtual_copy.z_feedback_setpoint = im_spm.z_feedback_setpoint
+            virtual_copy.z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
+            virtual_copy.z = im_spm.z
+            virtual_copy.comment = utf8ify(im_spm.header["Comment"])
+            virtual_copy.status = 0
 
-            t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
+            t = Threads.@spawn create_image!(virtual_copy, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
             push!(tasks, t)
         end
     end
