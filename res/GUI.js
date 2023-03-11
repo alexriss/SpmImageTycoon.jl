@@ -59,6 +59,8 @@ window.queue_edits_range == null  // queue object, used for edits and range adju
 
 window.filter_items_object = null;  // holds the FilterItems object
 
+window.timeout_notification = {};  // holds the timeout for the notifications
+
 window.t0 = 0;   // for performance measurements
 
 // helper functions

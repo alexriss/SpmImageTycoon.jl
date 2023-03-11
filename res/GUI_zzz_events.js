@@ -228,6 +228,16 @@ function event_handlers() {
             details.classList.toggle('is-hidden');
         });
     });
+    document.querySelectorAll('.notification').forEach((el) => {
+        el.addEventListener('click', () => {
+            if ("id" in el.dataset) {
+                const id = el.dataset.id;
+                if (id in window.timeout_notification) {
+                    clearTimeout(window.timeout_notification[id]);
+                }
+            }
+        });
+    });
 
     // imagezoom
     document.getElementById('zoomview_container').addEventListener('dblclick', (e) => {

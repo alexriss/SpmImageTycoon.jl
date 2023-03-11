@@ -481,7 +481,7 @@ function load_notification_temp_cache(fnames) {
     const el = document.getElementById("notification_temp_cache");
     el.classList.remove("is-hidden");
 
-    window.setTimeout(function() {
+    window.timeout_notification["temp_cache"] = window.setTimeout(function() {
         el.classList.add("is-hidden");
     }, 5000);
 }
