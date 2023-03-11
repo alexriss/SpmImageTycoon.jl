@@ -781,7 +781,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
         "image" => Dict("0" => "forward", "1" => "backward"),
         "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
     )
-    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list, $editing_entries)
+    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list, $editing_entries, $tycoon_mode)
     @js w set_last_directories($last_directories)
     @js w load_page($versions)
     @js w show_start()

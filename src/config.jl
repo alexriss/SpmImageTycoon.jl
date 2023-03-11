@@ -4,6 +4,8 @@ const config_dir = ".spmimagetycoon"  # will be in home directory
 
 
 # default settings - the ones that are not declared as constants can be overriden by values from the config file
+tycoon_mode = ""  # can be set to "pro" to enable pro features
+
 image_channels_feedback_on = ["Z"]
 image_channels_feedback_off = ["Frequency Shift", "Current"]
 spectrum_channels = OrderedDict{String,Vector{String}}(
@@ -185,6 +187,10 @@ function load_config()::Nothing
     if isfile(config_filepath)
         d = TOML.tryparsefile(config_filepath)
         if typeof(d) <: Dict
+            if haskey(d, "tycoon_mode") && isa(d["tycoon_mode"], String)
+                global tycoon_mode = d["tycoon_mode"]
+            end
+
             if haskey(d, "image_channels_feedback_on") && isa(d["image_channels_feedback_on"], Array)
                 global image_channels_feedback_on = string.(d["image_channels_feedback_on"])
             end
@@ -308,6 +314,11 @@ function save_config(new_directory::String="")::Nothing
         ),
         "last_directories" => last_directories
     )
+
+    # only add if it is set
+    if tycoon_mode != ""
+        d["tycoon_mode"] = tycoon_mode
+    end
 
     try
         open(config_filepath,"w") do f
