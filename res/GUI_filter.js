@@ -63,6 +63,9 @@ FilterItems.prototype = {
         const filter_scansize_comparator = document.getElementById('filter_scansize_comparator').value;
         const filter_type = document.getElementById('filter_type').value;
         const filter_keywords_raw = document.getElementById('filter_keywords').value;
+        const filter_virtual_copy = document.getElementById('filter_virtual_copy').checked;
+        const filter_selected = document.getElementById('filter_selected').checked;
+
         let filter_keywords = null;
         if (filter_keywords_raw.length > 0) {
             try {
@@ -83,7 +86,6 @@ FilterItems.prototype = {
             this.warning.scansize.classList.remove("is-invisible");
         }
 
-        const filter_selected = document.getElementById('filter_selected').checked;
         let filter_selected_overview = false;
         if (window.filter_overview_selection_object !== null) {  // this might not exist yet (when images are initially loaded)
             if (window.filter_overview_selection_object.getSelection().length > 0) {
@@ -124,6 +126,11 @@ FilterItems.prototype = {
                 this.progressbar.value = 100 * i / ids.length;
             }
 
+            if (filter_virtual_copy) { // we do this first because it might limit the number of items a lot
+                if (this.filter_items__virtual_copy(id, item)) {
+                    continue;
+                }
+            }
             if (filter_selected) {  // we do this first because it might limit the number of items a lot
                 if (this.filter_items__selected(id)) {
                     continue;
@@ -204,6 +211,16 @@ FilterItems.prototype = {
         // filters by whether the item is selected or not
         let el = document.getElementById(id)
         if (el.classList.contains('active')) {
+            return false;
+        } else {
+            this.filter_showhide(id, !this.show);
+            return true;
+        }
+    },
+
+    filter_items__virtual_copy(id, item) {
+        // filters by whether the item is a virtual copy or not
+        if (item.virtual_copy > 0) {
             return false;
         } else {
             this.filter_showhide(id, !this.show);
