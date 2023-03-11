@@ -743,7 +743,7 @@ function scroll_to_selected(next=true) {
         return;
     }
 
-    const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden).active'));
+    const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden).active, #imagegrid .item:not(.is-hidden).is-marked'));
     if (items.length == 0) {
         return;
     }
