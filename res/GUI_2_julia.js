@@ -13,13 +13,8 @@ function load_page(versions) {
     document.getElementById("about_version_spmimages").innerText = versions["SpmImages"];
     document.getElementById("about_version_spmspectroscopy").innerText = versions["SpmSpectroscopy"];
 
-    document.querySelectorAll('.tycoon_mode_pro').forEach((el) => {
-        if (window.tycoon_mode === "pro") {
-            el.classList.remove("is-hidden");
-        } else {
-            el.classList.add("is-hidden");
-        }
-    });
+    // shows/hides elements for pro mode
+    tycoon_mode_setup();
 
     // set-up extra event handlers
     event_handlers();

@@ -1065,3 +1065,14 @@ function check_update() {
         console.log(response.statusText);
     });
 }
+
+function tycoon_mode_setup() {
+    // shows/hides elements depending on the tycoon mode
+    document.querySelectorAll('.tycoon_mode_pro').forEach((el) => {
+        if (window.tycoon_mode === "pro") {
+            el.classList.remove("is-hidden");
+        } else {
+            el.classList.add("is-hidden");
+        }
+    });
+}
