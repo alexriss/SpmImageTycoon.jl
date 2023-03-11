@@ -212,6 +212,23 @@ function event_handlers() {
     // make keywords modal draggable
     dragElement(document.getElementById("modal_keywords"), document.getElementById("modal_keywords_header"));
 
+
+    // notifications
+    document.querySelectorAll('.notification .delete').forEach((elDelete) => {
+        const notification = elDelete.parentNode;
+    
+        elDelete.addEventListener('click', () => {
+            notification.classList.add('is-hidden');
+        });
+    });
+    document.querySelectorAll('.notification .toggle_details').forEach((el) => {
+        const details = el.nextElementSibling;
+    
+        el.addEventListener('click', () => {
+            details.classList.toggle('is-hidden');
+        });
+    });
+
     // imagezoom
     document.getElementById('zoomview_container').addEventListener('dblclick', (e) => {
         if (e.ctrlKey) {

@@ -21,6 +21,7 @@ const extension_image = ".sxm"
 const extension_spectrum = ".dat"
 
 const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated files here)
+const dir_temp_cache_name = "SpmImageTycoon_temp"  # directory used for temporary caching (if cache dir is write restricted). Will be created in tempdir()
 const dir_edits_name = "edits"  # directory used for edits (julia writes all generated edit files here)
 const dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
 const dir_res = "../res/"  # relative to module directory

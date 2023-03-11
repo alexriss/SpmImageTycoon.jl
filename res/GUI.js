@@ -2,6 +2,7 @@ window.versions = {}  // versions for julia packages, set by julia
 
 window.dir_res = "";  // resources directory. sey by julia
 window.dir_cache = "";  // cache directory, set by julia
+window.dir_temp_cache = "";  // temp cache directory, set by julia
 window.dir_data = "";  // directory with all data
 window.dir_colorbars = "";  // colorbars are saved here, set by julia
 window.filenames_colorbar = {};  // dictionary specifying the filenames for the colorbars, set by julia
@@ -88,9 +89,12 @@ function file_url_querystring(item) {
 function file_url(id) {
     // returns the display filename url
     const item = window.items[id];
-    return 'file:///' + window.dir_cache + item.filename_display +
+    let basedir = window.dir_cache;
+    if (item.status == 10) {
+        basedir = window.dir_temp_cache;
+    }
+    return 'file:///' + basedir + item.filename_display +
     file_url_querystring(item); // to prevent caching and force reload
-         
 }
 
 function file_url_colorbar(id) {
@@ -978,8 +982,13 @@ function open_in_explorer(what="") {
     const ids = get_active_element_ids(only_current=true);
     if (ids.length > 0) {
         const item = window.items[ids[0]];
+
+        let basedir = window.dir_cache;
+        if (item.status == 10) {
+            basedir = window.dir_temp_cache;
+        }        
         if (what == "image") {
-            file_path = window.dir_cache + item.filename_display;  // generated image
+            file_path = basedir + item.filename_display;  // generated image
         } else {
             file_path = window.dir_data + item.filename_original;  // original file
         }

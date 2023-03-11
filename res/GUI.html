@@ -107,7 +107,17 @@
   <div class="columns is-mobile is-2">
 
     <!-- main part of page: grid and zoom views -->
-    <div class="column p-0">
+    <div class="column p-0" style="position:relative;" >
+      <div id="notification_temp_cache" class="notification is-warning is-light is-hidden">
+        <button class="delete"></button>
+        Some items could only be save to a temporary directory. This is usually caused by limited write permissions or a file in use.
+        <a class="toggle_details">details</a>
+        <div class="is-hidden mt-3">
+          The following files are affected: <br />
+          <span id="notification_temp_cache_items"></span>
+        </div>
+      </div>
+
       <div id="imagegrid_container">
         <div id="imagegrid_container_sub" class="p-3">
           <div id="imagegrid" class="imagegrid unselectable hover_enabled">

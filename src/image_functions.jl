@@ -242,7 +242,17 @@ function create_image!(griditem::SpmGridItem, im_spm::SpmImage; resize_to::Int=0
         filename_display = griditem.filename_display
     end
     f = joinpath(dir_cache, filename_display)
-    save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
+    try
+        save(f, im_arr)  # ImageIO should be installed, gives speed improvement for saving pngs
+    catch e
+        if isa(e, SystemError) || isa(e, Base.IOError)
+            f = joinpath(get_dir_temp_cache_cache(dir_cache), filename_display)
+            save(f, im_arr)
+            griditem.status = 10
+        else
+            rethrow(e)
+        end
+    end
 
     lock(griditems_lock) do
         griditem.channel_unit = unit

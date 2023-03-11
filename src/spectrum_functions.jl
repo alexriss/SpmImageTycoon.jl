@@ -371,7 +371,10 @@ function save_spectrum_svg(filename::AbstractString, xy_datas::AbstractVector{Da
             break
         catch e
             err = e
-            if isa(e, Base.IOError)
+            if isa(e, Base.IOError) || isa(e, Base.SystemError)
+                if !ispath(dirname(filename))
+                    mkpath(dirname(filename))
+                end
                 sleep(0.005)
             end
         end
@@ -469,7 +472,21 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cach
         filename_display = griditem.filename_display
     end
     f = joinpath(dir_cache, filename_display)
-    yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
+    
+    yxranges = Float64[]
+    try
+        yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
+    catch e
+        @show typeof(e)
+        if isa(e, SystemError) || isa(e, Base.IOError)
+            @show "trying temp dir"
+            f = joinpath(get_dir_temp_cache_cache(dir_cache), filename_display)
+            yxranges = save_spectrum_svg(f, xy_datas, colors, range_selected=griditem.channel_range_selected)
+            griditem.status = 10
+        else
+            rethrow(e)
+        end
+    end
 
     lock(griditems_lock) do
         griditem.channel_range = yxranges

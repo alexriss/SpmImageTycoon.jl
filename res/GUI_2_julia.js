@@ -29,10 +29,11 @@ function set_params(dir_res, auto_save_minutes, overview_max_images, bg_correcti
     window.editing_entry_list = editing_entries;
 }
 
-function set_params_project(dir_data, dir_cache, dir_colorbars, dir_edits, filenames_colorbar) {
+function set_params_project(dir_data, dir_cache, dir_temp_cache, dir_colorbars, dir_edits, filenames_colorbar) {
     //  sets the global variables needed for this current directory
     window.dir_data = dir_data;
     window.dir_cache = dir_cache;
+    window.dir_temp_cache = dir_temp_cache;
     window.dir_colorbars = dir_colorbars;
     window.dir_edits = dir_edits;
     window.filenames_colorbar = filenames_colorbar;
@@ -145,7 +146,7 @@ function update_images(gzip_json_griditems, julia_queue_type="") {  // "griditem
     // t1 = performance.now();
     // console.log("Update info get2:" + (t1 - window.t0) + " ms.");
 
-    window.filter_items_object.window.filter_items_object.filter_items(Object.keys(griditems));
+    window.filter_items_object.filter_items(Object.keys(griditems));
     check_hover_enabled()
 
     open_jobs(-1, ids, julia_queue_type);
@@ -327,6 +328,12 @@ function show_info(id, gzip_info_json, extra_info={}) {
         document.getElementById("image_info_virtual_copy").classList.add("is-hidden");
     }
 
+    if (window.items[id].status == 10) {
+        document.getElementById("editing_entry_main_filename_temp_cache").classList.remove("is-hidden");
+    } else {
+        document.getElementById("editing_entry_main_filename_temp_cache").classList.add("is-hidden");
+    }
+
     const rating = window.items[id].rating;
     document.getElementsByName("image_info_rating")[rating].checked = true;
 
@@ -460,6 +467,19 @@ function page_start_load_error(message) {
     el_error_message.innerText = message;
     el_error.classList.remove("is-hidden");
     el_error.classList.add("bounce");
+}
+
+function load_notification_temp_cache(fnames) {
+    // displays a notification if the temp cache was used for some items
+    console.log("temp cache used for " + fnames);
+    document.getElementById("notification_temp_cache_items").innerHTML = fnames.join("<br />");
+
+    const el = document.getElementById("notification_temp_cache");
+    el.classList.remove("is-hidden");
+
+    window.setTimeout(function() {
+        el.classList.add("is-hidden");
+    }, 5000);
 }
 
 function header_data(json) {

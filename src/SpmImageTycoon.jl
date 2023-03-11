@@ -61,11 +61,11 @@ mutable struct SpmGridItem_v130
     colorscheme::String                        # color scheme
     channel_range::Vector{Float64}             # min/max of current channel (for spectra this contains the min/max of channel and channel2)
     channel_range_selected::Vector{Float64}    # selected min/max for current channel
-    edits::Vector{String}                      # array of edits used (not implemented yet)
+    edits::Vector{String}                      # array of edits used
     keywords::Vector{String}                   # keywords
     rating::Int64                              # rating (0 to 5 stars)
-    status::Int64                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
-    virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
+    status::Int64                              # status, i.e. 0: normal, 10: writen to temp-cache (due to write permissions), -2: being parsed/generated
+    virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies
 
     SpmGridItem_v130(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
@@ -567,6 +567,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
                 end
             end
         else
+            @show "parsing file: $filename_original"
             if endswith(filename_original, extension_image)
                 ts = parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
@@ -694,15 +695,25 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
     # call js functions to setup everything
     dir_data_js = add_trailing_slash(dir_data)
     dir_cache = get_dir_cache(dir_data)
+    dir_temp_cache = get_dir_temp_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
+    dir_temp_cache_js = add_trailing_slash(dir_temp_cache)
     dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
     dir_edits = add_trailing_slash(get_dir_edits(dir_cache))
-    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $dir_edits, $filenames_colorbar)
+    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_temp_cache_js, $dir_colorbars_js, $dir_edits, $filenames_colorbar)
     
     # only send the images with status >=0 (deleted ones are not sent, but still saved)
     griditems_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(griditems))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
     json_compressed = transcode(GzipCompressor, JSON.json(griditems_values))
     @js_ w load_images($json_compressed, $bottomleft, $topright, true)
+
+    griditems_values_temp_cache = filter(im -> im.status === 10, griditems_values)
+    if length(griditems_values_temp_cache) > 0
+        fname_temp_cache = map(griditems_values_temp_cache) do im
+            return im.filename_display
+        end
+        @js_ w load_notification_temp_cache($fname_temp_cache)
+    end
 
     set_event_handlers(w, dir_data, griditems)
 
