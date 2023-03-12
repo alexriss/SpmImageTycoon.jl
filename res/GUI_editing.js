@@ -45,11 +45,15 @@ Editing.prototype = {
         el.src = file_url_edit(id, "FT_" + n);
         if (repeat > 1) return;  // we tried two times, the image should be there
 
-        // we reload the image one more time, sometimes generation takes longer (and it doesn't hurt to reload)
-        const that = this;
-        window.setTimeout(() => {
-            that.set_img_src(el, id, n, repeat+1);  // sometimes the image generation is slow, so we call it again
-        }, 60);
+        // if there are no other edits in the queue, we reload the image one more time,
+        // because sometimes generation takes longer (and it anyways doesn't hurt to reload)
+        if (!window.queue_edits_range.type_in_queue(id, "edit")) {
+            const that = this;
+            const waitms = 60 * (repeat + 1);
+            window.setTimeout(() => {
+                that.set_img_src(el, id, n, repeat+1);  // sometimes the image generation is slow, so we call it again
+            }, waitms);
+        }
     },
 
     setup_form(id, extra_info) {
