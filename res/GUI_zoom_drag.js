@@ -271,7 +271,7 @@ function zoom_drag_filter_overview_setup(divMain) {
 }
 
 function zoom_drag_filter_overview_reset(divMain) {
-    window.filter_overview_scale = 1
+    window.filter_overview_scale = 1;
     for (const divSection of divMain.getElementsByTagName('section')) {
         divSection.style.width = "100%";
         divSection.style.height = "100%";

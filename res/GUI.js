@@ -155,6 +155,10 @@ function reset_all() {
     document.getElementById("sidebar_content_none").classList.remove("is-hidden");
     document.getElementById("sidebar_content").classList.add("is-hidden");
 
+    if (window.filter_overview_selection_object != null) {
+        zoom_drag_filter_overview_reset(document.getElementById('filter_overview_container'));
+    }
+
     clear_all_filters();
     show_message(); // empty footer message
     standard_view();
