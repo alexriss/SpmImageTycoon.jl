@@ -1,20 +1,18 @@
 <!-- navigation bar -->
-<nav class="navbar is-fixed-top is-link unselectable" role="navigation" aria-label="main navigation">
+<nav id="navbar_main" class="navbar is-fixed-top is-link unselectable" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
-    <div>
-      <div class="is-pulled-left">
-        <img class="pt-2 pl-2 pr-3" src="media/logo_diamond.png" style="height:2.8rem;" />
-      </div>
-      <div class="is-pulled-right has-text-centered pr-5" style="line-height:1.3;padding-top:0.3rem;">
-        <span class="is-size-6 is-unselectable" style="line-height:1;">
-          <span class="has-text-weight-bold">SpmImage</span><br />
-          Tycoon
-        </span>
-      </div>
+    <div class="navbar-item p-0 m-0">
+      <img class="pl-2 pr-0" src="media/logo_diamond.png" style="width:3rem; max-height:3.0rem;" />
+    </div>
+    <div class="navbar-item has-text-centered pl-2 pr-5">
+      <span class="is-size-6 is-unselectable" style="line-height:1.35;">
+        <span class="has-text-weight-bold">SpmImage</span><br />
+        Tycoon
+      </span>
     </div>
   </div>
 
-  <div id="navbarTitle" class="navbar-menu">
+  <div id="navbar_title" class="navbar-menu">
     <div class="navbar-start">
       <a id="nav_home" class="navbar-item">
         Home
@@ -27,6 +25,16 @@
       </a>
     </div>
     <div class="navbar-end">
+      <div id="menu_sidebar" class="navbar-item py-0">
+        <span class="mr-3">Sidebars:</span>
+        <template id="template_icon_sidebar">
+          <span class="icon_sidebar">
+            <span class="icon"><img src="media/info-square.svg" /></span>
+            <span class="icon_sidebar_title">info</span>
+            <span class="icon_sidebar_info_disabled is-size-7 is-italic"></span>
+          </span>
+        </template>
+      </div>
       <div class="navbar-item">
         <div id="spinner_title" class="loader is-loading is-invisible"></div>
       </div>

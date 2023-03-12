@@ -1,6 +1,6 @@
 // keyboard events etc
 
-let key_commands = {
+const key_commands = {
     c: { command: change_item, args: ["channel", "change channel."] },
     y: { command: change_item, args: ["channel", "change channel.", 1] },
     x: { command: change_item, args: ["channel2", "change x-channel.", 1] },
@@ -43,24 +43,24 @@ let key_commands = {
 }
 
 // with shift-modifier (some of the normal ones also work with the shift key)
-let shift_key_commands = {
+const shift_key_commands = {
     E: { command: open_in_explorer, args: [] },
     Delete: { command: virtual_copy, args: ["delete"] },
     ArrowDown: { command: scroll_to_selected, args: [] },
     ArrowUp: { command: scroll_to_selected, args: [false] },
 }
 
-let alt_key_commands = {
+const alt_key_commands = {
     e: { command: open_in_explorer, args: ["image"] },
 }
 
 // mac will send different key-values when alt-key is pressed
-let alt_keycode_commands = {
+const alt_keycode_commands = {
     KeyE: { command: open_in_explorer, args: ["image"] },
 }
 
 // with ctrl-modifier
-let ctrl_key_commands = {
+const ctrl_key_commands = {
     a: { command: toggle_all_active, args: [true] },
     s: { command: save_all, args: [false, true] },  // exit=false, force=true
     c: { command: set_copyfrom_id, args: ["set copy.", "can't set copy - select one item."] },
@@ -72,6 +72,12 @@ let ctrl_key_commands = {
     q: { command: toggle_start_project, args: ["re-project"] },
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [true] },
+}
+
+const icon_sidebar = {
+    "imagezoomtools": { icon: "media/pencil-square.svg", title: "editing", command: toggle_sidebar_imagezoomtools, args: [], info_disabled: "zoom view" },
+    "info": { icon: "media/info-square.svg", title: "details", command: toggle_sidebar, args: ["info"] },
+    "filter": { icon: "media/filter-square.svg", title: "filter", command: toggle_sidebar, args: ["filter"] },
 }
 
 // for debugging, F5 for reload, F12 for dev tools

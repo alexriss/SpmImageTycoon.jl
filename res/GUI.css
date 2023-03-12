@@ -54,11 +54,20 @@ sup {
   margin-left:auto;  /* new bulma versions should have a ml-auto, then this can be removed */
 }
 
+
+#page_project {
+  top: 1rem;
+  position: relative;
+}
+
+
 /* start page */
 
 #page_start {
   overflow: auto;
   height: 100%;
+  top: 1rem;
+  position: relative;
 }
 
 #page_start_last_dir_container li {
@@ -71,12 +80,77 @@ sup {
   max-width: 640px;
 }
 
+/* menu */
+
+#navbar_main {
+  height:4.25rem;
+}
+
+#navbar_main .icon_sidebar {
+  position: relative;
+  opacity: 0.5;
+  margin-left: 0.3rem;
+  height: 3.9rem;
+  width: 2.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#navbar_main .icon_sidebar:hover {
+  opacity: 0.8;
+}
+
+#navbar_main .icon_sidebar.active {
+  opacity: 1.0;
+}
+
+#navbar_main .icon_sidebar.disabled {
+  opacity: 0.5;
+}
+
+#navbar_main .icon_sidebar.active:hover {
+  opacity: 0.9;
+  /* filter: invert(12%) saturate(6234%) hue-rotate(246deg); */
+}
+
+#navbar_main .icon_sidebar.disabled:hover {
+  opacity: 0.5;
+}
+
+#navbar_main .icon_sidebar img {
+  width: 24px;
+  height: 24px;
+  margin: 6px;
+}
+
+#navbar_main .icon_sidebar_title {
+  position: absolute;
+  top: -0.25rem;
+  opacity: 0;
+}
+#navbar_main .icon_sidebar:hover .icon_sidebar_title {
+  opacity: 1;
+}
+
+#navbar_main .icon_sidebar_info_disabled {
+  position: absolute;
+  bottom: 0.2rem;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: show;
+}
+
+#navbar_main .icon_sidebar.disabled:hover .icon_sidebar_info_disabled {
+  opacity: 1;
+}
+
 
 /* imagegrid */
 
 #imagegrid_container {
   transform: translateZ(0);  /* this will cause the child with to be relaive to this container */
-  height: calc(100vh - 5rem);
+  height: calc(100vh - 5rem - 1rem);
   background-color:#eef6fc;
 }
 
@@ -213,7 +287,7 @@ sup {
 
 #imagezoom_content {
 	width: 100%;
-	height: calc(100vh - 6rem - 4rem);  /* substract header/footer and histogram */
+	height: calc(100vh - 6rem - 4rem - 1rem);  /* substract header/footer and histogram */
   overflow: hidden;
 }
 
@@ -347,7 +421,7 @@ sup {
 
 #spectrumzoom_content {
 	width: 100%;
-	height: calc(100vh - 6rem - 8rem);  /* substract header/footer and histogram */
+	height: calc(100vh - 6rem - 8rem - 1rem);  /* substract header/footer and histogram */
   overflow: hidden;
 }
 
@@ -375,13 +449,13 @@ sup {
 /* sidebar */
 
 .sidebar {
-  height: calc(var(--vh, 1vh) * 100 - 5rem);
+  height: calc(var(--vh, 1vh) * 100 - 5rem - 1rem);
   width: 30%;
   max-width:400px;
   min-width:300px;
   padding-top: 15px;
   /* position: sticky; */
-  top: 3rem;
+  top: 4rem;
   transition: 0.15s;
   background-color:#37a8ff;
   border-left:1px solid #afdafa;
@@ -394,7 +468,7 @@ sup {
   max-width: 400px;
   display: flex;
   height: 85vh; 
-  height: calc(var(--vh, 1vh) * 100 - 13.3rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
+  height: calc(var(--vh, 1vh) * 100 - 13.3rem  - 1rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
   overflow-y: hidden;
   display: none;
   position: relative;
@@ -422,6 +496,10 @@ sup {
   margin-top: 0.37rem;
   background-color:#ffffffb4;
   border: 1px solid #999;
+}
+
+#table-container .table.is-narrow td {
+  padding: 0.1rem 0.5rem;
 }
 
 /* star rating in sidebar */

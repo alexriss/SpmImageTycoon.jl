@@ -267,8 +267,9 @@ function toggle_start_project(target="project", save=false) {
 function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
     // toggles sidebar
 
-    let sidebars = document.getElementsByClassName("sidebar");
-    let sidebar = document.getElementById('sidebar_' + what);
+    const sidebars = document.getElementsByClassName("sidebar");
+    const sidebar = document.getElementById('sidebar_' + what);
+    const icon = document.getElementById('menu_icon_sidebar_' + what);
 
     // hide all other sidebars
     if (hide_others) {
@@ -295,6 +296,12 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
             zoom_drag_filter_overview_setup(document.getElementById("filter_overview_container")); // set up zoom and drag for filter overview
         }
     }
+
+    if (sidebar.classList.contains("is-hidden")) {
+        icon.classList.remove("active");
+    } else {
+        icon.classList.add("active");
+    }
 }
 
 function toggle_sidebar_imagezoomtools(restore_previous=false) {
@@ -302,6 +309,7 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
     const sidebar = document.getElementById('sidebar_imagezoomtools');
     const line_profile_container = document.getElementById("line_profile_container");
     const griditem = window.items[window.zoom_last_selected];
+    const icon = document.getElementById('menu_icon_sidebar_imagezoomtools');
     
     if (get_view() == "zoom") {
         if (griditem.type == "SpmGridImage") {
@@ -335,6 +343,18 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
 
     if (!sidebar.classList.contains("is-hidden") && window.line_profile_object !== null) {
         window.line_profile_object.setup();  // will set up or remove event handlers
+    }
+
+    // menu icon
+    if (sidebar.classList.contains("is-hidden")) {
+        icon.classList.remove("active");
+    } else {
+        icon.classList.add("active");
+    }
+    if (get_view() == "zoom") {
+        icon.classList.remove("disabled");
+    } else {
+        icon.classList.add("disabled");
     }
 }
 

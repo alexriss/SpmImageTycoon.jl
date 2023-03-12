@@ -13,6 +13,9 @@ function load_page(versions) {
     document.getElementById("about_version_spmimages").innerText = versions["SpmImages"];
     document.getElementById("about_version_spmspectroscopy").innerText = versions["SpmSpectroscopy"];
 
+    // setup menu
+    setup_menu();
+
     // shows/hides elements for pro mode
     tycoon_mode_setup();
 
@@ -362,7 +365,7 @@ function show_info(id, gzip_info_json, extra_info={}) {
             searchable: true,
             // fixedHeight: true,
             paging: false,
-            scrollY: "calc(var(--vh, 1vh) * 100 - 15.6rem)",
+            scrollY: "calc(var(--vh, 1vh) * 100 - 15.6rem - 1rem)",
             // fixedColumns: true,
             // columns: { select: [2], sortable: false },
         })
