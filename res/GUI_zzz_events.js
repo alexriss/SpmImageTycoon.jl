@@ -315,6 +315,13 @@ function event_handlers() {
                     window.filter_items_object.filter_items();
                 }
             });
+        } else if (el.id == "button_delete_filter_virtual_copy") {
+            el.addEventListener('click', function(e) {
+                document.getElementById('filter_virtual_copy').checked = false;
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    window.filter_items_object.filter_items();
+                }
+            });
         } else if (el.id == "button_delete_filter_overview") {
             el.addEventListener('click', function(e) {
                 filter_overview_clear_selection();
