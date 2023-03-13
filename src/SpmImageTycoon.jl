@@ -510,6 +510,8 @@ end
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
 function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Array{String}}
+    time_start = Dates.now()
+
     dir_cache = get_dir_cache(dir_data)
     if !isdir(dir_cache)
         mkpath(dir_cache)
@@ -534,7 +536,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
     end
 
     num_parsed = 0
-    time_start = Dates.now()
+    num_in_cache = 0
     tasks = Task[]
     for datafile in datafiles
         filename_original = basename(datafile)
@@ -561,9 +563,11 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
         if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified && griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache)
             griditems[id].status = 0
+            num_in_cache += 1
             if haskey(virtual_copies_dict, id)
                 for virtual_copy in virtual_copies_dict[id]
                     griditems[virtual_copy.id].status = 0
+                    num_in_cache += 1
                 end
             end
         else
@@ -597,7 +601,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        msg = "Parsed $(num_parsed) files and created $(length(griditems)) items in $elapsed_time."
+        num_items = length(filter(x -> x.status >= 0, collect(values(griditems))))
+        msg = "Parsed $(num_parsed) files ($(num_items) items, $(num_in_cache) in cache) in $elapsed_time."
         log(msg, w)
     end
     return griditems, griditems_new
