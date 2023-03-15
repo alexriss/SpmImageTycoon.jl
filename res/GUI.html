@@ -14,21 +14,60 @@
 
   <div id="navbar_title" class="navbar-menu">
     <div class="navbar-start">
-      <a id="nav_home" class="navbar-item">
+      <a id="nav_home" class="navbar-item a_button">
         Home
       </a>
-      <a id="nav_help" class="navbar-item">
-        Documentation
+      <a id="nav_help" class="navbar-item a_button">
+        Docs
       </a>
-      <a id="nav_about" class="navbar-item">
+      <a id="nav_about" class="navbar-item a_button">
         About
       </a>
+      <div id="menu_main" class="navbar-item py-0 ml-2">
+        <div id="menu_main_num_container" class="has-text-right">
+          <span id="menu_main_num_images">0</span><br />
+          <span id="menu_main_num_spectra">0</span>
+        </div>
+        <div class="has-text-left ml-1 mr-3">
+          <span id="menu_main_num_images_title">images</span><br />
+          <span id="menu_main_num_spectra_title">spectra</span>
+        </div>
+        <template id="template_icon_menu">
+          <div class="icon_menu_container navbar-item has-dropdown is-hoverable">
+            <span class="icon_menu icon_button">
+              <span class="icon"><img src="media/bx-palette.svg" /></span>
+              <span class="icon_menu_title">palette</span>
+              <span class="icon_menu_info_disabled is-size-7 is-italic">select images</span>
+            </span>
+            <span class="icon_menu_options is-size-6">
+              <span class="icon_menu_option">&#9664;</span>
+              <!-- <span class="icon_menu_option">&ctdot;</span> -->
+              <span class="icon_menu_option">&#9654;</span>
+            </span>
+            <div class="navbar-dropdown">
+              <a class="navbar-item">
+                Overview
+              </a>
+              <a class="navbar-item disabled">
+                Elements
+              </a>
+              <a class="navbar-item">
+                Components
+              </a>
+              <hr class="navbar-divider">
+              <div class="navbar-item">
+                Version 0.9.4
+              </div>
+            </div>
+          </div>
+     </template>
+      </div>
     </div>
     <div class="navbar-end">
       <div id="menu_sidebar" class="navbar-item py-0">
         <span class="mr-3">Sidebars:</span>
         <template id="template_icon_sidebar">
-          <span class="icon_sidebar">
+          <span class="icon_sidebar icon_button">
             <span class="icon"><img src="media/info-square.svg" /></span>
             <span class="icon_sidebar_title">info</span>
             <span class="icon_sidebar_info_disabled is-size-7 is-italic"></span>

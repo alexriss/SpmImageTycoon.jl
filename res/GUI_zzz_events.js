@@ -6,7 +6,7 @@ const key_commands = {
     x: { command: change_item, args: ["channel2", "change x-channel.", 1] },
     d: { command: change_item, args: ["direction", "change direction."] },
     b: { command: change_item, args: ["background_correction", "change background."] },
-    p: { command: change_item, args: ["colorscheme", "change colorscheme."] },
+    p: { command: change_item, args: ["colorscheme", "change palette."] },
     i: { command: change_item, args: ["inverted", "invert."] },
     C: { command: change_item, args: ["channel", "change channel.", -1] },
     Y: { command: change_item, args: ["channel", "change channel.", -1] },
@@ -78,6 +78,18 @@ const icon_sidebar = {
     "imagezoomtools": { icon: "media/pencil-square.svg", title: "editing", command: toggle_sidebar_imagezoomtools, args: [], info_disabled: "zoom view" },
     "info": { icon: "media/info-square.svg", title: "details", command: toggle_sidebar, args: ["info"] },
     "filter": { icon: "media/filter-square.svg", title: "filter", command: toggle_sidebar, args: ["filter"] },
+}
+
+const icon_menu = {
+    "channel": { icon: "media/bx-layer.svg", title: "channel", command: change_item, args: ["channel", "change channel."], info_disabled: "select items" },
+    "channel2": { icon: "media/bx-layer-x.svg", title: "channel x", command: change_item, args: ["channel2", "change x-channel."], info_disabled: "select spectra" },
+    "direction": { icon: "media/bx-expand-horizontal.svg", title: "direction", command: change_item, args: ["direction", "change direction."], info_disabled: "select images" },
+    "background": { icon: "media/bg_correction.svg", title: "background", command: change_item, args: ["background", "change background."], info_disabled: "select images" },
+    "colorscheme": { icon: "media/bx-palette.svg", title: "palette", command: change_item, args: ["background", "change palette."], info_disabled: "select images" },
+    "reset": { icon: "media/bx-reset.svg", title: "reset", command: change_item, args: ["inverted", "invert."], info_disabled: "select images" },
+    "rating": { icon: "media/bx-star.svg", title: "rating", command: change_item, args: ["inverted", "invert."], info_disabled: "select images" },
+    "keywords": { icon: "media/bx-message-square-dots.svg", title: "keywords", command: change_item, args: ["background", "change palette."], info_disabled: "select images" },
+    "export": { icon: "media/bx-link-external.svg", title: "export", command: change_item, args: ["background", "change palette."], info_disabled: "" },
 }
 
 // for debugging, F5 for reload, F12 for dev tools

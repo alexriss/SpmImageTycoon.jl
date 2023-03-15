@@ -534,18 +534,14 @@ function toggle_all_active(ignore_filter_status=false) {
         if (els.length == 0) {
             clear_all_active();
         } else {
-            for (let i = 0; i < els.length; i++) {
-                els[i].classList.add('active');
-            }
+            els.forEach(el => el.classList.add('active'));
         }
     } else {
         const els = document.querySelectorAll('#imagegrid .item:not(.is-hidden):not(.active)');
         if (els.length == 0) {
             clear_all_active();
         } else {
-            for (let i = 0; i < els.length; i++) {
-                els[i].classList.add('active');
-            }
+            els.forEach(el => el.classList.add('active'));
         }
     }
     check_hover_enabled();
@@ -640,14 +636,52 @@ function set_copyfrom_id(message, message_fail) {
     }
 }
 
+function update_selected_filter_overview(active_els) {
+    // updates the items in the filter_overview
+    const overview = document.getElementById('filter_overview');
+
+    // filter overview
+    const els_with_background = overview.querySelectorAll(".with_background");
+    if (active_els.length == 0 || active_els.length > window.overview_max_images) {  // remove all backgrounds
+        for (let i=0; i < els_with_background.length; i++) {
+            els_with_background[i].firstElementChild.style.backgroundImage = "none";
+            els_with_background[i].classList.remove("with_background");
+        }
+        document.getElementById("filter_overview_selected_zoom").classList.add("notactive");
+    } else {  // update images
+        // remove all other images
+        const prefix = "filter_overview_item_";
+        const prefix_length = prefix.length;
+        const ids = Array.from(active_els).map(function(el) {
+            return el.id;
+        });
+
+        els_with_background.forEach(function(el) {
+            if (!ids.includes(el.id.substring(prefix_length))) {  // we cut off the prefix
+                el.firstElementChild.style.backgroundImage = "none";
+                el.classList.remove("with_background");
+            }
+        });
+
+        for (let i=0; i<ids.length;i++) {
+            let el = document.getElementById(prefix + ids[i]);
+            if (window.items[ids[i]].type == "SpmGridImage") {
+                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+            }
+            el.classList.add("with_background");
+        }
+        document.getElementById("filter_overview_selected_zoom").classList.remove("notactive");
+    }
+}
+
 function check_hover_enabled() {
     // checks whether the imagedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
-    // also writes the number of selected images into the footer.
+    // also writes the number of selected images into the footer and navbar.
     // also adds images to the filter_overview window
     const grid = document.getElementById('imagegrid');
-    const els = grid.getElementsByClassName('item active');
-    const overview = document.getElementById('filter_overview');
+    const els = grid.querySelectorAll('.item.active');
+
 
     if (els.length == 0) {
         grid.classList.add('hover_enabled');
@@ -663,37 +697,13 @@ function check_hover_enabled() {
         document.getElementById('footer_num_images_container').classList.remove("has-text-weight-bold");
     }
 
-    // filter overview
-    const els_with_background = Array.from(overview.getElementsByClassName("with_background"));
-    if (els.length == 0 || els.length > window.overview_max_images) {  // remove all backgrounds
-        for (let i=0; i < els_with_background.length; i++) {
-            els_with_background[i].firstElementChild.style.backgroundImage = "none";
-            els_with_background[i].classList.remove("with_background");
-        }
-        document.getElementById("filter_overview_selected_zoom").classList.add("notactive");
-    } else {  // update images
-        // remove all other images
-        const prefix = "filter_overview_item_";
-        const prefix_length = prefix.length;
-        const ids = Array.from(els).map(function(el) {
-            return el.id;
-        });
+    const num_images = grid.querySelectorAll('.item.active.SpmGridImage').length;
+    const num_spectra = grid.querySelectorAll('.item.active.SpmGridSpectrum').length;
 
-        for (let i=0; i < els_with_background.length; i++) {
-            if (!ids.includes(els_with_background[i].id.substring(prefix_length))) {  // we cut off the prefix
-                els_with_background[i].firstElementChild.style.backgroundImage = "none";
-                els_with_background[i].classList.remove("with_background");
-            }
-        }
-        for (let i=0; i<ids.length;i++) {
-            let el = document.getElementById(prefix + ids[i]);
-            if (window.items[ids[i]].type == "SpmGridImage") {
-                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
-            }
-            el.classList.add("with_background");
-        }
-        document.getElementById("filter_overview_selected_zoom").classList.remove("notactive");
-    }
+    document.getElementById("menu_main_num_images").innerText = num_images;
+    document.getElementById("menu_main_num_spectra").innerText = num_spectra;
+
+    update_selected_filter_overview(els);
 }
 
 function next_item(jump) {
@@ -923,6 +933,7 @@ function add_image(id, id_after=null) {
     const t = document.getElementById('griditem');
     const el = t.content.firstElementChild.cloneNode(true)
     el.id = id;
+    el.classList.add(window.items[id].type);
     el.querySelector('img').src = file_url(id);
     if (id_after === null) {
         grid.append(el);
