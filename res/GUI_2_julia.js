@@ -13,11 +13,11 @@ function load_page(versions) {
     document.getElementById("about_version_spmimages").innerText = versions["SpmImages"];
     document.getElementById("about_version_spmspectroscopy").innerText = versions["SpmSpectroscopy"];
 
-    // setup menu
-    setup_menu();
-
     // shows/hides elements for pro mode
     tycoon_mode_setup();
+
+    // setup menu
+    setup_menu();
 
     // set-up extra event handlers
     event_handlers();
@@ -44,6 +44,8 @@ function set_params_project(dir_data, dir_cache, dir_temp_cache, dir_colorbars, 
     window.dir_colorbars = dir_colorbars;
     window.dir_edits = dir_edits;
     window.filenames_colorbar = filenames_colorbar;
+
+    setup_menu_project();
 }
 
 function set_last_directories(dirs) {
@@ -512,7 +514,21 @@ function change_item(what, message, jump=1) {
     if (ids.length > 0) {
         Blink.msg("grid_item", ["next_" + what, ids, jump, full_resolution]);
         open_jobs(1);
-        show_message(message)
+        show_message(message);
+    }
+}
+
+function change_items_menu(state, message) {
+    let ids = get_active_element_ids();
+    let full_resolution = false;
+    if (get_view() == "zoom") {
+        full_resolution = true;
+    }
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["set_multiple", ids, state, full_resolution]);
+        open_jobs(1);
+        show_message(message);
     }
 }
 

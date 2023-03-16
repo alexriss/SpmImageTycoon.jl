@@ -13,6 +13,7 @@ window.topright = [];   // top right of overall scan range
 window.last_directories = [];  // array of last directories used (set by julia)
 window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
 window.overview_max_images = 0  // maximum number of images to display in the filter overview (set by julia)
+window.background_corrections = {};  // dictionary with background corrections for "image" and "spectrum" (set by julia)
 
 window.space_pressed = false;  // true if user is holding space down (for dragging etc)
 window.dblClickLast = new Date().getTime(); // last time a double click was registered
@@ -103,6 +104,11 @@ function file_url_colorbar(id) {
     // returns the colorbar url
     const item = window.items[id];
     return 'file:///' + window.dir_colorbars + window.filenames_colorbar[item.colorscheme];
+}
+
+function file_url_colorbar_name(name) {
+    // returns the colorbar url
+    return 'file:///' + window.dir_colorbars + window.filenames_colorbar[name];
 }
 
 function file_url_edit(id, suffix) {

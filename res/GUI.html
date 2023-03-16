@@ -35,20 +35,24 @@
         <template id="template_icon_menu">
           <div class="icon_menu_container navbar-item has-dropdown is-hoverable">
             <span class="icon_menu icon_button">
-              <span class="icon"><img src="media/bx-palette.svg" /></span>
-              <span class="icon_menu_title">palette</span>
-              <span class="icon_menu_info_disabled is-size-7 is-italic">select images</span>
+              <span class="icon"><img src="" /></span>
+              <span class="icon_menu_title">title</span>
+              <span class="icon_menu_info_disabled is-size-7 is-italic">select ...</span>
             </span>
             <span class="icon_menu_options is-size-6">
-              <span class="icon_menu_option">&#9664;</span>
+              <span class="icon_menu_option icon_menu_option_prev">&#9664;</span>
               <!-- <span class="icon_menu_option">&ctdot;</span> -->
-              <span class="icon_menu_option">&#9654;</span>
+              <span class="icon_menu_option icon_menu_option_next">&#9654;</span>
             </span>
-            <div class="navbar-dropdown">
-              <a class="navbar-item">
-                Overview
-              </a>
-              <a class="navbar-item disabled">
+            <div class="icon_menu_dropdown navbar-dropdown">
+              <template class="template_icon_menu_dropdown">
+                <a class="navbar-item a_button">
+                  <span class="icon"><img class="icon_menu_dropdown_icon" src="" /></span>
+                  <span class="icon_colorscheme"><img class="icon_menu_dropdown_icon_colorscheme" src="" /></span>
+                  <span class="icon_menu_dropdown_name">Name</span>
+                </a>
+              </template>
+              <!-- <a class="navbar-item disabled">
                 Elements
               </a>
               <a class="navbar-item">
@@ -57,7 +61,7 @@
               <hr class="navbar-divider">
               <div class="navbar-item">
                 Version 0.9.4
-              </div>
+              </div> -->
             </div>
           </div>
      </template>

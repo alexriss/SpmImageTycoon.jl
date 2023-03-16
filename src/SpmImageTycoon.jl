@@ -780,12 +780,13 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     
     bg_corrections = Dict(
         "image" => keys(background_correction_list_image),
-        "spectrum" => keys(background_correction_list_spectrum)
+        "spectrum" => keys(background_correction_list_spectrum),
     )
     directions_list = Dict(
         "image" => Dict("0" => "forward", "1" => "backward"),
         "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
     )
+
     @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list, $editing_entries, $tycoon_mode)
     @js w set_last_directories($last_directories)
     @js w load_page($versions)
@@ -833,8 +834,15 @@ end
         "SpmImages" => string(SpmImages.VERSION),
         "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
     )
+    bg_corrections = Dict(
+        "image" => keys(background_correction_list_image),
+        "spectrum" => keys(background_correction_list_spectrum),
+    )
+    directions_list = Dict(
+        "image" => Dict("0" => "forward", "1" => "backward"),
+        "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
+    )
     include(joinpath(@__DIR__ , "../test/functions.jl"))
-
 
     @precompile_all_calls begin
         global Precompiling = true
@@ -897,8 +905,8 @@ end
             for asset_file in asset_files
                 load!(w, asset_file)
             end
-        @js w set_params($dir_asset, 0, 100)
-        
+
+        @js w set_params($dir_asset, 0, 100, $bg_corrections, $directions_list, $editing_entries, "")
         @js w load_page($versions)
         @js w show_start()
         

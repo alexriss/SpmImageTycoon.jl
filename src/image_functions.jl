@@ -7,9 +7,9 @@ memcache_imagedata_lock = ReentrantLock()
 
 """saves all colorbars as pngs in the cache directory.
 Returns a dictionary that associates each colorscheme name with a png file"""
-function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::Dict{String,String}
+function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::OrderedDict{String,String}
     dir_cache = get_dir_cache(dir_data)
-    res = Dict()
+    res = OrderedDict{String,String}()
     for (k,v) in dict_colorschemes
         m = repeat(transpose(collect(0:1/(width-1):1)), inner=(height,1))
         img = get(v, m)
