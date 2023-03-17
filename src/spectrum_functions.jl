@@ -21,14 +21,22 @@ function expand_range(start::Float64, stop::Float64)::Tuple{Float64,Float64}
 end
 
 
+"""Get the units for channel and channel2"""
+function get_channel_units(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{String,String}
+    units = map((griditem.channel_name, griditem.channel2_name)) do c
+        c_idx = findfirst(isequal(c), spectrum.channel_names)
+        return spectrum.channel_units[c_idx]
+    end
+    return units
+end
+
+
 """gets the default channel name for the y-axis and x-axis, as well as their units, 
 according to the lists spectrum_channels and spectrum_channels_x in config.jl
 and the type of the experiment."""
-function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String,String,String}
+function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String}
     channel_name = spectrum.channel_names[2]   # yaxis
-    channel_unit = spectrum.channel_units[2]
     channel2_name = spectrum.channel_names[1]  # xaxis
-    channel2_unit = spectrum.channel_units[1]
 
     if haskey(spectrum.header, "Experiment")
         experiment = spectrum.header["Experiment"] 
@@ -44,11 +52,6 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
             for c in channels
                 if c in spectrum.channel_names
                     channel_name = c
-
-                    # get corresponding unit
-                    c_idx = findfirst(isequal(c), spectrum.channel_names)
-                    channel_unit = spectrum.channel_units[c_idx]
-                    break
                 end
             end
         end
@@ -56,22 +59,17 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
             for c in channels2
                 if c in spectrum.channel_names
                     channel2_name = c
-
-                    # get corresponding unit
-                    c_idx = findfirst(isequal(c), spectrum.channel_names)
-                    channel2_unit = spectrum.channel_units[c_idx]
-                    break
                 end
             end
         end
     end
 
-    return channel_name, channel_unit, channel2_name, channel2_unit
+    return channel_name, channel2_name
 end
 
 
 """Gets the next channel name and corresponding unit of `spectrum`, skipping all backwards channels."""
-function next_channel_name_unit(spectrum::SpmSpectrum, channel_name::String, jump::Int)::Tuple{String, String}
+function next_channel_name(spectrum::SpmSpectrum, channel_name::String, jump::Int)::String
     channel_names = sort_channel_names(filter(!endswith(" [bwd]"), spectrum.channel_names))
 
     i = findfirst(x -> x == channel_name, channel_names)
@@ -83,19 +81,15 @@ function next_channel_name_unit(spectrum::SpmSpectrum, channel_name::String, jum
         next_channel_name = channel_names[i]
     end
 
-    # get unit
-    i = findfirst(x -> x == next_channel_name, spectrum.channel_names)
-    next_channel_unit = spectrum.channel_units[i]
-
-    return next_channel_name, next_channel_unit
+    return next_channel_name
 end
 
 
 """Sets the next channel name for the griditem."""
 function next_channel_name!(griditem::SpmGridItem, spectrum::SpmSpectrum, jump::Int)::Nothing
-    channel_name, channel_unit = next_channel_name_unit(spectrum, griditem.channel_name, jump)
+    channel_name = next_channel_name(spectrum, griditem.channel_name, jump)
     griditem.channel_name = channel_name
-    griditem.channel_unit = channel_unit
+    # unit will be set in `create_spectrum!`
 
     if length(griditem.channel_range_selected) != 0
          # reset selected range when switching channel (we try to keep it for all other cases for now)
@@ -108,9 +102,9 @@ end
 
 """Sets the next channel2 name for the griditem, dummy function for images."""
 function next_channel2_name!(griditem::SpmGridItem, spectrum::SpmSpectrum, jump::Int)::Nothing
-    channel2_name, channel2_unit = next_channel_name_unit(spectrum, griditem.channel2_name, jump)
+    channel2_name = next_channel_name(spectrum, griditem.channel2_name, jump)
     griditem.channel2_name = channel2_name
-    griditem.channel2_unit = channel2_unit
+    # unit will be set in `create_spectrum!`
     
     if length(griditem.channel_range_selected) != 0
          # reset selected range when switching channel (we try to keep it for all other cases for now)
@@ -183,12 +177,10 @@ end
 
 """Reverts a spectrum to its default settings, returns `true` if anything was changed."""
 function reset_default!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Bool
-    channel_name, channel_unit, channel2_name, channel2_unit = default_channel_names_units(spectrum)
-    if griditem.channel_name != channel_name || griditem.channel_unit != channel_unit || griditem.channel2_name != channel2_name || griditem.channel2_unit != channel2_unit
+    channel_name, channel2_name = default_channel_names_units(spectrum)
+    if griditem.channel_name != channel_name || griditem.channel2_name != channel2_name
         griditem.channel_name = channel_name
-        griditem.channel_unit = channel_unit
         griditem.channel2_name = channel2_name
-        griditem.channel2_unit = channel2_unit
         changed = true
     end
     if griditem.background_correction != "none"
@@ -486,8 +478,12 @@ function create_spectrum!(griditem::SpmGridItem, spectrum::SpmSpectrum; dir_cach
         end
     end
 
+    unit, unit2 = get_channel_units(griditem, spectrum)
+
     lock(griditems_lock) do
         griditem.channel_range = yxranges
+        griditem.channel_unit = unit
+        griditem.channel2_unit = unit2
 
         if griditem.filename_display === ""
             griditem.filename_display = filename_display
@@ -572,10 +568,10 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         griditem.status = 0
     else
         # get the respective image channel (depending on whether the feedback was on or not)
-        channel_name, channel_unit, channel2_name, channel2_unit = default_channel_names_units(spectrum)
+        channel_name, channel2_name = default_channel_names_units(spectrum)
         griditems[id] = SpmGridItem(
             id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=start_time,
-            channel_name=channel_name, channel_unit=channel_unit, channel2_name=channel2_name, channel2_unit=channel2_unit,
+            channel_name=channel_name, channel2_name=channel2_name,
             center=spectrum.position .* 1e9, scan_direction=2, 
             bias=spectrum.bias, z_feedback=spectrum.z_feedback,
             z_feedback_setpoint=z_feedback_setpoint, z_feedback_setpoint_unit=z_feedback_setpoint_unit, z=spectrum.position[3],
