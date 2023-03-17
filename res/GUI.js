@@ -427,6 +427,7 @@ function toggle_imagezoom(target_view = "", id="") {
         image_info_quick_timeout_clear();  // if we leave zoom-mode, we might need to get rid of the quick image info (if mouse is not hovering anything)
         toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
         gridsub.scrollTop = window.grid_last_scrolltop;
+        check_hover_enabled();
     } else {
         let el = null;
         if (target_view == "zoom" && id != "") {  // this is used for automated testing - here the hover doesn't work so well
@@ -680,6 +681,38 @@ function update_selected_filter_overview(active_els) {
     }
 }
 
+function update_menu_main(grid=null) {
+    // updates main menu numbers for spectra and images and loads channels
+
+    let num_images = 0;
+    let num_spectra = 0;
+    if (get_view() === "zoom") {
+        const item = window.items[window.zoom_last_selected];
+        if (item.type === "SpmGridImage") {
+            num_images = 1;
+        } else if (item.type === "SpmGridSpectrum") {
+            num_spectra = 1;
+        }
+    } else {
+        num_images = grid.querySelectorAll('.item.active.SpmGridImage').length;
+        num_spectra = grid.querySelectorAll('.item.active.SpmGridSpectrum').length;
+    }
+    document.getElementById("menu_main_num_images").innerText = num_images;
+    document.getElementById("menu_main_num_spectra").innerText = num_spectra;
+
+    if (num_images >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridImage");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridImage");
+    }
+    if (num_spectra >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridSpectrum");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridSpectrum");
+    }
+    setup_menu_selection();
+}
+
 function check_hover_enabled() {
     // checks whether the imagedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
@@ -703,23 +736,7 @@ function check_hover_enabled() {
         document.getElementById('footer_num_images_container').classList.remove("has-text-weight-bold");
     }
 
-    const num_images = grid.querySelectorAll('.item.active.SpmGridImage').length;
-    const num_spectra = grid.querySelectorAll('.item.active.SpmGridSpectrum').length;
-
-    document.getElementById("menu_main_num_images").innerText = num_images;
-    document.getElementById("menu_main_num_spectra").innerText = num_spectra;
-
-    if (num_images >= 1) {
-        document.getElementById("menu_main").classList.add("selected-SpmGridImage");
-    } else {
-        document.getElementById("menu_main").classList.remove("selected-SpmGridImage");
-    }
-    if (num_spectra >= 1) {
-        document.getElementById("menu_main").classList.add("selected-SpmGridSpectrum");
-    } else {
-        document.getElementById("menu_main").classList.remove("selected-SpmGridSpectrum");
-    }
-
+    update_menu_main(grid);
     update_selected_filter_overview(els);
 }
 
@@ -783,6 +800,7 @@ function next_item(jump) {
         }
 
         image_info_timeout(null, el.id, zoomview=true, timeout_ms=30);
+        update_menu_main();
     }
     toggle_sidebar_imagezoomtools(restore_previous=true);
 }

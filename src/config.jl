@@ -18,6 +18,8 @@ spectrum_channels_x = OrderedDict{String,Vector{String}}(
     "History Data" => ["Index"]
 )
 
+sort_channel_list = true  # sort channels in the channel list
+
 const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
 const extension_image = ".sxm"
 const extension_spectrum = ".dat"
@@ -191,6 +193,10 @@ function load_config()::Nothing
                 global tycoon_mode = d["tycoon_mode"]
             end
 
+            if haskey(d, "sort_channel_list") && isa(d["sort_channel_list"], Bool)
+                global sort_channel_list = d["sort_channel_list"]
+            end
+
             if haskey(d, "image_channels_feedback_on") && isa(d["image_channels_feedback_on"], Array)
                 global image_channels_feedback_on = string.(d["image_channels_feedback_on"])
             end
@@ -302,6 +308,7 @@ function save_config(new_directory::String="")::Nothing
         "image_channels_feedback_off" => image_channels_feedback_off,
         "spectrum_channels" => spectrum_channels,
         "spectrum_channels_x" => spectrum_channels_x,
+        "sort_channel_list" => sort_channel_list,
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
         "memcache_mb_spectra" => memcache_mb_spectra,

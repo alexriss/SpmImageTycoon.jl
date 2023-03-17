@@ -74,18 +74,19 @@ end
 function next_channel_name!(griditem::SpmGridItem, im_spm::SpmImage, jump::Int)::Nothing
     channel_name = griditem.channel_name    
     
+    channel_names = sort_channel_names(im_spm.channel_names)
     backward_suffix = ""
     if endswith(channel_name, " bwd")
         channel_name = channel_name[1:end-4]
         backward_suffix = " bwd"
     end
-    i = findfirst(x -> x == channel_name, im_spm.channel_names)
+    i = findfirst(x -> x == channel_name, channel_names)
     if i === nothing  # this should never happen anyways
-        channel_name = im_spm.channel_names[1]
+        channel_name = channel_names[1]
     else
-        i = (i + jump - 1) % length(im_spm.channel_names) + length(im_spm.channel_names)
-        i = i % length(im_spm.channel_names) + 1
-        channel_name = im_spm.channel_names[i] * backward_suffix
+        i = (i + jump - 1) % length(channel_names) + length(channel_names)
+        i = i % length(channel_names) + 1
+        channel_name = channel_names[i] * backward_suffix
     end
 
     griditem.channel_name = channel_name
@@ -268,7 +269,7 @@ end
 
 
 """sets selected range and recreates images"""
-function set_range_selected!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, range_selected::Array{Float64}, full_resolution::Bool)::Nothing
+function set_range_selected!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, range_selected::Vector{Float64}, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = griditems[id].filename_original
@@ -343,8 +344,8 @@ end
 
 
 """Parses an image file and creates the images in the cache directory if necessary."""
-function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
-    griditems_new::Vector{String}, only_new::Bool,
+function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
+    griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String,
     created::DateTime, last_modified::DateTime)::Vector{Task}
 
@@ -389,6 +390,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
         end
         griditem = griditems[id]
     end
+    channel_names_list[filename_original] = im_spm.channel_names
     t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
     push!(tasks, t)
     

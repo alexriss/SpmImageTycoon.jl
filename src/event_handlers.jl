@@ -1,11 +1,13 @@
 """sets the julia handlers that are triggered by javascript events"""
-function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,SpmGridItem})
+function set_event_handlers(w::Window, dir_data::String, current_data::Dict{String,Dict{String}})
     # this function is called when a new directory is loaded,
     # so the griditems might change when the dir is parsed, thus we set `griditems_last_changed`
     global griditems_last_changed = time()
 
     l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
+        griditems = current_data["griditems"]
+      
         what = args[1]
         ids = string.(args[2])  # for some reason its type is "Any" and not String
         if what == "get_info"
@@ -146,6 +148,17 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
             finally
                 unlock(l)
             end
+        elseif what == "get_channels"
+            lock(l)  # might not be necessary here, as it is just a read operation - but griditems might change, so let's keep it
+            channel_names_list = current_data["channel_names_list"]
+            try
+                channels, channels2 = get_channels(ids, griditems, channel_names_list)
+                @js_ w set_channels_menu($channels, $channels2)
+            catch e
+                error(e, w, false)  # do not show modal-dialog for user if anything goes wrong
+            finally
+                unlock(l)
+            end
         elseif what == "reset"
             lock(l)
             full_resolution = args[3]
@@ -180,7 +193,7 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
             mode = args[3]
             try
                 if mode =="create"
-                    ids_new = Array{String}(undef, 0)
+                    ids_new = Vector{String}(undef, 0)
                     for id in ids
                         id_new = create_virtual_copy!(griditems, id, dir_data)
                         push!(ids_new, id_new)
@@ -244,8 +257,13 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
         lock(l)
         try
             global cancel_sent = false  # user might send cancel during the next steps
-            save_all(dir_data, griditems)
-            griditems, griditems_new = parse_files(dir_data, only_new=!parse_all)
+            save_all(dir_data, griditems, channel_names_list)
+            griditems, griditems_new, channel_names_list = parse_files(dir_data, only_new=!parse_all)
+
+            # update current data for all other event handlers
+            current_data["griditems"] = griditems
+            current_data["channel_names_list"] = channel_names_list
+
             bottomleft, topright = get_scan_range(griditems)
             if cancel_sent
                 @js_ w console.log()
@@ -286,10 +304,12 @@ function set_event_handlers(w::Window, dir_data::String, griditems::Dict{String,
         end
         force = args[2]
         saved = false
+        griditems = current_data["griditems"]
+        channel_names_list = current_data["channel_names_list"]
         try
             if dir_data != ""
                 if force || (griditems_last_changed > griditems_last_saved - 180)
-                    save_all(dir_data, griditems)
+                    save_all(dir_data, griditems, channel_names_list)
                     global griditems_last_saved = time()
                     saved = true
                 end

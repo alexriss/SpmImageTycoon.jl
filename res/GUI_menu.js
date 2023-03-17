@@ -2,11 +2,11 @@ const icon_menu = {
     "channel": {
         icon: "media/bx-layer.svg", title: "channel", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
-            prev: () => change_item("channel", "change channel.", 1),
-            next: () => change_item("channel", "change channel.", -1),
+            prev: () => change_item("channel", "change channel.", -1),
+            next: () => change_item("channel", "change channel.", 1),
             list: {
-                type: "func",
-                func: console.log("channel func"),
+                type: "list",
+                entries: {},
                 command: (x) => change_items_menu({"channel": x}, "set channel.")
             }
         }
@@ -14,11 +14,11 @@ const icon_menu = {
     "channel2": {
         icon: "media/bx-layer-x.svg", title: "channel x", info_disabled: "select spectra", for: ["SpmGridSpectrum"],
         commands: {
-            prev: () => change_item("channel2", "change x-channel.", 1),
-            next: () => change_item("channel2", "change x-channel.", -1),
+            prev: () => change_item("channel2", "change x-channel.", -1),
+            next: () => change_item("channel2", "change x-channel.", 1),
             list: {
-                type: "func",
-                func: console.log("channel func"),
+                type: "list",
+                entries: {},
                 command: (x) => change_items_menu({"channel2": x}, "set x-channel.")
             }
         }
@@ -26,8 +26,8 @@ const icon_menu = {
     "direction": {
         icon: "media/bx-expand-horizontal.svg", title: "direction", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
-            prev: () => change_item("direction", "change direction.", 1),
-            next: () => change_item("direction", "change direction.", -1),
+            prev: () => change_item("direction", "change direction.", -1),
+            next: () => change_item("direction", "change direction.", 1),
             list: {
                 type: "list",
                 entries: {
@@ -51,11 +51,11 @@ const icon_menu = {
     "background": {
         icon: "media/bg_correction.svg", title: "background", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
-            prev: () => change_item("background_correction", "change background.", 1),
-            next: () => change_item("background_correction", "change background.", -1),
+            prev: () => change_item("background_correction", "change background.", -1),
+            next: () => change_item("background_correction", "change background.", 1),
             list: {
                 type: "list",
-                entries: [],
+                entries: {},
                 command: (x) => change_items_menu({"background_correction": x}, "set background.")
             }
         }
@@ -63,11 +63,11 @@ const icon_menu = {
     "colorscheme": { 
         icon: "media/bx-palette.svg", title: "palette", info_disabled: "select images", for: ["SpmGridImage"],
         commands: {
-            prev: () => change_item("colorscheme", "change palette.", 1),
-            next: () => change_item("colorscheme", "change palette.", -1),
+            prev: () => change_item("colorscheme", "change palette.", -1),
+            next: () => change_item("colorscheme", "change palette.", 1),
             list: {
                 type: "list",
-                entries: [],  // has to be initialized when project is loaded
+                entries: {},  // has to be initialized when project is loaded
                 command: (x) => change_items_menu({"colorscheme": x}, "set palette."),
             }
         }
@@ -77,7 +77,7 @@ const icon_menu = {
         commands: {
             list: {
                 type: "list",
-                entries: [],
+                entries: {},
                 command: (x) => console.log(x),
             }
         }
@@ -97,8 +97,15 @@ function setup_menu_project() {
     update_menu_entries("colorscheme");
 }
 
+function setup_menu_selection_callback(channels, channels2) { // called from julia
+    icon_menu.channel.commands.list.entries = channels;
+    icon_menu.channel2.commands.list.entries = channels2;
+    update_menu_entries("channel");
+    update_menu_entries("channel2");
+}
+
 function setup_menu_selection() {
-    // todo: update channel and channel2
+    get_channels(); // calls julia
 }
 
 function menu_colorscheme_list() {
@@ -118,7 +125,6 @@ function menu_colorscheme_list() {
 
 function menu_background_correction_list() {
     // creates list of background corrections to be used in the main menu
-    console.log(window.background_corrections);
     const bg_corrs_image = window.background_corrections["image"];
     const bg_corrs_spectrum = window.background_corrections["spectrum"];
     const bg_corrs = {};
@@ -165,7 +171,7 @@ function setup_menu_main() {
             prev.addEventListener("click", () => {
                 commands.prev();
             });
-            const next = clone.querySelector(".icon_menu_option_prev");
+            const next = clone.querySelector(".icon_menu_option_next");
             next.addEventListener("click", () => {
                 commands.next();
             });
@@ -187,6 +193,7 @@ function setup_menu_main() {
         add_menu_entries(clone, commands);
         clone.firstElementChild.addEventListener("click", () => {
             // value.command(); // todo: default command
+            // check the -for attribute and only trigger command if it matches selection
         });
         container.appendChild(clone);
     });

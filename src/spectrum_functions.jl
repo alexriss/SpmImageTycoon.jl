@@ -72,7 +72,7 @@ end
 
 """Gets the next channel name and corresponding unit of `spectrum`, skipping all backwards channels."""
 function next_channel_name_unit(spectrum::SpmSpectrum, channel_name::String, jump::Int)::Tuple{String, String}
-    channel_names = filter(!endswith(" [bwd]"), spectrum.channel_names)
+    channel_names = sort_channel_names(filter(!endswith(" [bwd]"), spectrum.channel_names))
 
     i = findfirst(x -> x == channel_name, channel_names)
     if i === nothing  # this should never happen anyways
@@ -169,7 +169,7 @@ end
 
 
 """sets selected range and recreates spectra"""
-function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, range_selected::Array{Float64})::Nothing
+function set_range_selected_spectrum!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, range_selected::Vector{Float64})::Nothing
     dir_cache = get_dir_cache(dir_data)
     for id in ids  # we could use threads here as well, but so far we only do this for one image at once (and threads seem to make it a bit more unstable)
         filename_original = griditems[id].filename_original
@@ -499,8 +499,8 @@ end
 
 
 """Parses a spectrum file and creates the preview in the cache directory if necessary."""
-function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Array{SpmGridItem}},
-    griditems_new::Vector{String}, only_new::Bool,
+function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
+    griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool,
     dir_cache::String, datafile::String, id::String, filename_original::String,
     created::DateTime, last_modified::DateTime)::Vector{Task}
 
@@ -586,6 +586,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         end
         griditem = griditems[id]
     end
+    channel_names_list[filename_original] = spectrum.channel_names
     t = Threads.@spawn create_spectrum!(griditem, spectrum, dir_cache=dir_cache, use_existing=true)
     push!(tasks, t)
     

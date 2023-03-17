@@ -9,7 +9,7 @@ end
 """scales and offsets an array, so that each value lies between 0 and 1.
 If range_selected is given, this range is normalized to lie between 0 and 1.
 Returns the minimum and maximum value of the original array."""
-function normalize01!(d::AbstractArray; range_selected::Array{<:Number}=Float64[])::Tuple{Number,Number}
+function normalize01!(d::AbstractArray; range_selected::Vector{<:Number}=Float64[])::Tuple{Number,Number}
     d_ = skipnan(d)
     if !isempty(d_)
         vmin_original, vmax_original = extrema(d_)  # minimum and maximum function return NaN otherwise

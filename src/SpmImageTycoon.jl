@@ -104,6 +104,26 @@ griditems_lock = ReentrantLock()
 
 Precompiling = false
 
+"""sorts channel names"""
+function sort_channel_names(channel_names::Vector{String})::Vector{String}
+    if sort_channel_list  # global config variable
+        return NaturalSort.sort(channel_names, by = x -> lowercase(x))
+    else
+        return channel_names
+    end
+end
+
+
+"""sorts channel names and units"""
+function sort_channel_names_units(channel_names::Vector{String}, channel_units::Vector{String})::Tuple{Vector{String}, Vector{String}}
+    if sort_channel_list  # global config variable
+        perm = NaturalSort.sortperm(channel_names, by = x -> lowercase(x))
+        return channel_names[perm], channel_units[perm]
+    else
+        return channel_names, channel_units
+    end
+end
+
 
 """sets keywords"""
 function set_keywords!(ids::Vector{String}, dir_data::String, griditems::Dict{String,SpmGridItem}, mode::String, keywords::Vector{String})
@@ -136,13 +156,13 @@ end
 
 
 """gets a dictionary "original_id" => (array of virtual copies) with all virtual copies in griditems"""
-function get_virtual_copies_dict(griditems::Dict{String, SpmGridItem})::Dict{String,Array{SpmGridItem}}
+function get_virtual_copies_dict(griditems::Dict{String, SpmGridItem})::Dict{String,Vector{SpmGridItem}}
     virtual_copies = filter(x -> last(x).virtual_copy > 0, griditems)
-    virtual_copies_dict = Dict{String, Array{SpmGridItem}}()  # create a dict for quick lookup
+    virtual_copies_dict = Dict{String, Vector{SpmGridItem}}()  # create a dict for quick lookup
     for virtual_copy in values(virtual_copies)
         id_original = virtual_copy.filename_original
         if !haskey(virtual_copies_dict, id_original)
-            virtual_copies_dict[id_original] = Array{SpmGridItem}(undef, 0);
+            virtual_copies_dict[id_original] = Vector{SpmGridItem}(undef, 0);
         end
         push!(virtual_copies_dict[id_original], virtual_copy)
     end
@@ -152,7 +172,7 @@ end
 
 
 """gets the virtual copies that have been created for id. Returns an array of SpmGridItem"""
-function get_virtual_copies(griditems::Dict{String, SpmGridItem}, id::String)::Array{SpmGridItem}
+function get_virtual_copies(griditems::Dict{String, SpmGridItem}, id::String)::Vector{SpmGridItem}
     virtual_copies = filter(x -> last(x).filename_original==id && last(x).virtual_copy > 0, griditems)
     return collect(values(virtual_copies))
 end
@@ -183,6 +203,43 @@ function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
     end
     
     return filename_display
+end
+
+"""Gets channels and channels2 for the given ids"""
+function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem}, channel_names_list::Dict{String,Vector{String}})::Tuple{OrderedDict{String,Dict},OrderedDict{String,Dict}}
+    channels = OrderedDict{String,Dict}()
+    channels2 = OrderedDict{String,Dict}()
+
+    # todo: get channels, create unique set, also order
+    for id in ids
+        filename_original = griditems[id].filename_original
+        !haskey(channel_names_list, filename_original) && continue  # should never happen, though
+        for ch in channel_names_list[filename_original]
+            (griditems[id].type == SpmGridSpectrum) && endswith(ch, " [bwd]") && continue
+
+            if !haskey(channels, ch)
+                channels[ch] = Dict(
+                    "val" => ch,
+                    "for" => [griditems[id].type]
+                )
+            else
+                push!(channels[ch]["for"], griditems[id].type)
+            end
+            
+            if griditems[id].type === SpmGridSpectrum
+                if !haskey(channels2, ch)
+                    channels2[ch] = Dict(
+                        "val" => ch,
+                        "for" => [griditems[id].type]
+                    )
+                end
+            end
+        end
+    end
+    # always sort here
+    NaturalSort.sort!(channels, by = x -> lowercase(x))
+    NaturalSort.sort!(channels2, by = x -> lowercase(x))
+    return channels, channels2
 end
 
 
@@ -448,13 +505,15 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
     extra_info["active_edits_str"] = get_active_edits_str(griditem)
     if griditem.type == SpmGridImage
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
-        extra_info["Channels"] = join(im_spm.channel_names, ", ")
-        extra_info["Units"] = join(im_spm.channel_units, ", ")
+        channel_names, channel_units = sort_channel_names_units(im_spm.channel_names, im_spm.channel_units)
+        extra_info["Channels"] = join(channel_names, ", ")
+        extra_info["Units"] = join(channel_units, ", ")
         return im_spm.header, extra_info
     elseif griditem.type == SpmGridSpectrum
         spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)  # no caching here
-        extra_info["Channels"] = join(spectrum.channel_names, ", ")
-        extra_info["Units"] = join(spectrum.channel_units, ", ")
+        channel_names, channel_units = sort_channel_names_units(spectrum.channel_names, spectrum.channel_units)
+        extra_info["Channels"] = join(channel_names, ", ")
+        extra_info["Units"] = join(channel_units, ", ")
         # we add this information to the header
         spectrum.header["Channels"] = extra_info["Channels"]
         spectrum.header["Units"] = extra_info["Units"]
@@ -484,7 +543,7 @@ end
 
 """Sets the virtual_copy-field values in the SpmGridItems to consecutive numbers (starting with 1). Creates a position to insert a new virtual copy (after the items with id 'id').
 Returns the new position."""
-function update_virtual_copies_order!(virtual_copies::Array{SpmGridItem}, id::String)::Int
+function update_virtual_copies_order!(virtual_copies::Vector{SpmGridItem}, id::String)::Int
     sort!(virtual_copies, by=x -> x.virtual_copy)
     i_new = -1
     i = 1
@@ -509,7 +568,9 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Array{String}}
+function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
+    only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Vector{String},Dict{String, Vector{String}}}
+
     time_start = Dates.now()
 
     dir_cache = get_dir_cache(dir_data)
@@ -518,10 +579,10 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
     end
 
     # load saved data - if available
-    griditems = load_all(dir_data, w)
+    griditems, channel_names_list = load_all(dir_data, w)
 
     griditems_new = String[]
-    virtual_copies_dict = Dict{String, Array{SpmGridItem}}()
+    virtual_copies_dict = Dict{String, Vector{SpmGridItem}}()
     if !only_new
         # get all virtual copies that are saved
         virtual_copies_dict = get_virtual_copies_dict(griditems)
@@ -561,7 +622,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         end
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
-        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified && griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache)
+        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified &&
+            griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, filename_original)
             griditems[id].status = 0
             num_in_cache += 1
             if haskey(virtual_copies_dict, id)
@@ -572,11 +634,11 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
             end
         else
             if endswith(filename_original, extension_image)
-                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
+                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
                 append!(tasks, ts)
             elseif endswith(filename_original, extension_spectrum)
-                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, only_new,
+                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
                 append!(tasks, ts)
             end
@@ -605,7 +667,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         msg = "Parsed $(num_parsed) files ($(num_items) items, $(num_in_cache) in cache) in $elapsed_time."
         log(msg, w)
     end
-    return griditems, griditems_new
+    return griditems, griditems_new, channel_names_list
 end
 
 
@@ -682,7 +744,7 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
     global memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
     global memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
 
-    griditems, _ = parse_files(dir_data, w, output_info=output_info)
+    griditems, _, channel_names_list = parse_files(dir_data, w, output_info=output_info)
     bottomleft, topright = get_scan_range(griditems)
     if cancel_sent
         msg = "Cancelled loading $dir_data"
@@ -719,7 +781,7 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
         @js_ w load_notification_temp_cache($fname_temp_cache)
     end
 
-    set_event_handlers(w, dir_data, griditems)
+    set_event_handlers(w, dir_data, Dict("griditems" => griditems, "channel_names_list" => channel_names_list))
 
     save_config(dir_data)  # set and save new last dirs
     @js_ w set_last_directories($last_directories)
@@ -864,7 +926,7 @@ end
         end
 
         SpmImageTycoon.load_all(DIR_db_old, nothing)
-        griditems, _ = SpmImageTycoon.parse_files(DIR_data)
+        griditems, _, _ = SpmImageTycoon.parse_files(DIR_data)
         # these can give write permission errors, so let's remove for now
         # SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, dir_cache=DIR_cache)
         # SpmImageTycoon.create_image!(griditems[fname_img_base], ima, dir_cache=DIR_cache)

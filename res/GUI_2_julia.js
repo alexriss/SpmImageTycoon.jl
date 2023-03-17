@@ -403,6 +403,12 @@ function show_line_profile(id, distances, values, start_point_value, end_point_v
     open_jobs(-1);
 }
 
+function set_channels_menu(channels, channels2) {
+    // we dont check whether the ids match, to save time
+    setup_menu_selection_callback(channels, channels2);
+    open_jobs(-1);
+}
+
 function show_spectrum(id, gzip_json_spectrum_data) {
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
         let json_spectrum_data = require("zlib").gunzipSync(new Buffer.from(gzip_json_spectrum_data));
@@ -685,6 +691,16 @@ function set_keywords() {
     if (ids.length > 0) {
         Blink.msg("grid_item", ["set_keywords", ids, keywords_mode, window.keywords_input.value.map(a => a.value)]);
         open_jobs(1);  // julia will then set the radiobox
+    }
+}
+
+function get_channels() {
+    // gets the channels and channels2 for the current selection
+    let ids = get_active_element_ids();
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["get_channels", ids]);
+        open_jobs(1);
     }
 }
 

@@ -57,7 +57,7 @@ global timings["import"] = t1 - t0
 end
 
 @testset "Convert old database" begin
-    griditems = SpmImageTycoon.load_all(DIR_db_old, nothing)
+    griditems, channel_names_list = SpmImageTycoon.load_all(DIR_db_old, nothing)
     items_loaded = Dict{String,Any}()
     for item in griditems
         # item is stored as a Pair{String,SpmGridItem}
