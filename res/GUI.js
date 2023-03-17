@@ -234,6 +234,7 @@ function toggle_start_project(target="project", save=false) {
         document.getElementById("page_start").classList.add("is-hidden");
         document.getElementById("page_project").classList.remove("is-hidden");
         document.getElementById("footer_project").classList.remove("is-hidden");
+        document.getElementById("menu_main").classList.remove("is-hidden");
         start_page_logo_spin(false);
     } else {
         const template_last_dir = document.getElementById("page_start_last_dir");
@@ -266,6 +267,9 @@ function toggle_start_project(target="project", save=false) {
         document.getElementById("page_project").classList.add("is-hidden");
         document.getElementById("footer_project").classList.add("is-hidden");
         document.getElementById("page_start").classList.remove("is-hidden");
+
+        document.getElementById("menu_main").classList.add("is-hidden");
+
         start_page_logo_spin(true);
     }
 }
