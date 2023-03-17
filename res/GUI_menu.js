@@ -1,6 +1,6 @@
 const icon_menu = {
     "channel": {
-        icon: "media/bx-layer.svg", title: "channel", info_disabled: "select items",
+        icon: "media/bx-layer.svg", title: "channel", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
             prev: () => change_item("channel", "change channel.", 1),
             next: () => change_item("channel", "change channel.", -1),
@@ -12,7 +12,7 @@ const icon_menu = {
         }
     },
     "channel2": {
-        icon: "media/bx-layer-x.svg", title: "channel x", info_disabled: "select spectra",
+        icon: "media/bx-layer-x.svg", title: "channel x", info_disabled: "select spectra", for: ["SpmGridSpectrum"],
         commands: {
             prev: () => change_item("channel2", "change x-channel.", 1),
             next: () => change_item("channel2", "change x-channel.", -1),
@@ -24,19 +24,32 @@ const icon_menu = {
         }
     },
     "direction": {
-        icon: "media/bx-expand-horizontal.svg", title: "direction", info_disabled: "select items",
+        icon: "media/bx-expand-horizontal.svg", title: "direction", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
             prev: () => change_item("direction", "change direction.", 1),
             next: () => change_item("direction", "change direction.", -1),
             list: {
                 type: "list",
-                entries: {0: {val: "&rarr; &nbsp; forward"}, 1: {val: "&larr; &nbsp; backward"}, 2: {val: "&harr; &nbsp; both", for: "SpmGridSpectrum"}},  // for images the change is in the name, for specta it is in the field "scan_direction", // todo: needs preparsing by julia
+                entries: {
+                    0: {
+                        val: "&rarr; &nbsp; forward",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    1: {
+                        val: "&larr; &nbsp; backward",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    2: {
+                        val: "&harr; &nbsp; both",
+                        for: ["SpmGridSpectrum"]
+                    }
+                },  // for images the change is in the name, for specta it is in the field "scan_direction", // todo: needs preparsing by julia
                 command: (x) => change_items_menu({"direction": x}, "set direction.")
             }
         }
     },
     "background": {
-        icon: "media/bg_correction.svg", title: "background", info_disabled: "select items",
+        icon: "media/bg_correction.svg", title: "background", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
             prev: () => change_item("background_correction", "change background.", 1),
             next: () => change_item("background_correction", "change background.", -1),
@@ -48,7 +61,7 @@ const icon_menu = {
         }
     },
     "colorscheme": { 
-        icon: "media/bx-palette.svg", title: "palette", info_disabled: "select images",
+        icon: "media/bx-palette.svg", title: "palette", info_disabled: "select images", for: ["SpmGridImage"],
         commands: {
             prev: () => change_item("colorscheme", "change palette.", 1),
             next: () => change_item("colorscheme", "change palette.", -1),
@@ -96,6 +109,7 @@ function menu_colorscheme_list() {
             colorschemes[x] = {
                 val: x,
                 icon_colorscheme: file_url_colorbar_name(x),
+                for: ["SpmGridImage"],
             }
         };
     });
@@ -111,17 +125,16 @@ function menu_background_correction_list() {
     bg_corrs_image.forEach((x) => {
         bg_corrs[x] = {
             val: x,
+            for: ["SpmGridImage"],
         };
-        if (!(x in bg_corrs_spectrum)) {
-            bg_corrs[x].for = "SpmGridImage";
-        }
     });
     bg_corrs_spectrum.forEach((x) => {
-        console.log(x);
-        if (!(x in bg_corrs)) {
+        if (x in bg_corrs) {
+            bg_corrs[x].for.push("SpmGridSpectrum");
+        } else {
             bg_corrs[x] = {
                 val: x,
-                for: "SpmGridSpectrum",
+                for: ["SpmGridSpectrum"],
             };
         }
     });
@@ -160,6 +173,12 @@ function setup_menu_main() {
             clone.querySelector(".icon_menu_options").classList.add("is-hidden");
         }
 
+        if ("for" in value) {
+            value.for.forEach((x) => {
+                clone.firstElementChild.classList.add("for-" + x);
+            });
+        }
+
         if ("info_disabled" in value) {
             const info = clone.querySelector(".icon_menu_info_disabled");
             info.innerHTML = value.info_disabled;
@@ -189,6 +208,11 @@ function add_menu_entries(parent, commands) {
                 clone_entry.querySelector(".icon_menu_dropdown_icon_colorscheme").src = value.icon_colorscheme;
             } else {
                 clone_entry.querySelector("span.icon_colorscheme").classList.add("is-hidden");
+            }
+            if ("for" in value) {
+                value.for.forEach((x) => {
+                    clone_entry.firstElementChild.classList.add("for-" + x);
+                });
             }
             clone_entry.firstElementChild.addEventListener("click", () => {
                 commands.list.command(key);

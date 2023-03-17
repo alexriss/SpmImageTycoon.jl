@@ -45,26 +45,19 @@
   justify-content: center;
 }
 
-#navbar_main .icon_menu:hover {
+/* #navbar_main .icon_menu:hover {
   opacity: 0.8;
-}
-
-#navbar_main .icon_menu.disabled {
-  opacity: 0.5;
-}
+} */
 
 #navbar_main .icon_menu_container:hover {
-  opacity: 1.0;
-}
-
-#navbar_main .icon_menu:hover {
-  opacity: 0.9;
-  /* filter: invert(12%) saturate(6234%) hue-rotate(246deg); */
-}
-
-#navbar_main .icon_menu.disabled:hover {
   opacity: 0.5;
 }
+
+/* #navbar_main .icon_menu:hover {
+  opacity: 0.9;
+  /* filter: invert(12%) saturate(6234%) hue-rotate(246deg); */
+} */
+
 
 #navbar_main .icon_menu img {
   width: 24px;
@@ -85,14 +78,10 @@
 
 #navbar_main .icon_menu_info_disabled {
   position: absolute;
-  bottom: 0.2rem;
+  bottom: -1.05rem;
   opacity: 0;
   white-space: nowrap;
   overflow: visible;
-}
-
-#navbar_main .icon_menu_container.disabled:hover .icon_menu_info_disabled {
-  opacity: 1;
 }
 
 #navbar_main .icon_menu_options {
@@ -101,6 +90,7 @@
   opacity: 0;
   white-space: nowrap;
   overflow: visible;
+  display: none;
 }
 
 #navbar_main .icon_menu_option {
@@ -117,29 +107,18 @@
   top:1px;
 }
 
-
-
-#navbar_main .icon_menu_container:not(.disabled):not(.is-active):hover .icon_menu_options {
-  opacity: 1;
-}
-
-#navbar_main .navbar-dropdown.is-active {
-    /* display: block;
-    opacity: 1; */
-}
-
-
 #navbar_main .navbar-item {
     color: #ffffff;
 }
 
 #navbar_main .navbar-dropdown {
-    max-height: 20vh;
+    max-height: 80vh;
     overflow-y: auto;
     background-color:#485fc7;
     color: #ffffff;
     margin-top: 3px;
     border-top: 1px solid #c0c0c0;
+    box-shadow: 0px 4px 5px 4px #00000090;
 }
 
 #navbar_main .navbar-dropdown .icon_menu_dropdown_icon_colorscheme,
@@ -159,10 +138,6 @@
     padding: 0.2rem 1rem;
 }
 
-#navbar_main .navbar-dropdown .navbar-item.disabled {
-    opacity:0.5;
-}
-
 #navbar_main .navbar-dropdown .navbar-item:not(.disabled):hover {
     background-color:#3a51bb;
     color: #ffffff;
@@ -172,6 +147,101 @@
     background-color: #ffffff;
     opacity: 0.2;
 }
+
+
+
+/* disable interacion when no elements are selected */
+
+#navbar_main .icon_menu_container .icon_menu_options {
+    display: none;
+}
+#navbar_main .icon_menu_container .icon_menu_dropdown_container {
+    display: none;
+}
+
+#menu_main .icon_menu_container.for-SpmGridImage:hover .icon_menu_info_disabled,
+#menu_main .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_info_disabled {
+  opacity: 1;
+}
+  
+#menu_main .navbar-dropdown .navbar-item {
+    opacity:0.5;
+    pointer-events:none;
+}
+
+#menu_main .icon_menu_container .icon_menu_button:active .icon {
+    padding-top: 0px;
+}
+  
+
+/* show image-specific menu items when images selected */
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage {
+    opacity:0.6;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage:hover .icon_menu_options,
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main.selected-SpmGridImage .navbar-dropdown .navbar-item.for-SpmGridImage {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main.selected-SpmGridImage .navbar-dropdown .navbar-item.for-SpmGridImage:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage .icon_menu_button:active .icon {
+    padding-top: 2px;
+} 
+
+
+/* show spectrum-specific menu items when spectra selected */
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum {
+    opacity:0.6;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_options,
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main.selected-SpmGridSpectrum .navbar-dropdown .navbar-item.for-SpmGridSpectrum {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main.selected-SpmGridSpectrum .navbar-dropdown .navbar-item.for-SpmGridSpectrum:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum .icon_menu_button:active .icon {
+    padding-top: 2px;
+}
+
+
 
 
 /* sidebar icons */
@@ -245,29 +315,10 @@
   transition-duration: 0.2s;
 }
 
-#navbar_main .icon_button:after {
-  content: "";
-  display: block;
-  position: absolute;
-  border-radius: 50%;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: all 0.2s;
-  /* box-shadow: 0 0 10px 10px white; */
-}
-
-#navbar_main .icon_button:active:after {
-  box-shadow: 0 0 0 0 white;
-  position: absolute;
-  border-radius: 4em;
-  left:0;
-  top:0;
-  opacity: 1;
-  transition: 0s;
-}
+#navbar_main .icon_menu_button {
+    position: relative;
+    transition-duration: 0.2s;
+  }
 
 #navbar_main .icon_button:not(.disabled):active .icon {
   padding-top: 2px;  /* make the button look like it is pressed */
@@ -278,6 +329,6 @@
 }
 
 #navbar_main .navbar-dropdown .a_button:not(.disabled):active {
-    margin-top: 1px; 
-    margin-bottom: -1px; 
+  margin-top: 1px; 
+  margin-bottom: -1px; 
 }

@@ -709,6 +709,17 @@ function check_hover_enabled() {
     document.getElementById("menu_main_num_images").innerText = num_images;
     document.getElementById("menu_main_num_spectra").innerText = num_spectra;
 
+    if (num_images >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridImage");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridImage");
+    }
+    if (num_spectra >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridSpectrum");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridSpectrum");
+    }
+
     update_selected_filter_overview(els);
 }
 
