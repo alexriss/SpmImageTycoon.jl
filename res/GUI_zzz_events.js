@@ -180,6 +180,11 @@ function clear_all_filters() {
 function event_handlers() {
     //extra event handlers, this functions is called form "load_page", when all elements are present
 
+    // imagegrid - we want to show image info of selected items when hovering stops
+    document.getElementById("imagegrid").addEventListener("mouseleave", (e) => {
+        image_info_timeout();
+    });
+
     // star ratings
     document.getElementsByName("image_info_rating").forEach((el) => {
         el.addEventListener("change", function(event) {

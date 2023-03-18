@@ -18,7 +18,8 @@ window.background_corrections = {};  // dictionary with background corrections f
 window.space_pressed = false;  // true if user is holding space down (for dragging etc)
 window.dblClickLast = new Date().getTime(); // last time a double click was registered
 
-window.last_selected = "";  // last selected item
+window.last_clicked = "";  // last clicked item
+window.last_selected = ""; // last selected item that is active/selected
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
@@ -142,8 +143,9 @@ function open_jobs(diff, ids=[], julia_queue_type="") {
 
 function reset_all() {
     // resets view and all selections etc
-    window.last_selected = "";
+    window.last_clicked = "";
     window.zoom_last_selected = "";
+    window.last_selected = "";
     window.last_copy_from = "";
     if (window.timeout != null) {
         clearTimeout(window.timeout);
@@ -869,8 +871,8 @@ function select_item(event) {
     const modifier = event.shiftKey;
     const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden)'));
     let end = items.indexOf(this);
-    let start = items.indexOf(document.getElementById(window.last_selected));
-    if (modifier && window.last_selected != "" && start != end) {
+    let start = items.indexOf(document.getElementById(window.last_clicked));
+    if (modifier && window.last_clicked != "" && start != end) {
         if (start > end) {
             [start, end] = [end, start];
         }
@@ -893,7 +895,10 @@ function select_item(event) {
     } else {
         this.classList.toggle('active');
     }
-    window.last_selected = this.id;
+    window.last_clicked = this.id;
+    if (this.classList.contains('active')) {
+        window.last_selected = this.id;
+    }
     check_hover_enabled();
 }
 

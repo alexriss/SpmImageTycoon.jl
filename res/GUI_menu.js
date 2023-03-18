@@ -387,5 +387,5 @@ function setup_menu_sidebar() {
 }
 
 function change_items_menu(state, message) {
-    recalculate_items(null, state, message);
+    recalculate_items(null, state, "", message);
 }

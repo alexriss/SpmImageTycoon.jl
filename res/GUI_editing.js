@@ -569,7 +569,7 @@ Editing.prototype = {
         }
 
         if (this.state_changed(curr_state, item)) {
-            window.queue_edits_range.add(curr_id, "edit", () => recalculate_items([curr_id], curr_state));
+            window.queue_edits_range.add(curr_id, "edit", () => recalculate_items([curr_id], curr_state, "", "edit"));
         }
     },
 

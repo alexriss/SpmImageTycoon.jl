@@ -524,7 +524,7 @@ function change_item(what, message, jump=1) {
     }
 }
 
-function recalculate_items(ids, state, message="") {
+function recalculate_items(ids, state, queue_type="", message="") {
     console.log("recalculate");
     
     if (ids == null) {
@@ -536,7 +536,7 @@ function recalculate_items(ids, state, message="") {
         full_resolution = true;
     }
     if (ids.length > 0) {
-        Blink.msg("grid_item", ["set_multiple", ids, state, full_resolution]);
+        Blink.msg("grid_item", ["set_multiple", ids, state, queue_type, full_resolution]);
         open_jobs(1);
         if (message !== "") {
             show_message(message);
@@ -651,7 +651,11 @@ function get_image_info(id="", zoomview=false) {
         else {
             ids = get_active_element_ids();
             if (ids.length >= 1) {
-                id = ids[0];
+                if (ids.includes(window.last_selected)) {
+                    id = window.last_selected;
+                } else {
+                    id = ids[0];
+                }
             } else {
                 id = window.image_info_id;
             }
