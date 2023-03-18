@@ -564,22 +564,12 @@ Editing.prototype = {
             curr_state["channel_name"] = el_ch.value;
             curr_state["channel2_name"] = el_ch2.value;
         } else if (item.type == "SpmGridImage") {
-            let dir = el_dir.value;
-            let channel_name = el_ch.value;
-            if (dir == "1") {
-                channel_name += " bwd";
-            }
-            curr_state["channel_name"] = channel_name;
-            if ("channel2_name" in curr_state) {
-                delete curr_state["channel2_name"];
-            }
-            if ("scan_direction" in curr_state) {
-                delete curr_state["scan_direction"];
-            }
+            curr_state["scan_direction"] = el_dir.value;
+            curr_state["channel_name"] = el_ch.value;
         }
 
         if (this.state_changed(curr_state, item)) {
-            window.queue_edits_range.add(curr_id, "edit", () => recalculate_item(curr_id, curr_state));
+            window.queue_edits_range.add(curr_id, "edit", () => recalculate_items([curr_id], curr_state));
         }
     },
 

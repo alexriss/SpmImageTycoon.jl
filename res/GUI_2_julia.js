@@ -524,28 +524,24 @@ function change_item(what, message, jump=1) {
     }
 }
 
-function change_items_menu(state, message) {
-    let ids = get_active_element_ids();
+function recalculate_items(ids, state, message="") {
+    console.log("recalculate");
+    
+    if (ids == null) {
+        ids = get_active_element_ids();
+    }
+
     let full_resolution = false;
     if (get_view() == "zoom") {
         full_resolution = true;
     }
-
     if (ids.length > 0) {
         Blink.msg("grid_item", ["set_multiple", ids, state, full_resolution]);
         open_jobs(1);
-        show_message(message);
+        if (message !== "") {
+            show_message(message);
+        }
     }
-}
-
-function recalculate_item(id, state) {
-    console.log("recalculate");
-    let full_resolution = false;
-    if (get_view() == "zoom") {
-        full_resolution = true;
-    }
-    Blink.msg("grid_item", ["set_multiple", [id], state, full_resolution]);
-    open_jobs(1);
 }
 
 function reset_item(what, message) {

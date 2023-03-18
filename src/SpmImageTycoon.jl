@@ -210,7 +210,6 @@ function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem},
     channels = OrderedDict{String,Dict}()
     channels2 = OrderedDict{String,Dict}()
 
-    # todo: get channels, create unique set, also order
     for id in ids
         filename_original = griditems[id].filename_original
         !haskey(channel_names_list, filename_original) && continue  # should never happen, though
@@ -295,7 +294,7 @@ end
 
 
 """Changes the griditem fieldnames. Cycles/toggles the respective property. Returns if caching is safe."""
-function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, what::String, jump::Int=1)::Bool
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, what::String, jump::Int=1)::Tuple{Bool,Bool}
     # multiple dispatch for update functions
     if what == "channel"
         next_channel_name!(griditem, item, jump)
@@ -311,49 +310,75 @@ function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpe
         next_invert!(griditem, item)
     else
         println("Unknown property to change: ", what)  # this should never happen, though
-        return true
+        return false, true
     end
-    return true
+    return true, true
 end
 
 
 """Changes the griditem fieldnames. Changes multiple properties to specific values. Returns if caching is safe."""
-function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, state::Dict, jump::Int)::Bool
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, state::Dict, jump::Int)::Tuple{Bool,Bool}
     # set new properties for griditem - we also do some checks
     cache_safe = true
+    changed = false
     for (k,v) in state
         if k =="channel_name"
-            v_orig = v
+            v_ = v
             if griditem.type == SpmGridImage
-                if endswith(v_orig, " bwd")
-                    v_orig = replace(v_orig, " bwd" => "")
+                if is_image_channel_name_fwd(griditem.channel_name)
+                    v = image_channel_name_fwd(v)
+                else
+                    v = image_channel_name_bwd(v)
                 end
             end
-            if v_orig in item.channel_names
+            if (v_ in item.channel_names) && (v != griditem.channel_name)
                 griditem.channel_name = v
+                changed = true
             end
         elseif k == "channel2_name" && griditem.type == SpmGridSpectrum
-            if v in item.channel_names
+            if (v in item.channel_names) && (v != griditem.channel2_name)
                 griditem.channel2_name = v
+                changed = true
             end
         elseif k == "scan_direction" && griditem.type == SpmGridSpectrum
             v = parse(Int, v)
-            if v in (0, 1, 2)
+            if v in (0, 1, 2) && v != griditem.scan_direction
                 griditem.scan_direction = v
+                changed = true
+            end
+        elseif k == "scan_direction" && griditem.type == SpmGridImage
+            v = parse(Int, v)
+            c = griditem.channel_name
+            if v == 0
+                c = image_channel_name_fwd(c)
+            elseif v == 1
+                c = image_channel_name_bwd(c)
+            end
+
+            if v in (0, 1) && c != griditem.channel_name
+                griditem.channel_name = c
+                changed = true
             end
         elseif k == "background_correction"
             vs = (griditem.type == SpmGridImage) ? background_correction_list_image : background_correction_list_spectrum
-            if v in keys(vs)
+            if v in keys(vs) && v != griditem.background_correction
                 griditem.background_correction = v
+                changed = true
+            end
+        elseif k == "colorscheme" && griditem.type == SpmGridImage
+            if v in keys(colorscheme_list) && v != griditem.colorscheme
+                griditem.colorscheme = v
+                changed = true
             end
         elseif k == "edits"
             if griditem.edits != v
                 cache_safe = false
+                changed = true  # always recreate in case of edits (for now)
             end
             griditem.edits = v
         end
     end
-    return cache_safe
+    return changed, cache_safe
 end
 
 
@@ -375,7 +400,10 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
             continue
         end
 
-        cache_safe = pre_change_griditem!(griditems[id], item, what, jump)
+        changed, cache_safe = pre_change_griditem!(griditems[id], item, what, jump)
+        full_resolution && (changed = true)  # always recreate in full resolution
+
+        !changed && continue
 
         # update the image or spectrum
         if griditems[id].type == SpmGridImage

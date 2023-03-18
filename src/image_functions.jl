@@ -5,6 +5,28 @@ memcache_imagedata = ListNodeCache{Tuple{Array{Float32,2},String}}(memcache_mb_i
 memcache_imagedata_lock = ReentrantLock() 
 
 
+"""channel name for forward direction"""
+function image_channel_name_fwd(name)
+    if endswith(name, " bwd")
+        name = name[1:end-4]
+    end
+    return name
+end
+
+"""channel name for backward direction"""
+function image_channel_name_bwd(name)
+    if !endswith(name, " bwd")
+        name *= " bwd"
+    end
+    return name
+end
+
+"""returns if the name ccorresponds to the forward direction"""
+function is_image_channel_name_fwd(name)
+    return !endswith(name, " bwd")
+end
+
+
 """saves all colorbars as pngs in the cache directory.
 Returns a dictionary that associates each colorscheme name with a png file"""
 function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::OrderedDict{String,String}
@@ -75,18 +97,21 @@ function next_channel_name!(griditem::SpmGridItem, im_spm::SpmImage, jump::Int):
     channel_name = griditem.channel_name    
     
     channel_names = sort_channel_names(im_spm.channel_names)
-    backward_suffix = ""
-    if endswith(channel_name, " bwd")
-        channel_name = channel_name[1:end-4]
-        backward_suffix = " bwd"
+    bwd = !is_image_channel_name_fwd(channel_name)
+    if bwd
+        channel_name = image_channel_name_fwd(channel_name)
     end
+
     i = findfirst(x -> x == channel_name, channel_names)
     if i === nothing  # this should never happen anyways
         channel_name = channel_names[1]
     else
         i = (i + jump - 1) % length(channel_names) + length(channel_names)
         i = i % length(channel_names) + 1
-        channel_name = channel_names[i] * backward_suffix
+        channel_name = channel_names[i]
+    end
+    if bwd
+        channel_name = image_channel_name_bwd(channel_name)
     end
 
     griditem.channel_name = channel_name
@@ -103,10 +128,10 @@ end
 
 # toggles between forwards and backward scan
 function next_direction!(griditem::SpmGridItem, im_spm::SpmImage)::Nothing
-    if endswith(griditem.channel_name, " bwd")
-        channel_name = griditem.channel_name[1:end-4]
+    if is_image_channel_name_fwd(griditem.channel_name)
+        channel_name = image_channel_name_bwd(griditem.channel_name)
     else
-        channel_name = griditem.channel_name * " bwd"
+        channel_name = image_channel_name_fwd(griditem.channel_name)
     end
     griditem.channel_name = channel_name
 

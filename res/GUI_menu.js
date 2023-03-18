@@ -7,7 +7,7 @@ const icon_menu = {
             list: {
                 type: "list",
                 entries: {},
-                command: (x) => change_items_menu({"channel": x}, "set channel.")
+                command: (x) => change_items_menu({"channel_name": x}, "set channel.")
             }
         }
     },
@@ -19,7 +19,7 @@ const icon_menu = {
             list: {
                 type: "list",
                 entries: {},
-                command: (x) => change_items_menu({"channel2": x}, "set x-channel.")
+                command: (x) => change_items_menu({"channel2_name": x}, "set x-channel.")
             }
         }
     },
@@ -44,7 +44,7 @@ const icon_menu = {
                         for: ["SpmGridSpectrum"]
                     }
                 },  // for images the change is in the name, for specta it is in the field "scan_direction", // todo: needs preparsing by julia
-                command: (x) => change_items_menu({"direction": x}, "set direction.")
+                command: (x) => change_items_menu({"scan_direction": x}, "set direction.")
             }
         }
     },
@@ -72,7 +72,7 @@ const icon_menu = {
             }
         }
     },
-    "more": {
+    "more": {  // revert, virtual copy, delete virtual copy
         icon: "media/bx-dots-horizontal-rounded.svg", title: "more", info_disabled: "select items",
         commands: {
             list: {
@@ -147,7 +147,6 @@ function menu_background_correction_list() {
     return bg_corrs;
 }
 
-// todo: colorschemes need to be set up afte rloading the project
 // channels need to be set up after every selection
 function setup_menu_main() {
     // create main icons in navbar
@@ -270,6 +269,6 @@ function setup_menu_sidebar() {
     });
 }
 
-function change_items_menu() {
-    console.log("change_items_menu");
+function change_items_menu(state, message) {
+    recalculate_items(null, state, message);
 }
