@@ -514,10 +514,7 @@ function change_item(what, message, jump=1) {
     console.log("change: " + what);
     let ids = get_active_element_ids();
 
-    let full_resolution = false;
-    if (get_view() == "zoom") {
-        full_resolution = true;
-    }
+    const full_resolution = (get_view() == "zoom") ? true : false;
 
     if (ids.length > 0) {
         Blink.msg("grid_item", ["next_" + what, ids, jump, full_resolution]);
@@ -533,10 +530,8 @@ function recalculate_items(ids, state, queue_type="", message="") {
         ids = get_active_element_ids();
     }
 
-    let full_resolution = false;
-    if (get_view() == "zoom") {
-        full_resolution = true;
-    }
+    const full_resolution = (get_view() == "zoom") ? true : false;
+
     if (ids.length > 0) {
         Blink.msg("grid_item", ["set_multiple", ids, state, queue_type, full_resolution]);
         open_jobs(1);
@@ -550,10 +545,7 @@ function reset_item(what, message) {
     console.log(what);
     let ids = get_active_element_ids();
 
-    let full_resolution = false;
-    if (get_view() == "zoom") {
-        full_resolution = true;
-    }
+    const full_resolution = (get_view() == "zoom") ? true : false;
 
     if (ids.length > 0) {
         Blink.msg("grid_item", [what, ids, full_resolution]);

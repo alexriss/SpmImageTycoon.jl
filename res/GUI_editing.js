@@ -563,13 +563,30 @@ Editing.prototype = {
             curr_state["scan_direction"] = el_dir.value;
             curr_state["channel_name"] = el_ch.value;
             curr_state["channel2_name"] = el_ch2.value;
+            curr_state_julia = curr_state
         } else if (item.type == "SpmGridImage") {
-            curr_state["scan_direction"] = el_dir.value;
-            curr_state["channel_name"] = el_ch.value;
+            let channel_name = el_ch.value;
+
+            // julia does a similar thing, but we need to do it here for the state_changed check
+            if (el_dir.value == "1") {
+                channel_name += " bwd";
+            }
+            curr_state["channel_name"] = channel_name;
+            if ("channel2_name" in curr_state) {
+                delete curr_state["channel2_name"];
+            }
+            if ("scan_direction" in curr_state) {
+                delete curr_state["scan_direction"];
+            }
+
+            // and this will be for julia
+            curr_state_julia = {...curr_state};  // shallow copy
+            curr_state_julia["scan_direction"] = el_dir.value;
+            curr_state_julia["channel_name"] = el_ch.value;
         }
 
         if (this.state_changed(curr_state, item)) {
-            window.queue_edits_range.add(curr_id, "edit", () => recalculate_items([curr_id], curr_state, "", "edit"));
+            window.queue_edits_range.add(curr_id, "edit", () => recalculate_items([curr_id], curr_state_julia, "edit"));
         }
     },
 
