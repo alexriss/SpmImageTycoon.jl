@@ -108,27 +108,39 @@ const icon_menu = {
                 type: "list",
                 entries: {
                     0: {
-                        val: "no rating",
+                        val: "",
+                        icon: "media/rating-0.svg",
+                        icon_type: "rating",
                         for: ["SpmGridImage", "SpmGridSpectrum"]
                     },
                     1: {
-                        val: "1 star",
+                        val: "",
+                        icon: "media/rating-1.svg",
+                        icon_type: "rating",
                         for: ["SpmGridImage", "SpmGridSpectrum"]
                     },
                     2: {
-                        val: "2 stars",
+                        val: "",
+                        icon: "media/rating-2.svg",
+                        icon_type: "rating",
                         for: ["SpmGridImage", "SpmGridSpectrum"]
                     },
                     3: {
-                        val: "3 stars",
+                        val: "",
+                        icon: "media/rating-3.svg",
+                        icon_type: "rating",
                         for: ["SpmGridImage", "SpmGridSpectrum"]
                     },
                     4: {
-                        val: "4 stars",
+                        val: "",
+                        icon: "media/rating-4.svg",
+                        icon_type: "rating",
                         for: ["SpmGridImage", "SpmGridSpectrum"]
                     },
                     5: {
-                        val: "5 stars",
+                        val: "",
+                        icon: "media/rating-5.svg",
+                        icon_type: "rating",
                         for: ["SpmGridImage", "SpmGridSpectrum"]
                     },
                     "spacer": {},
@@ -203,7 +215,8 @@ function menu_colorscheme_list() {
         if (!x.endsWith(" inv")) {
             colorschemes[x] = {
                 val: x,
-                icon_colorscheme: file_url_colorbar_name(x),
+                icon: file_url_colorbar_name(x),
+                icon_type: "colorscheme",
                 for: ["SpmGridImage"],
             }
         };
@@ -211,7 +224,8 @@ function menu_colorscheme_list() {
     colorschemes["spacer"] = {};
     colorschemes["_invert"] = {
         val: "invert",
-        icon_colorscheme: "media/cb_invert.png",
+        icon: "media/cb_invert.png",
+        icon_type: "colorscheme",
         for: ["SpmGridImage"],
     }
     return colorschemes;
@@ -310,14 +324,13 @@ function add_menu_entries(parent, commands) {
             clone_entry.querySelector(".icon_menu_dropdown_name").innerHTML = value.val;
             if ("icon" in value) {
                 clone_entry.querySelector(".icon_menu_dropdown_icon").src = value.icon;
+                if ("icon_type" in value) {
+                    clone_entry.querySelector(".icon").classList.add(value.icon_type);
+                }
             } else {
                 clone_entry.querySelector("span.icon").classList.add("is-hidden");
             }
-            if ("icon_colorscheme" in value) {
-                clone_entry.querySelector(".icon_menu_dropdown_icon_colorscheme").src = value.icon_colorscheme;
-            } else {
-                clone_entry.querySelector("span.icon_colorscheme").classList.add("is-hidden");
-            }
+
             if ("for" in value) {
                 value.for.forEach((x) => {
                     clone_entry.firstElementChild.classList.add("for-" + x);
