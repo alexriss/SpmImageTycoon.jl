@@ -34,7 +34,7 @@ end
 """gets the default channel name for the y-axis and x-axis, as well as their units, 
 according to the lists spectrum_channels and spectrum_channels_x in config.jl
 and the type of the experiment."""
-function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String}
+function default_channel_names(spectrum::SpmSpectrum)::Tuple{String,String}
     channel_name = spectrum.channel_names[2]   # yaxis
     channel2_name = spectrum.channel_names[1]  # xaxis
 
@@ -52,6 +52,7 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
             for c in channels
                 if c in spectrum.channel_names
                     channel_name = c
+                    break
                 end
             end
         end
@@ -59,6 +60,7 @@ function default_channel_names_units(spectrum::SpmSpectrum)::Tuple{String,String
             for c in channels2
                 if c in spectrum.channel_names
                     channel2_name = c
+                    break
                 end
             end
         end
@@ -177,7 +179,7 @@ end
 
 """Reverts a spectrum to its default settings, returns `true` if anything was changed."""
 function reset_default!(griditem::SpmGridItem, spectrum::SpmSpectrum)::Bool
-    channel_name, channel2_name = default_channel_names_units(spectrum)
+    channel_name, channel2_name = default_channel_names(spectrum)
     if griditem.channel_name != channel_name || griditem.channel2_name != channel2_name
         griditem.channel_name = channel_name
         griditem.channel2_name = channel2_name
@@ -568,7 +570,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         griditem.status = 0
     else
         # get the respective image channel (depending on whether the feedback was on or not)
-        channel_name, channel2_name = default_channel_names_units(spectrum)
+        channel_name, channel2_name = default_channel_names(spectrum)
         griditems[id] = SpmGridItem(
             id=id, type=SpmGridSpectrum, filename_original=filename_original, created=created, last_modified=last_modified, recorded=start_time,
             channel_name=channel_name, channel2_name=channel2_name,
