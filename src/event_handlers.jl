@@ -26,14 +26,19 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
                     if zoomview
                         if griditems[id].type == SpmGridImage
                             width, counts = get_histogram(griditems[id], dir_data)
+                            # this also does open_jobs(-1)
                             @js_ w show_histogram($id, $width, $counts)
                         else
                             # get 2d data for spectrum
                             spectrum_data = get_spectrum_data_dict(griditems[id], dir_data)
                             json_compressed = transcode(GzipCompressor, JSON.json(spectrum_data))
+                            # this also does open_jobs(-1)
                             @js_ w show_spectrum($id, $json_compressed)
                         end
                     end
+                else
+                    # close the job
+                    @js_ w open_jobs(-1)
                 end
             catch e
                 error(e, w)

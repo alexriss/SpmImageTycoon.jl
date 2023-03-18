@@ -650,7 +650,7 @@ function get_image_info(id="", zoomview=false) {
         }
         else {
             ids = get_active_element_ids();
-            if (ids.length == 1) {
+            if (ids.length >= 1) {
                 id = ids[0];
             } else {
                 id = window.image_info_id;
