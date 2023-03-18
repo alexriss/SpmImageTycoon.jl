@@ -84,6 +84,7 @@ const icon_menu = {
                         icon: "media/bx-reset.svg",
                         command: (x) => reset_item("reset", "reset.")
                     },
+                    "spacer": {},
                     "virtual_copy": {
                         val: "create virtual copy",
                         for: ["SpmGridImage", "SpmGridSpectrum"],
@@ -100,9 +101,78 @@ const icon_menu = {
             }
         }
     },
-    // "rating": { icon: "media/bx-star.svg", title: "rating", command: change_item, args: ["inverted", "invert."], info_disabled: "select images" },
-    // "keywords": { icon: "media/bx-message-square-dots.svg", title: "keywords", command: change_item, args: ["background", "change palette."], info_disabled: "select images" },
-    // "export": { icon: "media/bx-link-external.svg", title: "export", command: change_item, args: ["background", "change palette."], info_disabled: "" },
+    "rating": {
+        icon: "media/bx-star.svg", title: "rating", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
+        commands: {
+            list: {
+                type: "list",
+                entries: {
+                    0: {
+                        val: "no rating",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    1: {
+                        val: "1 star",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    2: {
+                        val: "2 stars",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    3: {
+                        val: "3 stars",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    4: {
+                        val: "4 stars",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    5: {
+                        val: "5 stars",
+                        for: ["SpmGridImage", "SpmGridSpectrum"]
+                    },
+                    "spacer": {},
+                    "keywords": {
+                        val: "keywords",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        command: (x) => toggle_keywords_dialog()
+                    }
+                },  // for images the change is in the name, for specta it is in the field "scan_direction", // todo: needs preparsing by julia
+                command: (x) => set_rating(parseInt(x))
+            }
+        }
+    },
+    "export": {
+        icon: "media/bx-link-external.svg", title: "export", info_disabled: "", for: ["any"],
+        commands: {
+            list: {
+                type: "list",
+                entries: {
+                    "odp": {
+                        val: "export presentation",
+                        for: ["any"],
+                        command: (x) => export_to("odp")
+                    },
+                    "spacer": {},
+                    "file_loc": {
+                        val: "show file location",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        command: (x) => open_in_explorer()
+                    },
+                    "image_loc": {
+                        val: "show image location",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        command: (x) => open_in_explorer("image")
+                    },
+                    "file_clipboard": {
+                        val: "copy name to clipboard",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        command: (x) => copy_to_clipboard()
+                    }
+                },
+            }
+        }
+    },
 };
 
 function setup_menu() {
@@ -138,6 +208,7 @@ function menu_colorscheme_list() {
             }
         };
     });
+    colorschemes["spacer"] = {};
     colorschemes["_invert"] = {
         val: "invert",
         icon_colorscheme: "media/cb_invert.png",
@@ -225,9 +296,16 @@ function setup_menu_main() {
 
 function add_menu_entries(parent, commands) {
     const tpl_entry = parent.querySelector(".template_icon_menu_dropdown");
+    const tpl_spacer = parent.querySelector(".template_icon_menu_spacer");
     const dropdownEl = parent.querySelector(".icon_menu_dropdown");
     if (commands.list.type === "list") {
         Object.entries(commands.list.entries).forEach(([key, value]) => {
+            if (key === "spacer") {
+                const clone_spacer = tpl_spacer.content.cloneNode(true);
+                dropdownEl.appendChild(clone_spacer);
+                return;
+            }
+
             const clone_entry = tpl_entry.content.cloneNode(true);
             clone_entry.querySelector(".icon_menu_dropdown_name").innerHTML = value.val;
             if ("icon" in value) {

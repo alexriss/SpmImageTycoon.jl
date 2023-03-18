@@ -131,6 +131,10 @@
     box-shadow: 0px 4px 5px 4px #00000090;
 }
 
+#navbar_main .navbar-dropdown hr.navbar-divider {
+    margin: 0.25rem 0;
+}
+
 #navbar_main .navbar-dropdown .icon_menu_dropdown_icon_colorscheme,
 #navbar_main .navbar-dropdown .icon_colorscheme {
     width: 3rem;
@@ -193,6 +197,39 @@
 #menu_main .icon_menu_container .icon_menu_button:active .icon {
     padding-top: 0px;
 }
+
+/* options available for any state (even if none selected) */
+
+#menu_main .icon_menu_container.for-any {
+    opacity:0.6;
+}
+
+#menu_main .icon_menu_container.for-any:hover {
+    opacity:1;
+}
+
+#menu_main .icon_menu_container.for-any:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main .icon_menu_container.for-any:hover .icon_menu_options,
+#menu_main .icon_menu_container.for-any .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main .navbar-dropdown .navbar-item.for-any {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main .navbar-dropdown .navbar-item.for-any:hover {
+    opacity:1;
+}
+
+#menu_main .icon_menu_container.for-any .icon_menu_button:active .icon {
+    padding-top: 2px;
+} 
   
 
 /* show image-specific menu items when images selected */
