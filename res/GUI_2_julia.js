@@ -607,6 +607,9 @@ function virtual_copy(mode) {
                 open_jobs(1);
                 if (ids_virtual.length == 1) {
                     show_message("delete virtual copy.");
+                    if (get_view() == "zoom") {  // we deleted the one that was shown
+                        toggle_imagezoom("grid");
+                    }
                 } else {
                     show_message("delete virtual copies.");
                 }    

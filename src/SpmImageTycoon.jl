@@ -211,6 +211,7 @@ function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem},
     channels2 = OrderedDict{String,Dict}()
 
     for id in ids
+        !haskey(griditems, id) && continue
         filename_original = griditems[id].filename_original
         !haskey(channel_names_list, filename_original) && continue  # should never happen, though
         for ch in channel_names_list[filename_original]

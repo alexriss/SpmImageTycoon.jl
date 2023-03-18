@@ -15,22 +15,24 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
             zoomview = args[3]
             # get header data
             try
-                image_header, extra_info = get_griditem_header(griditems[id], dir_data)
-                k = replace.(collect(keys(image_header)), ">" => "><wbr>")  # replace for for word wrap in tables
-                v = replace.(collect(values(image_header)), "\n" => "<br />") 
-                v = utf8ify.(v)
-                image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
-                json_compressed = transcode(GzipCompressor, image_header_json)
-                @js_ w show_info($id, $json_compressed, $extra_info);
-                if zoomview
-                    if griditems[id].type == SpmGridImage
-                        width, counts = get_histogram(griditems[id], dir_data)
-                        @js_ w show_histogram($id, $width, $counts)
-                    else
-                        # get 2d data for spectrum
-                        spectrum_data = get_spectrum_data_dict(griditems[id], dir_data)
-                        json_compressed = transcode(GzipCompressor, JSON.json(spectrum_data))
-                        @js_ w show_spectrum($id, $json_compressed)
+                if haskey(griditems, id)  # it can happen that we deleted a virtual copy and then the id is not available anymore
+                    image_header, extra_info = get_griditem_header(griditems[id], dir_data)
+                    k = replace.(collect(keys(image_header)), ">" => "><wbr>")  # replace for for word wrap in tables
+                    v = replace.(collect(values(image_header)), "\n" => "<br />") 
+                    v = utf8ify.(v)
+                    image_header_json = JSON.json(vcat(reshape(k, 1, :), reshape(v, 1, :)))
+                    json_compressed = transcode(GzipCompressor, image_header_json)
+                    @js_ w show_info($id, $json_compressed, $extra_info);
+                    if zoomview
+                        if griditems[id].type == SpmGridImage
+                            width, counts = get_histogram(griditems[id], dir_data)
+                            @js_ w show_histogram($id, $width, $counts)
+                        else
+                            # get 2d data for spectrum
+                            spectrum_data = get_spectrum_data_dict(griditems[id], dir_data)
+                            json_compressed = transcode(GzipCompressor, JSON.json(spectrum_data))
+                            @js_ w show_spectrum($id, $json_compressed)
+                        end
                     end
                 end
             catch e

@@ -93,6 +93,16 @@
   display: none;
 }
 
+/* helps with the hover effect */
+#navbar_main .icon_menu_options_dummy { 
+    position: absolute;
+    bottom: -0.2rem;
+    opacity: 0;
+    width:100%;
+    height:2rem;
+    z-index: 0;
+}
+
 #navbar_main .icon_menu_option {
   position: relative;
   padding: 0.2rem;
@@ -126,6 +136,17 @@
     width: 3rem;
     height: 1rem;
 }
+
+#navbar_main .navbar-dropdown .icon_colorscheme {
+    margin-right: 0.5rem;
+}
+
+#navbar_main .navbar-dropdown .icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-right: 0.5rem;
+}
+
 #navbar_main .navbar-dropdown .icon_colorscheme {
     margin-right: 0.5rem;
 }
@@ -238,6 +259,40 @@
 }
 
 #menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum .icon_menu_button:active .icon {
+    padding-top: 2px;
+}
+
+
+/* show virtual-copy-specific menu items when virtual copies selected */
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy {
+    opacity:0.6;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy:hover .icon_menu_options,
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .navbar-dropdown .navbar-item.for-SpmGridVirtualCopy {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .navbar-dropdown .navbar-item.for-SpmGridVirtualCopy:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy .icon_menu_button:active .icon {
     padding-top: 2px;
 }
 

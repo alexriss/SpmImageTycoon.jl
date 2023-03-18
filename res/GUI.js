@@ -690,6 +690,7 @@ function update_menu_main(grid=null) {
 
     let num_images = 0;
     let num_spectra = 0;
+    let num_vc = 0;
     if (get_view() === "zoom") {
         const item = window.items[window.zoom_last_selected];
         if (item.type === "SpmGridImage") {
@@ -697,9 +698,13 @@ function update_menu_main(grid=null) {
         } else if (item.type === "SpmGridSpectrum") {
             num_spectra = 1;
         }
+        if (item.virtual_copy > 0) {
+            num_vc = 1;
+        }
     } else {
         num_images = grid.querySelectorAll('.item.active.SpmGridImage').length;
         num_spectra = grid.querySelectorAll('.item.active.SpmGridSpectrum').length;
+        num_vc = grid.querySelectorAll('.item.active.SpmGridVirtualCopy').length;
     }
     document.getElementById("menu_main_num_images").innerText = num_images;
     document.getElementById("menu_main_num_spectra").innerText = num_spectra;
@@ -713,6 +718,11 @@ function update_menu_main(grid=null) {
         document.getElementById("menu_main").classList.add("selected-SpmGridSpectrum");
     } else {
         document.getElementById("menu_main").classList.remove("selected-SpmGridSpectrum");
+    }
+    if (num_vc >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridVirtualCopy");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridVirtualCopy");
     }
     setup_menu_selection();
 }
@@ -973,6 +983,9 @@ function add_image(id, id_after=null) {
     const el = t.content.firstElementChild.cloneNode(true)
     el.id = id;
     el.classList.add(window.items[id].type);
+    if (window.items[id].virtual_copy > 0) {
+        el.classList.add("SpmGridVirtualCopy");
+    }
     el.querySelector('img').src = file_url(id);
     if (id_after === null) {
         grid.append(el);

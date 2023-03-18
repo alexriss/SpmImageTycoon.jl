@@ -73,12 +73,30 @@ const icon_menu = {
         }
     },
     "more": {  // revert, virtual copy, delete virtual copy
-        icon: "media/bx-dots-horizontal-rounded.svg", title: "more", info_disabled: "select items",
+        icon: "media/bx-dots-horizontal-rounded.svg", title: "more", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
         commands: {
             list: {
                 type: "list",
-                entries: {},
-                command: (x) => console.log(x),
+                entries: {
+                    "reset": {
+                        val: "reset",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        icon: "media/bx-reset.svg",
+                        command: (x) => reset_item("reset", "reset.")
+                    },
+                    "virtual_copy": {
+                        val: "create virtual copy",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        icon: "media/virtual_copy_white.svg",
+                        command: (x) => virtual_copy("create")
+                    },
+                    "delete_virtual_copy": {
+                        val: "delete virtual copy",
+                        for: ["SpmGridVirtualCopy"],
+                        icon: "media/x-circle.svg",
+                        command: (x) => virtual_copy("delete")
+                    }
+                },
             }
         }
     },
@@ -190,10 +208,12 @@ function setup_menu_main() {
         }
 
         add_menu_entries(clone, commands);
-        clone.firstElementChild.addEventListener("click", () => {
-            // value.command(); // todo: default command
-            // check the -for attribute and only trigger command if it matches selection
-        });
+        if ("command" in value) {
+            clone.firstElementChild.addEventListener("click", () => {
+                // value.command(); // todo: default command
+                // check the -for attribute and only trigger command if it matches selection
+            });
+        }
         container.appendChild(clone);
     });
 }
@@ -220,12 +240,13 @@ function add_menu_entries(parent, commands) {
                     clone_entry.firstElementChild.classList.add("for-" + x);
                 });
             }
+            const command_func = ("command" in value) ? value.command : commands.list.command;
             clone_entry.firstElementChild.addEventListener("click", () => {
-                commands.list.command(key);
-                dropdownEl.classList.add("is-hidden");  // to get rid of the hover effect
-                window.setTimeout(() => {
-                    dropdownEl.classList.remove("is-hidden");
-                }, 50);
+                command_func(key);
+                // dropdownEl.classList.add("is-hidden");  // to get rid of the hover effect
+                // window.setTimeout(() => {
+                //     dropdownEl.classList.remove("is-hidden");
+                // }, 50);
             });
             dropdownEl.appendChild(clone_entry);
         });
