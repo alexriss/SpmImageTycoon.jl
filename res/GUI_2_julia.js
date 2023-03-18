@@ -390,7 +390,6 @@ function show_histogram(id, width, counts) {
             window.histogram_object.plot_histogram(width, counts);
         }
     }
-    open_jobs(-1);
 }
 
 function show_line_profile(id, distances, values, start_point_value, end_point_value) {
@@ -418,6 +417,9 @@ function show_spectrum(id, gzip_json_spectrum_data) {
             window.spectrum_plot_object.plotSpectrum(spectrum_data);
         }
     }
+}
+
+function show_info_done() {
     open_jobs(-1);
 }
 
