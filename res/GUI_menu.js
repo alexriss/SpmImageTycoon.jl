@@ -138,6 +138,11 @@ function menu_colorscheme_list() {
             }
         };
     });
+    colorschemes["_invert"] = {
+        val: "invert",
+        icon_colorscheme: "media/cb_invert.png",
+        for: ["SpmGridImage"],
+    }
     return colorschemes;
 }
 

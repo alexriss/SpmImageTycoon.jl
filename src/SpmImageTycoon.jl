@@ -367,6 +367,14 @@ function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpe
                 changed = true
             end
         elseif k == "colorscheme" && griditem.type == SpmGridImage
+            if v == "_invert"
+                v = griditem.colorscheme
+                if endswith(v, " inv")
+                    v = v[1:end-4]
+                else
+                    v *= " inv"
+                end
+            end
             if v in keys(colorscheme_list) && v != griditem.colorscheme
                 griditem.colorscheme = v
                 changed = true
