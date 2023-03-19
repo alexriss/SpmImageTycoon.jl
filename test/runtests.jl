@@ -35,6 +35,8 @@ global timings["import"] = t1 - t0
     global w = tycoon(keep_alive=false, return_window=true)  # in the test environment config is not loaded and saved
     t1 = time()
 
+    @eval SpmImageTycoon sort_channel_list = false
+
     global fnames_images = filter(endswith(".sxm"), readdir(dir_data))
     global fnames_spectra = filter(endswith(".dat"), readdir(dir_data))
 

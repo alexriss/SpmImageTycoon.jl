@@ -36,14 +36,16 @@ function delete_files(i::Int=1; dir_cache::String="", fname_odp::String="")::Not
 end
 
 """Compare two dictionaries of items."""
-function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
+function compare_dicts(dict1, dict2, tol=1e-6; basekey="", show_all=false)
+    res = true
     for (k,v1) in dict1
         if k in ["created", "last_modified", "filename_display_last_modified"]  # these won't be the same
             continue
         end
 
         if !haskey(dict2, k)
-            return false
+            !show_all && return false
+            show_all && (res = false)
         end
         v2 = dict2[k]
 
@@ -56,45 +58,53 @@ function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
                 curr_basekey = k
             end
             if !compare_dicts(v1, v2, basekey=curr_basekey)
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isa(v1, AbstractArray)
             if !(length(v1) == length(v2))
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
             if length(v1) > 0 && isa(v1[1], Number)
                 if !all(abs.(v1 .- v2) .< tol)
                     println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                    return false
+                    !show_all && return false
+                    show_all && (res = false)
                 end
             elseif !all(v1 .== v2)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isa(v1, String)
             if v1 != v2
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isnan(v1)
             if !isnan(v2)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isa(v1, Number)
             if !(abs(v1 - v2) < tol)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         else
             if v1 != v2
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         end
     end
-    return true
+    return res
 end
 
 
