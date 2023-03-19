@@ -832,7 +832,6 @@ end
 """Start the main GUI and loads images from dir_data (if specified)"""
 function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool=true)::Union{Window,Nothing}
     global Precompiling = false
-    global exit_tycoon = false
     
     file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
@@ -892,6 +891,8 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     @js w show_start()
 
     set_event_handlers_basic(w)
+
+    global exit_tycoon = false
 
     if dir_data != ""
         load_directory(abspath(dir_data), w)

@@ -399,23 +399,31 @@ sup {
   border-left:1px solid #afdafa;
 }
 
+#sidebar_info_content {
+  min-width: 383px;
+}
+
 
 /* sidebar table for image info */
 
 #table-container {
   max-width: 400px;
   display: flex;
-  height: 85vh; 
+  /* height: 85vh;  */
   height: calc(var(--vh, 1vh) * 100 - 13.3rem  - 1rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
   overflow-y: hidden;
-  display: none;
   position: relative;
 }
 
 #table-container table {
   table-layout: fixed;
-  overflow-wrap: break-word;  
+  overflow-wrap: break-word;
   overflow-y: scroll;
+}
+
+#table-container td, #table-container th {
+  overflow-wrap: break-word;
+  max-width:200px;
 }
 
 #table-container input  {

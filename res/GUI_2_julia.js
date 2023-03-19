@@ -222,9 +222,9 @@ function show_info(id, gzip_info_json, extra_info={}) {
     let info_json = require("zlib").gunzipSync(new Buffer.from(gzip_info_json));
     let nnp;
 
-    if (document.getElementById("sidebar_content").classList.contains("is-hidden")) {
-        document.getElementById("sidebar_content_none").classList.add("is-hidden");
-        document.getElementById("sidebar_content").classList.remove("is-hidden");
+    if (document.getElementById("sidebar_info_content").classList.contains("is-invisible")) {
+        document.getElementById("sidebar_info_content_none").classList.add("is-hidden");
+        document.getElementById("sidebar_info_content").classList.remove("is-invisible");
     }
     // let t1 = performance.now();
     // console.log("info unparse:" + (t1 - window.t0) + " ms.");

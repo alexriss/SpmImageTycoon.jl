@@ -161,8 +161,8 @@ function reset_all() {
         window.timeout_image_info_quick = null;
     }
     window.image_info_id = "";
-    document.getElementById("sidebar_content_none").classList.remove("is-hidden");
-    document.getElementById("sidebar_content").classList.add("is-hidden");
+    document.getElementById("sidebar_info_content_none").classList.remove("is-hidden");
+    document.getElementById("sidebar_info_content").classList.add("is-invisible");
 
     if (window.filter_overview_selection_object != null) {
         zoom_drag_filter_overview_reset(document.getElementById('filter_overview_container'));
