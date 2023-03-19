@@ -26,7 +26,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 
 - Load and display Nanonis SPM images: grid and zoom views
 - Load and display Nanonis spectra
-- Fast keyboard-based navigation
+- Fast navigation: dropdown menus or keyboard shortcuts
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
 - Various color palettes
