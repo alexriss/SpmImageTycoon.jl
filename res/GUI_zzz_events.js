@@ -182,7 +182,7 @@ function event_handlers() {
 
     // imagegrid - we want to show image info of selected items when hovering stops
     document.getElementById("imagegrid").addEventListener("mouseleave", (e) => {
-        image_info_timeout();
+        if (get_view() == "grid") { image_info_timeout(); }
     });
 
     // star ratings
@@ -400,7 +400,7 @@ function event_handlers() {
 
     // auto-save every n minutes
     if (window.auto_save_minutes > 0) {
-        setInterval(save_all, 1000 * 60 * window.auto_save_minutes);
+        setInterval(() => save_all(false, false), 1000 * 60 * window.auto_save_minutes);
     }
 
     // open links externally by default

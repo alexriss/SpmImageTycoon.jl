@@ -743,7 +743,7 @@ function export_to(what) {
 function save_all(exit=false, force=false) {
     // saves the current state to disk
     if (get_view() != "start") {
-        console.log("save all")
+        console.log("save all");
         Blink.msg("save_all", [exit, force]);
         show_message("saving.")
         open_jobs(1);

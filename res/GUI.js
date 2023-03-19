@@ -147,6 +147,7 @@ function reset_all() {
     window.zoom_last_selected = "";
     window.last_selected = "";
     window.last_copy_from = "";
+    window.num_open_jobs = 0;
     if (window.timeout != null) {
         clearTimeout(window.timeout);
         window.timeout = null;
