@@ -33,10 +33,8 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
                             json_compressed = transcode(GzipCompressor, JSON.json(spectrum_data))
                             @js_ w show_spectrum($id, $json_compressed)
                         end
+                        @js_ w show_info_done()
                     end
-                end
-                if zoomview
-                    @js_ w show_info_done()
                 end
             catch e
                 error(e, w)
@@ -305,6 +303,7 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
 
     handle(w, "save_all") do args
         lock(l)
+        @show args
         args[1] && (global exit_tycoon = true)
         force = args[2]
         saved = false
@@ -323,7 +322,8 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
                 end
             end
             @show "saving 5"
-            !exit_tycoon && @js_ w saved_all($saved)
+            @show exit_tycoon, saved
+            !args[1] && @js_ w saved_all($saved)
             @show "saving 6"
         catch e
             error(e, w)
