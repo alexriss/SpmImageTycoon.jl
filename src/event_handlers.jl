@@ -303,28 +303,20 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
 
     handle(w, "save_all") do args
         lock(l)
-        @show args
         args[1] && (global exit_tycoon = true)
         force = args[2]
         saved = false
-        @show "saving"
         griditems = current_data["griditems"]
         channel_names_list = current_data["channel_names_list"]
-        @show "saving 2"
         try
             if dir_data != ""
                 if force || (griditems_last_changed > griditems_last_saved - 180)
-                    @show "saving 3"
                     save_all(dir_data, griditems, channel_names_list)
                     global griditems_last_saved = time()
                     saved = true
-                    @show "saving 4"
                 end
             end
-            @show "saving 5"
-            @show exit_tycoon, saved
             !args[1] && @js_ w saved_all($saved)
-            @show "saving 6"
         catch e
             error(e, w)
         finally
