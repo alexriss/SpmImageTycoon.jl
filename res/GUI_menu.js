@@ -354,7 +354,7 @@ function update_menu_entries(key) {
     const commands = icon_menu[key].commands;
 
     // remove old
-    parent.querySelectorAll(".icon_menu_dropdown .navbar-item").forEach((x) => {
+    parent.querySelectorAll(".icon_menu_dropdown .navbar-item, .icon_menu_dropdown .navbar-divider").forEach((x) => {
         x.remove();
     });
     add_menu_entries(parent, commands);
