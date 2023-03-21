@@ -261,7 +261,7 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
         lock(l)
         try
             global cancel_sent = false  # user might send cancel during the next steps
-            save_all(dir_data, griditems, channel_names_list)
+            save_all(dir_data, current_data["griditems"], channel_names_list)
             griditems, griditems_new, channel_names_list = parse_files(dir_data, only_new=!parse_all)
 
             # update current data for all other event handlers
