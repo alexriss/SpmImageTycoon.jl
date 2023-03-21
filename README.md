@@ -102,6 +102,10 @@ _The app should be considered experimental. It has undergone limited testing, an
 
 _The app never modifies or deletes your original data. However, in case of any unexpected problems, you might lose the modifications saved within the app. Even though this has never happened to me, I still advice to backup the database regularly (I personally do not do that, though). The app creates a database in each project directory under `_spmimages_cache/db.jld2` (some older versions of this file are kept as well). This file contains all your edits, keywords, etc. and can be copied as a backup. Any filesystem backup solution should handle this._
 
+### Known issues
+
+Currently, the app does not "survive" standby/sleep mode. So please save your work before putting your computer to sleep.
+
 ## Installation
 
 _Please only use the app if you read the disclaimer above and feel brave enough to do so._
