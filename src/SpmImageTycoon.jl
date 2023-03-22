@@ -842,6 +842,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
         ),
         "title" => "SpmImage Tycoon",
         "icon" => file_logo,
+        :icon => file_logo,
     ))
     Blink.AtomShell.@dot w setMenuBarVisibility(false)
     Blink.AtomShell.@dot w setIcon($file_logo)
