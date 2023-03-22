@@ -659,7 +659,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         end
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
-        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified &&
+        if haskey(griditems, id) && griditems[id].last_modified == last_modified &&  # && griditems[id].created == created 
             griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, filename_original)
             griditems[id].status = 0
             num_in_cache += 1
