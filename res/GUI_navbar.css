@@ -181,7 +181,7 @@
 
 
 
-/* disable interacion when no elements are selected */
+/* disable interaction when no elements are selected */
 
 #navbar_main .icon_menu_container .icon_menu_options {
     display: none;
@@ -316,7 +316,7 @@
     opacity:1;
 }
 
-#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_info_disabled {
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy:hover .icon_menu_info_disabled {
     opacity: 0;
 }
 
