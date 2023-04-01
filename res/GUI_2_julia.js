@@ -21,6 +21,9 @@ function load_page(versions) {
 
     // set-up extra event handlers
     event_handlers();
+
+    // show info sidebar
+    toggle_sidebar("info", true);
 }
 
 function set_params(dir_res, auto_save_minutes, overview_max_images, bg_corrections, directions_list, editing_entries, tycoon_mode) {

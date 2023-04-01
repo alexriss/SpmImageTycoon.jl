@@ -376,7 +376,6 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
 function standard_view() {
     // sets standard view, for instance when a new project is opened
     toggle_imagezoom("grid");
-    toggle_sidebar("info", true);
 }
 
 function get_view() {
