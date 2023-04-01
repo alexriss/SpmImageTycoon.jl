@@ -681,7 +681,7 @@ function update_selected_filter_overview(active_els) {
         for (let i=0; i<ids.length;i++) {
             let el = document.getElementById(prefix + ids[i]);
             if (window.items[ids[i]].type == "SpmGridImage") {
-                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
+                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/").replace(/\"/g, "") + '")';  // we seem to have to replace backward for forward slashed for the css
             }
             el.classList.add("with_background");
         }
