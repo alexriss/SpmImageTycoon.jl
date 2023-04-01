@@ -170,7 +170,6 @@ FilterItems.prototype = {
             // item is not filtered out, unhide it
             this.filter_showhide(id, this.show);
         }
-
         let num_result = document.querySelectorAll(this.filter_selector).length;
         this.progressbar.classList.add('is-hidden');
         this.filter_number.innerText = num_result;
@@ -201,7 +200,7 @@ FilterItems.prototype = {
             });
         }
         if (this.show) {
-            this.filter_selector = '#imagegrid .item:not(' + this.show_class + ')';
+            this.filter_selector = '#imagegrid .item:not(.' + this.show_class + ')';
         } else {
             this.filter_selector = '#imagegrid .item.' + this.show_class;
         }
