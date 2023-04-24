@@ -16,7 +16,7 @@ using JSExpr
 using JSON
 using NaturalSort
 using SkipNan
-using SnoopPrecompile
+using PrecompileTools
 using SpmImages
 using SpmSpectroscopy
 using StatsBase
@@ -799,7 +799,7 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 end
 
 
-@precompile_setup begin
+@setup_workload begin
     global Precompiling = true
     fname_spec_base = "Z-Spectroscopy420.dat"
     fname_img_base = "Image_002.sxm"
@@ -821,7 +821,7 @@ end
     include(joinpath(@__DIR__ , "../test/functions.jl"))
 
 
-    @precompile_all_calls begin
+    @compile_workload begin
         global Precompiling = true
         spec = load_spectrum(fname_spec)
         ima = load_image(fname_img, output_info=0)
