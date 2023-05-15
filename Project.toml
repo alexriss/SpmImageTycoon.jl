@@ -4,7 +4,7 @@ keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunnelin
 license = "GPLv3"
 desc = "Organize scanning probe microscopy images and spectra"
 authors = ["Alex Riss"]
-version = "0.6.0-alpha.2"
+version = "0.6.0-alpha.3"
 
 [deps]
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
@@ -35,7 +35,7 @@ TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
-Blink = "=0.12.6"
+Blink = "=0.12.7"
 CodecZlib = "^0.7"
 ColorSchemes = "^3.20"
 DSP = "^0.7"
