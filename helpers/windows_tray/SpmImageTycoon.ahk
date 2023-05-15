@@ -1,63 +1,56 @@
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-; #Warn  ; Enable warnings to assist with detecting common errors.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
-
-#NoTrayIcon
-#Persistent
-#SingleInstance force
+SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
+#SingleInstance
+Persistent
 
 global script
 
-/* Setup Tray icon and add item that will handle
-* double click events
-*/
-Menu Tray, NoStandard
-Menu Tray, Icon
-Menu Tray, Icon, SpmImageTycoon.ico
-Menu Tray, Add, Show / Hide, TrayClick
-Menu Tray, Add, Close, CloseItem
-Menu Tray, Default, Show / Hide
+; Setup Tray icon and add item that will handle double click events
+Tray:= A_TrayMenu
+Tray.Delete()
+TraySetIcon("SpmImageTycoon.ico")
+Tray.Add("Show / Hide", TrayClick)
+Tray.Add("Close", CloseItem)
+Tray.Default := "Show / Hide"
 
 ;// Run program or batch file hidden
-DetectHiddenWindows On
-Run SpmImageTycoon.bat,, Hide, PID
-WinWait ahk_pid %PID%
+DetectHiddenWindows(true)
+Run("SpmImageTycoon.bat", , "Hide", &PID)
+ErrorLevel := WinWait("ahk_pid " PID) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
 script := WinExist()
-DetectHiddenWindows Off
+DetectHiddenWindows(false)
 
-SetTimer, Closer, 2000
+SetTimer(Closer, 2000)
 
 return
 
-TrayClick:
-OnTrayClick()
-return
+TrayClick(A_ThisMenuItem, A_ThisMenuItemPos, MyMenu) {
+    OnTrayClick()
+    return
+}
 
 ;// Show / hide program or batch file on double click
-OnTrayClick() {
+OnTrayClick(*) {
     if DllCall("IsWindowVisible", "Ptr", script) {
-        WinHide ahk_id %script%
-
+        WinHide("ahk_id " script)
     } else {
-        WinShow ahk_id %script%
-        WinActivate ahk_id %script%
+        WinShow("ahk_id " script)
+        WinActivate("ahk_id " script)
     }
 }
 
-CloseItem() {
-
-       DetectHiddenWindows On
-       WinWait ahk_class ConsoleWindowClass
-       Process, Close, cmd.exe
-       DetectHiddenWindows Off
-       ExitApp
-
+CloseItem(*) {
+    DetectHiddenWindows(true)
+    ErrorLevel := WinWait("ahk_class ConsoleWindowClass") , ErrorLevel := ErrorLevel = 0 ? 1 : 0
+    ErrorLevel := ProcessClose("cmd.exe")
+    DetectHiddenWindows(false)
+    ExitApp()
 }
 
 
-Closer:
-Process, Exist, %PID%
-If !ErrorLevel
-ExitApp
-Return
+Closer(*) {
+    ErrorLevel := ProcessExist(PID)
+    If !ErrorLevel
+    ExitApp()
+    Return
+}
+
