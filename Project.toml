@@ -4,7 +4,7 @@ keywords = ["SPM", "STM", "AFM", "scanning probe microscopy", "scanning tunnelin
 license = "GPLv3"
 desc = "Organize scanning probe microscopy images and spectra"
 authors = ["Alex Riss"]
-version = "0.6.0-alpha.3"
+version = "0.6.0"
 
 [deps]
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
