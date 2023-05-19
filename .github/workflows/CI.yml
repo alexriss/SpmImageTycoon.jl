@@ -18,12 +18,14 @@ jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         version:
           - '1.8'
-          - '^1.9.0-0'
+          - '1.9'
+          # - '^1.9.0-0'
           # - 'nightly'
         os:
           - ubuntu-latest
