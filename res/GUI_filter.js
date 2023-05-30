@@ -2,6 +2,8 @@ function FilterItems() {
     this.running = false;
     this.progressbar = document.getElementById('filter_progress');
     this.filter_number = document.getElementById('filter_number');
+    this.filter_sort_by = document.getElementById('filter_sort_by');
+    this.filter_sort_order = document.getElementById('filter_sort_order');
     this.timeout_filter = null;  // timeout refrence for filter function
     this.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
     this.warning = {
@@ -29,9 +31,10 @@ FilterItems.prototype = {
         }
     },
 
-    filter_items(ids=[], random_id=-1) {
+    filter_items(ids=[], random_id=-1, sort=false) {
         // filters items as specified by the input fields in the filter-sidebar
         // if ids is specified (when certain images have been updated, re-filter those images)
+        // if sort is true, sort the items before filtering
 
         const other_running = this.running;
         this.running = true;
@@ -55,6 +58,10 @@ FilterItems.prototype = {
         this.progressbar.value = 0;
         this.filter_number.classList.add('is-hidden');
         this.progressbar.classList.remove('is-hidden');
+
+        if (sort) {
+            this.sort_items();
+        }
 
         this.filter_mode();
 
@@ -307,6 +314,27 @@ FilterItems.prototype = {
             this.filter_showhide(id, !this.show);
             return true;
         }
+    },
+
+    sort_items() {
+        const attribute = this.filter_sort_by.value;
+        const order = this.filter_sort_order.value;
+        const selector = element => window.items[element.id][attribute];
+
+        const ascendingOrder = (order == "asc") ? true : false;
+
+        const grid = document.getElementById('imagegrid');
+        const elements = [...grid.getElementsByClassName('item')];
+        const parentElement = elements[0].parentNode;
+
+        const collator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
+        elements
+        .sort((elementA, elementB) => {
+            const [firstElement, secondElement] = ascendingOrder ? [elementA, elementB] : [elementB, elementA];
+            const textOfFirstElement = selector(firstElement);
+            const textOfSecondElement = selector(secondElement);
+            return collator.compare(textOfFirstElement , textOfSecondElement)
+        }).forEach(element => parentElement.appendChild(element));
     }
 }
 

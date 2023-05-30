@@ -23,6 +23,25 @@
           <td></td>
         </tr>
         <tr>
+          <th>Sort order</th>
+          <td class="pr-1">
+            <select class="pl-1 pr-1 select is-small" id="filter_sort_by">
+              <option value="recorded" selected>Measurement time</option>
+              <option value="filename_original">Filename</option>
+              <option value="last_modified">File last modified date</option>
+              <option value="created">File creation date</option>
+              <option value="type">Type</option>
+              <option value="rating">Rating</option>
+            </select>
+            <select class="pl-1 pr-1 select is-small" id="filter_sort_order">
+              <option value="asc" selected>ascending</option>
+              <option value="desc">descending</option>
+            </select>
+          </td>
+          <td class="px-0"></td>
+          <td class="px-0"></button></td>
+        </tr>
+        <tr>
           <th>Rating</th>
           <td>
             <div class="columns">

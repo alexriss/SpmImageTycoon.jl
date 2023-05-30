@@ -270,6 +270,14 @@ function event_handlers() {
         window.filter_items_object = new FilterItems();
     }
 
+    document.getElementById('filter_sort_by').addEventListener('click', function() {
+        window.filter_items_object.sort_items()
+    });
+
+    document.getElementById('filter_sort_order').addEventListener('click', function() {
+        window.filter_items_object.sort_items()
+    });
+
     document.querySelectorAll('#sidebar_filter_table input,select').forEach((el) => {
         el.addEventListener("input", () => window.filter_items_object.filter_items());
     });
