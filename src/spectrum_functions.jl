@@ -507,10 +507,12 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
     # spectrum = load_spectrum_memcache(datafile)
     spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
     start_time = spectrum.start_time
+    update_start_time = true
 
     # if no time given in the header, we use the last_modified time of the file (this is better than the created time)
     if start_time <= DateTime(2)
         start_time = last_modified
+        update_start_time = false
     end
 
     z_feedback_setpoint = 0.0
@@ -559,7 +561,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         griditem.filename_original = filename_original
         griditem.created = created
         griditem.last_modified = last_modified
-        # griditem.recorded = start_time  # dont re-set; the first time it was set was probably the most accurate
+        update_start_time && (griditem.recorded = start_time)  # dont re-set if we only have the lmod time; the first time it was set was probably the most accurate
         griditem.center = spectrum.position .* 1e9  # convert to nm
         griditem.bias = spectrum.bias
         griditem.z_feedback = spectrum.z_feedback
@@ -596,7 +598,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
             virtual_copy.filename_original = filename_original
             virtual_copy.created = created
             virtual_copy.last_modified = last_modified
-            # griditem.recorded = start_time  # dont re-set; the first time it was set was probably the most accurate
+            update_start_time && (virtual_copy.recorded = start_time)  # dont re-set if we only have the lmod time; the first time it was set was probably the most accurate
             virtual_copy.center = spectrum.position .* 1e9  # convert to nm
             virtual_copy.bias = spectrum.bias
             virtual_copy.z_feedback = spectrum.z_feedback
