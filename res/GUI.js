@@ -1162,13 +1162,23 @@ function check_update() {
     });
 }
 
-function tycoon_mode_setup() {
-    // shows/hides elements depending on the tycoon mode
-    document.querySelectorAll('.tycoon_mode_pro').forEach((el) => {
+function tycoon_mode_setup_showhide(el) {
+    el.querySelectorAll('.tycoon_mode_pro').forEach((el) => {
+        console.log(el.id);
+        console.log(el.tagName);
         if (window.tycoon_mode === "pro") {
             el.classList.remove("is-hidden");
         } else {
             el.classList.add("is-hidden");
         }
+    });
+}
+
+function tycoon_mode_setup() {
+    // shows/hides elements depending on the tycoon mode
+    tycoon_mode_setup_showhide(document);
+    // also update the elements in the templates
+    document.querySelectorAll('template').forEach((el) => {
+        tycoon_mode_setup_showhide(el.content);
     });
 }
