@@ -274,8 +274,8 @@ function event_handlers() {
         window.filter_items_object.sort_items()
     });
 
-    document.getElementById('filter_sort_order').addEventListener('click', function() {
-        window.filter_items_object.sort_items()
+    document.querySelectorAll('.filter_sort_order_radio').forEach((el) => {
+        el.addEventListener('click', () =>  window.filter_items_object.sort_items());
     });
 
     document.querySelectorAll('#sidebar_filter_table input,select').forEach((el) => {

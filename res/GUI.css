@@ -598,6 +598,34 @@ sup {
   overflow-x: hidden;
 }
 
+#sidebar_filter .filter_sort_order_wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-evenly;
+  height: 100%;
+}
+
+#sidebar_filter .filter_sort_order_wrapper .filter_sort_order_label {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.45;
+  padding: 0px 5px;
+}
+
+#sidebar_filter .filter_sort_order_wrapper input[type="radio"] {
+  display: none;
+}
+
+#filter_sort_order_asc:checked:checked ~ .filter_sort_order_asc_label,
+#filter_sort_order_desc:checked:checked ~ .filter_sort_order_desc_label {
+  opacity:1;
+}
+
 #sidebar_filter_table {
   background-color: #ffffff00;
 }

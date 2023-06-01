@@ -3,7 +3,7 @@ function FilterItems() {
     this.progressbar = document.getElementById('filter_progress');
     this.filter_number = document.getElementById('filter_number');
     this.filter_sort_by = document.getElementById('filter_sort_by');
-    this.filter_sort_order = document.getElementById('filter_sort_order');
+    this.filter_sort_order_asc = document.getElementById('filter_sort_order_asc');
     this.timeout_filter = null;  // timeout refrence for filter function
     this.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
     this.warning = {
@@ -318,10 +318,8 @@ FilterItems.prototype = {
 
     sort_items() {
         const attribute = this.filter_sort_by.value;
-        const order = this.filter_sort_order.value;
+        const ascendingOrder = this.filter_sort_order_asc.checked;
         const selector = element => window.items[element.id][attribute];
-
-        const ascendingOrder = (order == "asc") ? true : false;
 
         const grid = document.getElementById('imagegrid');
         const elements = [...grid.getElementsByClassName('item')];

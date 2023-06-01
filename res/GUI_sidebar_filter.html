@@ -22,10 +22,16 @@
               <option value="type">Type</option>
               <option value="rating">Rating</option>
             </select>
-            <select class="pl-1 pr-1 select is-small" id="filter_sort_order">
-              <option value="asc" selected>ascending</option>
-              <option value="desc">descending</option>
-            </select>
+            <div class="filter_sort_order_wrapper is-small ml-2">
+              <input type="radio" name="filter_sort_order" class="filter_sort_order_radio" id="filter_sort_order_asc"  checked="checked">
+              <input type="radio" name="filter_sort_order" class="filter_sort_order_radio" id="filter_sort_order_desc">
+                <label for="filter_sort_order_asc" class="filter_sort_order_label filter_sort_order_asc_label">
+                   <span>asc</span>
+                </label>
+                <label for="filter_sort_order_desc" class="filter_sort_order_label filter_sort_order_desc_label">
+                   <span>desc</span>
+                </label>
+             </div>
           </td>
           <td class="px-0"></td>
           <td class="px-0"></button></td>
