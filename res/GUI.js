@@ -1164,8 +1164,6 @@ function check_update() {
 
 function tycoon_mode_setup_showhide(el) {
     el.querySelectorAll('.tycoon_mode_pro').forEach((el) => {
-        console.log(el.id);
-        console.log(el.tagName);
         if (window.tycoon_mode === "pro") {
             el.classList.remove("is-hidden");
         } else {
