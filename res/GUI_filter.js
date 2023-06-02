@@ -38,6 +38,8 @@ FilterItems.prototype = {
 
         const other_running = this.running;
         this.running = true;
+        const that = this;
+
         if (random_id == -1) {  // new item in the queue
             random_id = Math.random().toString(36).substring(2) + Date.now();
             this.queue_filter_items.push(random_id);
@@ -48,7 +50,7 @@ FilterItems.prototype = {
         }
         if (other_running) {
             setTimeout(function () {
-                this.filter_items(ids, random_id);
+                that.filter_items(ids, random_id, sort);
             }, 10);
             return;
         } 

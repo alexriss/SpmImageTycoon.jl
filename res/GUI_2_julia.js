@@ -118,7 +118,7 @@ function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previ
         })
     }
 
-    window.filter_items_object.filter_items(sort=true);
+    window.filter_items_object.filter_items([], -1, sort=true);
     document.getElementById('footer_num_images_total').innerText = griditems_arr.length;
     check_hover_enabled();
 
@@ -158,7 +158,7 @@ function update_images(gzip_json_griditems, julia_queue_type="") {  // "griditem
     // t1 = performance.now();
     // console.log("Update info get2:" + (t1 - window.t0) + " ms.");
 
-    window.filter_items_object.filter_items(Object.keys(griditems), sort=true);
+    window.filter_items_object.filter_items(Object.keys(griditems), -1, sort=true);
     check_hover_enabled();
 
     open_jobs(-1, ids, julia_queue_type);
@@ -186,7 +186,7 @@ function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {
         i++;
     }
 
-    window.filter_items_object.filter_items(Object.keys(griditems), sort=true);
+    window.filter_items_object.filter_items(Object.keys(griditems), -1, sort=true);
     document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
     check_hover_enabled();
 
