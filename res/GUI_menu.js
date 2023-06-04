@@ -73,18 +73,24 @@ const icon_menu = {
         }
     },
     "more": {  // revert, virtual copy, delete virtual copy
-        icon: "media/bx-dots-horizontal-rounded.svg", title: "more", info_disabled: "select items", for: ["SpmGridImage", "SpmGridSpectrum"],
+        icon: "media/bx-dots-horizontal-rounded.svg", title: "more", info_disabled: "select items", for: ["any"],
         commands: {
             list: {
                 type: "list",
                 entries: {
-                    "reset": {
-                        val: "reset",
-                        for: ["SpmGridImage", "SpmGridSpectrum"],
-                        icon: "media/bx-reset.svg",
-                        command: (x) => reset_item("reset", "reset.")
+                    "select_all": {
+                        val: "select all",
+                        for: ["any"],
+                        icon: "media/bx-check-double.svg",
+                        command: (x) => toggle_all_active(false, true)
                     },
-                    "spacer": {},
+                    "select_none": {
+                        val: "select none",
+                        for: ["any"],
+                        icon: "media/bx-x.svg",
+                        command: (x) => clear_all_active()
+                    },
+                    "spacer1": {},
                     "virtual_copy": {
                         val: "create virtual copy",
                         for: ["SpmGridImage", "SpmGridSpectrum"],
@@ -96,7 +102,14 @@ const icon_menu = {
                         for: ["SpmGridVirtualCopy"],
                         icon: "media/x-circle.svg",
                         command: (x) => virtual_copy("delete")
-                    }
+                    },
+                    "spacer2": {},
+                    "reset": {
+                        val: "reset",
+                        for: ["SpmGridImage", "SpmGridSpectrum"],
+                        icon: "media/bx-reset.svg",
+                        command: (x) => reset_item("reset", "reset.")
+                    },
                 },
             }
         }
@@ -314,7 +327,7 @@ function add_menu_entries(parent, commands) {
     const dropdownEl = parent.querySelector(".icon_menu_dropdown");
     if (commands.list.type === "list") {
         Object.entries(commands.list.entries).forEach(([key, value]) => {
-            if (key === "spacer") {
+            if (key.substring(0,6) === "spacer") {
                 const clone_spacer = tpl_spacer.content.cloneNode(true);
                 dropdownEl.appendChild(clone_spacer);
                 return;

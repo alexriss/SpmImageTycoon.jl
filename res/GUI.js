@@ -538,7 +538,7 @@ function clear_all_active() {
     check_hover_enabled();
 }
 
-function toggle_all_active(ignore_filter_status=false) {
+function toggle_all_active(ignore_filter_status=false, force_all=false) {
     // toggles between select-all and select-none
     if (get_view() != "grid") {
         return;
@@ -546,14 +546,14 @@ function toggle_all_active(ignore_filter_status=false) {
 
     if (ignore_filter_status) {
         const els = document.querySelectorAll('#imagegrid .item:not(.active)');
-        if (els.length == 0) {
+        if (els.length == 0 && !force_all) {
             clear_all_active();
         } else {
             els.forEach(el => el.classList.add('active'));
         }
     } else {
         const els = document.querySelectorAll('#imagegrid .item:not(.is-hidden):not(.active)');
-        if (els.length == 0) {
+        if (els.length == 0 && !force_all) {
             clear_all_active();
         } else {
             els.forEach(el => el.classList.add('active'));
