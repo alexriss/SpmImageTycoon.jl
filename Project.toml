@@ -55,7 +55,7 @@ PrecompileTools = "^1.0"
 SpmImages = "^0.3.2"
 SpmSpectroscopy = "^0.5"
 StatsBase = "^0.33"
-TranscodingStreams = "=0.9.11"
+TranscodingStreams = "^0.9.13"
 ZipFile = "^0.10"
 julia = "^1.8"
 
