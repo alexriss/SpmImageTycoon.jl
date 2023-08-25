@@ -9,10 +9,16 @@ tycoon_mode = ""  # can be set to "pro" to enable pro features
 image_channels_feedback_on = ["Z"]
 image_channels_feedback_off = ["Frequency Shift", "Current"]
 spectrum_channels = OrderedDict{String,Vector{String}}(
-    "bias spectroscopy" => ["LIX 1 omega [AVG]", "Frequency Shift [AVG]", "Current [AVG]", "LIX 1 omega", "Frequency Shift", "Current"],
-    "Z spectroscopy" => ["Frequency Shift [AVG]", "Current [AVG]", "Frequency Shift", "Current"],
-    "History Data" => ["Current", "Frequency Shift"],
-    "Frequency Sweep" => ["Amplitude", "Phase"]
+    "bias spectroscopy" => [
+        "LIX 1 omega [AVG]", "LI Demod 1 X [AVG]", "LI Demod 2 X [AVG]",  "Frequency Shift [AVG]", "OC M1 Freq. Shift [AVG]", "Current [AVG]",
+        "LIX 1 omega", "LI Demod 1 X", "LI Demod 2 X", "Frequency Shift", "OC M1 Freq. Shift", "Current"
+    ],
+    "Z spectroscopy" => [
+        "Frequency Shift [AVG]", "OC M1 Freq. Shift [AVG]", "Current [AVG]",
+        "Frequency Shift", "OC M1 Freq. Shift", "Current"
+    ],
+    "History Data" => ["Current", "Frequency Shift", "OC M1 Freq. Shift"],
+    "Frequency Sweep" => ["Amplitude", "OC D1 Amplitude", "Phase", "OC D1 Phase"]
 )
 spectrum_channels_x = OrderedDict{String,Vector{String}}(
     "History Data" => ["Index"]
