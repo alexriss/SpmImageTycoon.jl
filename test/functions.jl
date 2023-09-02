@@ -44,6 +44,7 @@ function compare_dicts(dict1, dict2, tol=1e-6; basekey="", show_all=false)
         end
 
         if !haskey(dict2, k)
+            println("$(basekey): key not found $(k)")
             !show_all && return false
             show_all && (res = false)
         end
@@ -68,12 +69,26 @@ function compare_dicts(dict1, dict2, tol=1e-6; basekey="", show_all=false)
                 show_all && (res = false)
             end
             if length(v1) > 0 && isa(v1[1], Number)
-                if !all(abs.(v1 .- v2) .< tol)
-                    println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                    !show_all && return false
-                    show_all && (res = false)
+                for (vv1, vv2) in zip(v1, v2)
+                    if isnan(vv1) || isnan(vv2)
+                        if !isnan(vv2) || !isnan(vv2)
+                            println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
+                            !show_all && return false
+                            show_all && (res = false)
+                        end
+                    elseif !(abs(vv1 - vv2) < tol)
+                        println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
+                        !show_all && return false
+                        show_all && (res = false)
+                    end
                 end
             elseif !all(v1 .== v2)
+                println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
+                !show_all && return false
+                show_all && (res = false)
+            end
+        elseif isa(v1, Dates.DateTime) || isa(v2, Dates.DateTime)  # sometimes the DateTime is stored as a String in the results
+            if string(v1) != string(v2)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
                 !show_all && return false
                 show_all && (res = false)

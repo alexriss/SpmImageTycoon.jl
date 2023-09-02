@@ -68,7 +68,8 @@ end
         d = Dict(string(key) => getfield(griditem, key) for key in propertynames(griditem))
         items_loaded[k] = d
     end
-    @test compare_dicts(items_loaded, items_old_db)
+    @show items_loaded
+    @test compare_dicts(items_old_db, items_loaded)
 end
 
 @testset "Manipulation" begin
