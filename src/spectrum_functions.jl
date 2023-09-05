@@ -35,7 +35,7 @@ end
 according to the lists spectrum_channels and spectrum_channels_x in config.jl
 and the type of the experiment."""
 function default_channel_names(spectrum::SpmSpectrum)::Tuple{String,String}
-    channel_name = spectrum.channel_names[2]   # yaxis
+    channel_name = (length(spectrum.channel_names) > 1) ? spectrum.channel_names[2] : spectrum.channel_names[1]  # yaxis
     channel2_name = spectrum.channel_names[1]  # xaxis
 
     if haskey(spectrum.header, "Experiment")
