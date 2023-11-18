@@ -499,8 +499,7 @@ end
 """Parses a spectrum file and creates the preview in the cache directory if necessary."""
 function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
     griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool,
-    dir_cache::String, datafile::String, id::String, filename_original::String,
-    created::DateTime, last_modified::DateTime)::Vector{Task}
+    dir_cache::String, datafile::String, id::String, created::DateTime, last_modified::DateTime)::Vector{Task}
 
     tasks = Task[]
 
@@ -508,6 +507,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
     spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
     start_time = spectrum.start_time
     update_start_time = true
+    filename_original = basename(datafile)
 
     # if no time given in the header, we use the last_modified time of the file (this is better than the created time)
     if start_time <= DateTime(2)

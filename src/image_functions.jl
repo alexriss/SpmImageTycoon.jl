@@ -309,7 +309,9 @@ end
 
 """Reverts a spectrum to its default settings, returns `true` if anything was changed."""
 function reset_default!(griditem::SpmGridItem, im_spm::SpmImage)::Bool
-    channel_name= default_channel_name(im_spm)
+    channel_name = default_channel_name(im_spm)
+    change_gsxm_griditem_filename_original!(griditem, channel_name)
+
     if griditem.channel_name != channel_name
         griditem.channel_name = channel_name
         # unit will be set in the create_image! function
@@ -371,17 +373,25 @@ end
 """Parses an image file and creates the images in the cache directory if necessary."""
 function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
     griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool,
-    dir_cache::String, datafile::String, id::String, filename_original::String,
+    dir_cache::String, datafiles::Vector{String}, id::String,
     created::DateTime, last_modified::DateTime)::Vector{Task}
 
     tasks = Task[]
 
-    im_spm = load_image(datafile, output_info=0)  # we dont use the cache here
+    im_spm = load_image(datafiles, output_info=0)  # we dont use the cache here
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
+    filename_original = datafiles[1]
 
     if haskey(griditems, id)
         griditem = griditems[id]
         # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
+        if length(datafiles) > 1
+            if haskey(channel_names_files[id], griditem.channel_name)
+                filename_original = channel_names_files[id][griditem.channel_name]
+            else
+                filename_original = channel_names_files[id][default_channel_name(im_spm)]
+            end
+        end
         griditem.type = SpmGridImage
         griditem.filename_original = filename_original
         griditem.created = created
@@ -397,30 +407,39 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
         griditem.z_feedback_setpoint = im_spm.z_feedback_setpoint
         griditem.z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
         griditem.z = im_spm.z
-        griditem.comment = utf8ify(im_spm.header["Comment"])
+        griditem.comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
         griditem.status = 0
     else
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name = default_channel_name(im_spm)
+        length(datafiles) > 1 && (filename_original = channel_names_files[id][channel_name])
+        comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
         griditems[id] = SpmGridItem(
             id=id, type=SpmGridImage, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
             channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
             center=im_spm.center, angle=im_spm.angle, scan_direction=scan_direction,
             bias=im_spm.bias, z_feedback=im_spm.z_feedback, z_feedback_setpoint=im_spm.z_feedback_setpoint, z_feedback_setpoint_unit=im_spm.z_feedback_setpoint_unit, z=im_spm.z,
             colorscheme=default_color_scheme,
-            comment=utf8ify(im_spm.header["Comment"])
+            comment=comment
         )
         if only_new
             push!(griditems_new, id)
         end
         griditem = griditems[id]
     end
-    channel_names_list[filename_original] = im_spm.channel_names
+    channel_names_list[basename(filename_original)] = im_spm.channel_names
     t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
     push!(tasks, t)
     
     # virtual copies
     if haskey(virtual_copies_dict, id)
+        if length(datafiles) > 1
+            if haskey(channel_names_files[id], virtual_copy.channel_name)
+                filename_original = channel_names_files[id][virtual_copy.channel_name]
+            else
+                filename_original = channel_names_files[id][default_channel_name(im_spm)]
+            end
+        end
         for virtual_copy in virtual_copies_dict[id]
             # update fields here, too - however, most of these fields should stay unchanged
             virtual_copy.type = SpmGridImage
@@ -438,7 +457,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
             virtual_copy.z_feedback_setpoint = im_spm.z_feedback_setpoint
             virtual_copy.z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
             virtual_copy.z = im_spm.z
-            virtual_copy.comment = utf8ify(im_spm.header["Comment"])
+            virtual_copy.comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
             virtual_copy.status = 0
 
             t = Threads.@spawn create_image!(virtual_copy, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)

@@ -38,9 +38,28 @@ function add_trailing_slash(directory::String)::String
 end
 
 
+"""returns the base filename for .nc files"""
+function base_filename(filename::String)::String
+    !is_gsxm(filename) && return filename
+    return split(filename, "-")[1] * extension_image_gsxm
+end
+
+
+"""Gets a list of the files for each channel in `fnames`. Used for GSXM files, for which each channel is stored in a separate file."""
+function get_channels_names_files(fnames::Vector{String})::Dict{String, String}
+    names, units, files_fwd, files_bwd = SpmImages.get_channel_names_units_netCDF(basename.(fnames))
+    res = Dict{String, String}()
+    for n in names
+        haskey(files_fwd, n) && (res[n] = files_fwd[n])
+        haskey(files_bwd, n) && (res[image_channel_name_bwd(n)] = files_bwd[n])
+    end
+    return res
+end
+
+
 """get contents of filename"""
 function get_contents(filename::String)::String
-    contents = open(file_GUI) do file
+    contents = open(filename) do file
         read(file, String)
     end
     return contents
@@ -52,11 +71,13 @@ function get_dir_cache(dir_data::String)::String
     return joinpath(dir_data, dir_cache_name)
 end
 
+
 """returns temp cache from dir_data"""
 function get_dir_temp_cache(dir_data::String)::String
     d = splitdir(dir_data)[end]
     return joinpath(tempdir(), dir_temp_cache_name, dir_cache_name, d)
 end
+
 
 """returns temp cache from dir_data"""
 function get_dir_temp_cache_cache(dir_cache::String)::String
@@ -68,4 +89,16 @@ end
 """Returns the absolute path to an asset"""
 function path_asset(asset::String)::String
     return abspath(joinpath(@__DIR__, dir_res, asset))
+end
+
+
+"""cecks if the filename is an image"""
+function is_image(filename::String)::Bool
+    return endswith(filename, extension_image_nanonis) || endswith(filename, extension_image_gsxm)
+end
+
+
+"""checks if the filename is a spectrrum"""
+function is_spectrum(filename::String)::Bool
+    return endswith(filename, extension_spectrum_nanonis)
 end

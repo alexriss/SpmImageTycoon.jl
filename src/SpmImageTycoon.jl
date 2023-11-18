@@ -90,6 +90,7 @@ include("cache.jl")
 include("helper_functions.jl")
 include("image_functions.jl")
 include("spectrum_functions.jl")
+include("gsxm_functions.jl")
 include("export.jl")
 include("event_handlers.jl")
 include("db_functions.jl")
@@ -101,6 +102,8 @@ cancel_sent = false  # user can cancel load-directory operation
 griditems_last_saved = 0.  # time of last save of griditems
 griditems_last_changed = 0.  # time of last (potential) change of griditems - we do not keep track of actual changes, but only if certain events happen
 griditems_lock = ReentrantLock()
+
+channel_names_files = Dict{String,Dict{String,String}}()  # list of channel names and the respective files (used for GSXM, where each channel has one file)
 
 Precompiling = false
 
@@ -195,15 +198,21 @@ end
 
 """Generates the display filename for `griditem`."""
 function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
-    base = splitext(griditem.filename_original)[1] * suffix
-    if griditem.type == SpmGridSpectrum
-        filename_display = "$(base).svg"
+    if is_gsxm(griditem.filename_original)
+        filename_display = split(griditem.filename_original, "-")[1] * suffix
     else
-        filename_display = "$(base).png"
+        filename_display = splitext(griditem.filename_original)[1] * suffix
+    end
+
+    if griditem.type == SpmGridSpectrum
+        filename_display *= ".svg"
+    else
+        filename_display *= ".png"
     end
     
     return filename_display
 end
+
 
 """Gets channels and channels2 for the given ids"""
 function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem}, channel_names_list::Dict{String,Vector{String}})::Tuple{OrderedDict{String,Dict},OrderedDict{String,Dict}}
@@ -212,9 +221,9 @@ function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem},
 
     for id in ids
         !haskey(griditems, id) && continue
-        filename_original = griditems[id].filename_original
-        !haskey(channel_names_list, filename_original) && continue  # should never happen, though
-        for ch in channel_names_list[filename_original]
+        filename_base = basename(griditems[id].filename_original)
+        !haskey(channel_names_list, filename_base) && continue  # should never happen, though
+        for ch in channel_names_list[filename_base]
             (griditems[id].type == SpmGridSpectrum) && endswith(ch, " [bwd]") && continue
 
             if !haskey(channels, ch)
@@ -399,27 +408,53 @@ Modifies the griditems array."""
 function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::Union{String,Dict}, full_resolution::Bool, jump::Int=0)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
-        filename_original_full = joinpath(dir_data, griditems[id].filename_original)
-        if griditems[id].type == SpmGridImage
+        griditem = griditems[id]
+        filename_original_full = joinpath(dir_data, griditem.filename_original)
+        if griditem.type == SpmGridImage
             item = load_image_memcache(filename_original_full)
-        elseif griditems[id].type == SpmGridSpectrum
+        elseif griditem.type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
         else
-            println("Unknown type: ", griditems[id].type)  # this should never happen, though
+            println("Unknown type: ", griditem.type)  # this should never happen, though
             continue
         end
 
-        changed, cache_safe = pre_change_griditem!(griditems[id], item, what, jump)
+        # we need all channel names to change GSXM files
+        if is_gsxm(griditem) 
+            channel_names_before = item.channel_names
+            item.channel_names = get_gsxm_channel_names(griditem)
+        end
+        changed, cache_safe = pre_change_griditem!(griditem, item, what, jump)
+        # change back now
+        if is_gsxm(griditem) 
+            item.channel_names = channel_names_before
+        end
+
+        # GSXM files have multiple files, so we have to load the right one
+        # if the filename_original was changed (can happen for GSXM files), we have to reload the item
+        if is_gsxm(griditem)
+            filename_original_before = griditem.filename_original
+            change_gsxm_griditem_filename_original!(griditem, griditems[id].channel_name)
+
+            if griditem.filename_original != filename_original_before
+                filename_original_full = joinpath(dir_data, griditem.filename_original)
+                if griditem.type == SpmGridImage
+                    item = load_image_memcache(filename_original_full)
+                elseif griditem.type == SpmGridSpectrum
+                    item = load_spectrum_memcache(filename_original_full)
+                end
+            end
+        end
         full_resolution && (changed = true)  # always recreate in full resolution
 
         !changed && continue
 
         # update the image or spectrum
-        if griditems[id].type == SpmGridImage
+        if griditem.type == SpmGridImage
             resize_to_ = full_resolution ? 0 : resize_to
-            create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache, cache_safe=cache_safe)    
-        elseif griditems[id].type == SpmGridSpectrum
-            create_spectrum!(griditems[id], item, dir_cache=dir_cache, cache_safe=cache_safe)
+            create_image!(griditem, item, resize_to=resize_to_, dir_cache=dir_cache, cache_safe=cache_safe)    
+        elseif griditem.type == SpmGridSpectrum
+            create_spectrum!(griditem, item, dir_cache=dir_cache, cache_safe=cache_safe)
         end
     end
     return nothing
@@ -430,26 +465,27 @@ end
 function reset_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, full_resolution::Bool)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
-        filename_original_full = joinpath(dir_data, griditems[id].filename_original)
+        griditem = griditems[id]
+        filename_original_full = joinpath(dir_data, griditem.filename_original)
 
-        if griditems[id].type == SpmGridImage
+        if griditem.type == SpmGridImage
             item = load_image_memcache(filename_original_full)
-        elseif griditems[id].type == SpmGridSpectrum
+        elseif griditem.type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
         else
-            println("Unknown type: ", griditems[id].type)  # this should never happen, though
+            println("Unknown type: ", griditem.type)  # this should never happen, though
             continue
         end
     
-        changed = reset_default!(griditems[id], item)
+        changed = reset_default!(griditem, item)
 
         # update the image or spectrum
         if changed
-            if griditems[id].type == SpmGridImage
+            if griditem.type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache)    
-            elseif griditems[id].type == SpmGridSpectrum
-                create_spectrum!(griditems[id], item, dir_cache=dir_cache)
+                create_image!(griditem, item, resize_to=resize_to_, dir_cache=dir_cache)    
+            elseif griditem.type == SpmGridSpectrum
+                create_spectrum!(griditem, item, dir_cache=dir_cache)
             end
         end
     end
@@ -466,6 +502,9 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
 
         griditem.type == type_from || continue
         id != id_from || continue
+
+        # GSXM files have multiple files, so we have to load the right one
+        change_gsxm_griditem_filename_original!(griditem, griditems[id_from].channel_name)
 
         filename_original_full = joinpath(dir_data, griditem.filename_original)
         if griditem.type == SpmGridImage
@@ -628,21 +667,41 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         map(x -> x.status=-2, values(griditems))  # we do not need to use "map! (we even cant use it)
     end
 
-    datafiles = filter!(x -> isfile(x) && (endswith(x, extension_image) || endswith(x, extension_spectrum)), readdir(dir_data, join=true))
+    datafiles = filter!(x -> isfile(x) && (is_image(x) || is_spectrum(x)), readdir(dir_data, join=true))
     if w !== nothing && length(datafiles) > 1  # 1 files will have the plural-s problem in the frontend, so just skip it
         @js_ w page_start_load_params($(length(datafiles)))
     end
 
+    empty!(channel_names_files)
+
     num_parsed = 0
     num_in_cache = 0
     tasks = Task[]
-    for datafile in datafiles
-        filename_original = basename(datafile)
-        s = stat(datafile)
-        created = unix2datetime(s.ctime)
-        last_modified = unix2datetime(s.mtime)
+    datafiles_curr = String[]
+    i_datafile = 1
+    while i_datafile <= length(datafiles)
+        datafile = datafiles[i_datafile]
+        push!(datafiles_curr, datafile)
 
-        id = filename_original
+        # gsxm uses one file for each channel
+        if i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
+            i_datafile += 1
+            continue
+        end
+
+        # first one is the main file
+        datafile = datafiles_curr[1]
+        filename_original = basename(datafile)
+        id = base_filename(filename_original)
+        is_gsxm(filename_original) && (channel_names_files[id] = get_channels_names_files(datafiles_curr))
+        
+        # there can be multiple files (for GSXM), so we compute the mean
+        s = stat.(datafiles_curr)
+        ctime = mean(getfield.(s, :ctime))
+        mtime = mean(getfield.(s, :mtime))
+        created = unix2datetime(ctime)
+        last_modified = unix2datetime(mtime)
+
         if only_new && haskey(griditems, id)
             continue
         end
@@ -660,7 +719,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
         if haskey(griditems, id) && griditems[id].last_modified == last_modified &&  # && griditems[id].created == created 
-            griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, filename_original)
+            griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, id)
             griditems[id].status = 0
             num_in_cache += 1
             if haskey(virtual_copies_dict, id)
@@ -670,13 +729,14 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
                 end
             end
         else
-            if endswith(filename_original, extension_image)
+            if is_image(filename_original)
+                # we load all datafiles here (for gsxm)
                 ts = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
-                    dir_cache, datafile, id, filename_original, created, last_modified)
+                    dir_cache, datafiles_curr, id, created, last_modified)
                 append!(tasks, ts)
-            elseif endswith(filename_original, extension_spectrum)
+            elseif is_spectrum(filename_original)
                 ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
-                    dir_cache, datafile, id, filename_original, created, last_modified)
+                    dir_cache, datafile, id, created, last_modified)
                 append!(tasks, ts)
             end
         end
@@ -695,6 +755,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         if cancel_sent
             break
         end
+        empty!(datafiles_curr)
+        i_datafile += 1
     end
     wait.(tasks)
 

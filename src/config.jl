@@ -27,8 +27,9 @@ spectrum_channels_x = OrderedDict{String,Vector{String}}(
 sort_channel_list = true  # sort channels in the channel list
 
 const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
-const extension_image = ".sxm"
-const extension_spectrum = ".dat"
+const extension_image_nanonis = ".sxm"
+const extension_spectrum_nanonis = ".dat"
+const extension_image_gsxm = ".nc"
 
 const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated files here)
 const dir_temp_cache_name = "SpmImageTycoon_temp"  # directory used for temporary caching (if cache dir is write restricted). Will be created in tempdir()
