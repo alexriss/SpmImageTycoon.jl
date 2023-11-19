@@ -199,7 +199,7 @@ end
 """Generates the display filename for `griditem`."""
 function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
     if is_gsxm(griditem.filename_original)
-        filename_display = split(griditem.filename_original, "-")[1] * suffix
+        filename_display = splitext(base_filename(griditem.filename_original))[1] * suffix
     else
         filename_display = splitext(griditem.filename_original)[1] * suffix
     end
@@ -221,7 +221,7 @@ function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem},
 
     for id in ids
         !haskey(griditems, id) && continue
-        filename_base = basename(griditems[id].filename_original)
+        filename_base = base_filename(griditems[id].filename_original)
         !haskey(channel_names_list, filename_base) && continue  # should never happen, though
         for ch in channel_names_list[filename_base]
             (griditems[id].type == SpmGridSpectrum) && endswith(ch, " [bwd]") && continue
@@ -769,7 +769,20 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         msg = "Parsed $(num_parsed) files ($(num_items) items, $(num_in_cache) in cache) in $elapsed_time."
         log(msg, w)
     end
+    cleanup_channel_names_list!(channel_names_list, griditems)
     return griditems, griditems_new, channel_names_list
+end
+
+
+"""removes all channels from `channels_names_list` that are not in the griditems"""
+function cleanup_channel_names_list!(channels_names_list::Dict{String, Vector{String}}, griditems::Dict{String,SpmGridItem})
+    valid_keys = Set{String}([base_filename(im.filename_original) for im in values(griditems)])
+    for k in keys(channels_names_list)
+        if k ∉ valid_keys
+            delete!(channels_names_list, k)
+        end
+    end
+    return nothing
 end
 
 
