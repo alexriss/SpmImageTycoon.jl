@@ -552,16 +552,34 @@ sup {
   height: 1.68em;
 }
 
+/* make modals a bit wider */
+@media screen and (min-width: 769px) {
+  .modal-content,
+  .modal-card {
+    width: 80% !important;
+    min-width: 720px;
+    max-width: 900px;
+  }
+}
+
 /* keywords modal */
 
 #modal_keywords .modal-card-body {
   line-height:160%;
   padding-bottom:5rem;
 }
+#modal_keywords .modal-card, #modal_keywords .modal-content  {
+  max-width: 900px;
+}
 
 /* modal error */
 #modal_error .message { 
   word-break: break-word;
+}
+
+/* modal error */
+#modal_help .modal-content, #modal_help .modal-card { 
+  max-width: 1000px;
 }
 
 /* keywords autosuggestions dropdown */
