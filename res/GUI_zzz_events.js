@@ -74,6 +74,11 @@ const ctrl_key_commands = {
     F5: { command: re_parse_images, args: [true] },
 }
 
+// with ctrl-and shift modifier
+const ctrl_shift_key_commands = {
+    F5: { command: re_parse_images, args: [true, true] },
+}
+
 const icon_sidebar = {
     "imagezoomtools": { icon: "media/pencil-square.svg", title: "editing", command: toggle_sidebar_imagezoomtools, args: [], info_disabled: "zoom view" },
     "info": { icon: "media/info-square.svg", title: "details", command: toggle_sidebar, args: ["info"] },
@@ -118,6 +123,11 @@ document.addEventListener("keydown", function (event) {
     } else if (event.target.nodeName == "INPUT" || event.target.nodeName == "TEXTAREA" || event.target.isContentEditable) {
         if (event.key == "Escape") {
             event.target.blur();
+        }
+    } else if (event.ctrlKey && event.shiftKey) {
+        if (event.key in ctrl_shift_key_commands) {
+            event.preventDefault();
+            ctrl_shift_key_commands[event.key].command(...ctrl_shift_key_commands[event.key].args);
         }
     } else if (event.ctrlKey) {
         if (event.key in ctrl_key_commands) {

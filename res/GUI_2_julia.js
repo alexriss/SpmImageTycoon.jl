@@ -719,11 +719,19 @@ function get_line_profile(id, start_point, end_point, width) {
     open_jobs(1);
 }
 
-function re_parse_images(all=false) {
-    // delete all images from DOM and re-parses them
-    if (get_view() == "grid" || all === false) {
-        Blink.msg("re_parse_images", [all]);
-        if (all) {
+function re_parse_images(all=false, force_selected=false) {
+    // look for new images. if all==true, then delete all images from DOM and re-parses them
+    // if force_selected==true, then force re-parse the selected images
+    if (get_view() == "grid" || !all) {
+        let ids = [];
+        if (all && force_selected) {
+            ids = get_active_element_ids();
+        }
+        Blink.msg("re_parse_images", [all, ids]);
+
+        if (all && ids.length > 0) {
+            show_message("clearing cache and reloading all images.")
+        } else if (all) {
             show_message("reloading all images.")
         } else {
             show_message("looking for new images.")

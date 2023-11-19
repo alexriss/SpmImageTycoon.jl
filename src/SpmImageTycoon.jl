@@ -645,7 +645,7 @@ end
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
 function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
-    only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Vector{String},Dict{String, Vector{String}}}
+    only_new::Bool=false, force_ids::Vector{String}=String[], output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Vector{String},Dict{String, Vector{String}}}
 
     time_start = Dates.now()
 
@@ -678,14 +678,14 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
     num_in_cache = 0
     tasks = Task[]
     datafiles_curr = String[]
-    i_datafile = 1
-    while i_datafile <= length(datafiles)
+    i_datafile = 0
+    while i_datafile < length(datafiles)
+        i_datafile += 1
         datafile = datafiles[i_datafile]
         push!(datafiles_curr, datafile)
 
         # gsxm uses one file for each channel
         if i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
-            i_datafile += 1
             continue
         end
 
@@ -702,7 +702,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         created = unix2datetime(ctime)
         last_modified = unix2datetime(mtime)
 
-        if only_new && haskey(griditems, id)
+        if only_new && haskey(griditems, id) && id ∉ force_ids
+            empty!(datafiles_curr)
             continue
         end
 
@@ -719,7 +720,9 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
         if haskey(griditems, id) && griditems[id].last_modified == last_modified &&  # && griditems[id].created == created 
-            griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, id)
+            griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, id) &&
+            id ∉ force_ids
+
             griditems[id].status = 0
             num_in_cache += 1
             if haskey(virtual_copies_dict, id)
@@ -729,13 +732,14 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
                 end
             end
         else
+            use_existing = id in force_ids ? false : true
             if is_image(filename_original)
                 # we load all datafiles here (for gsxm)
-                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
+                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
                     dir_cache, datafiles_curr, id, created, last_modified)
                 append!(tasks, ts)
             elseif is_spectrum(filename_original)
-                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
+                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
                     dir_cache, datafile, id, created, last_modified)
                 append!(tasks, ts)
             end
@@ -756,7 +760,6 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
             break
         end
         empty!(datafiles_curr)
-        i_datafile += 1
     end
     wait.(tasks)
 

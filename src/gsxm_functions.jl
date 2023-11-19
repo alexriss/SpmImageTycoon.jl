@@ -26,6 +26,7 @@ end
 
 """Get available channel names for GSXM files (needed if only one file is loaded)."""
 function get_gsxm_channel_names(griditem::SpmGridItem)::Vector{String}
-    !haskey(channel_names_files, griditem.id) && return String[]  # should not happen, though
-    return unique(image_channel_name_fwd.(keys(channel_names_files[griditem.id])))
+    id = base_filename(griditem.filename_original)
+    !haskey(channel_names_files, id) && return String[]  # should not happen, though
+    return unique(image_channel_name_fwd.(keys(channel_names_files[id])))
 end

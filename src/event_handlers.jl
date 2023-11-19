@@ -4,7 +4,7 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
     # so the griditems might change when the dir is parsed, thus we set `griditems_last_changed`
     global griditems_last_changed = time()
 
-    l = ReentrantLock()  # not sure if it is necessary to do it here, but it shoul be safer this way
+    l = ReentrantLock()  # not sure if it is necessary to do it here, but it should be safer this way
     handle(w, "grid_item") do args  # cycle through scan channels
         griditems = current_data["griditems"]
       
@@ -258,12 +258,15 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
 
     handle(w, "re_parse_images") do args
         parse_all = args[1]
+        ids = string.(args[2])
+        length(ids) == 0 && (ids = String[])  # otherwise it is AbstractString
         lock(l)
         try
             global cancel_sent = false  # user might send cancel during the next steps
             channel_names_list = current_data["channel_names_list"]
             save_all(dir_data, current_data["griditems"], channel_names_list)
-            griditems, griditems_new, channel_names_list = parse_files(dir_data, only_new=!parse_all)
+
+            griditems, griditems_new, channel_names_list = parse_files(dir_data, only_new=!parse_all, force_ids=ids)
 
             # update current data for all other event handlers
             current_data["griditems"] = griditems
@@ -283,7 +286,6 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
                     ids_after = String[]
                     griditems_sub = OrderedDict{String, SpmGridItem}()
                     prev_id = ""
-                    global griditems_values_test = copy(griditems_values)
                     for im in griditems_values
                         if im.id in griditems_new
                             griditems_sub[im.id] = im

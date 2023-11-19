@@ -372,7 +372,7 @@ end
 
 """Parses an image file and creates the images in the cache directory if necessary."""
 function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
-    griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool,
+    griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool, use_existing::Bool,
     dir_cache::String, datafiles::Vector{String}, id::String,
     created::DateTime, last_modified::DateTime)::Vector{Task}
 
@@ -380,7 +380,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
 
     im_spm = load_image(datafiles, output_info=0)  # we dont use the cache here
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
-    filename_original = datafiles[1]
+    filename_original = basename(datafiles[1])
 
     if haskey(griditems, id)
         griditem = griditems[id]
@@ -427,8 +427,8 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
         end
         griditem = griditems[id]
     end
-    channel_names_list[basename(filename_original)] = im_spm.channel_names
-    t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
+    channel_names_list[base_filename(filename_original)] = im_spm.channel_names
+    t = Threads.@spawn create_image!(griditem, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=use_existing)
     push!(tasks, t)
     
     # virtual copies
@@ -460,7 +460,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
             virtual_copy.comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
             virtual_copy.status = 0
 
-            t = Threads.@spawn create_image!(virtual_copy, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=true)
+            t = Threads.@spawn create_image!(virtual_copy, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=use_existing)
             push!(tasks, t)
         end
     end
