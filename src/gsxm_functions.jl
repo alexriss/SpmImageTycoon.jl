@@ -1,18 +1,18 @@
 """Returns true if the griditem is a GSXM file."""
-function is_gsxm(griditem::SpmGridItem)::Bool
+function is_gsxm_image(griditem::SpmGridItem)::Bool
     return endswith(griditem.filename_original, extension_image_gsxm)
 end
 
 
 """Returns true if the filename is a GSXM file."""
-function is_gsxm(filename::String)::Bool
+function is_gsxm_image(filename::String)::Bool
     return endswith(filename, extension_image_gsxm)
 end
 
 
 """Sets the filename_original field for `griditem` according to the channel. This is needed because GSXM files have one file for each channel."""
 function change_gsxm_griditem_filename_original!(griditem::SpmGridItem, channel::String)::Nothing
-    if is_gsxm(griditem) && haskey(channel_names_files, griditem.id)
+    if is_gsxm_image(griditem) && haskey(channel_names_files, griditem.id)
         if haskey(channel_names_files[griditem.id], channel)
             griditem.filename_original = channel_names_files[griditem.id][channel]
         elseif haskey(channel_names_files[griditem.id], image_channel_name_fwd(channel))

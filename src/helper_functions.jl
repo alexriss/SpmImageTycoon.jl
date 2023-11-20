@@ -41,7 +41,7 @@ end
 """returns the base filename for .nc files"""
 function base_filename(filename::String)::String
     filename = basename(filename)
-    !is_gsxm(filename) && return filename
+    !is_gsxm_image(filename) && return filename
     return split(filename, "-")[1] * "~merged" * extension_image_gsxm
 end
 

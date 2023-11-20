@@ -198,7 +198,7 @@ end
 
 """Generates the display filename for `griditem`."""
 function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
-    if is_gsxm(griditem.filename_original)
+    if is_gsxm_image(griditem.filename_original)
         filename_display = splitext(base_filename(griditem.filename_original))[1] * suffix
     else
         filename_display = splitext(griditem.filename_original)[1] * suffix
@@ -420,19 +420,19 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
         end
 
         # we need all channel names to change GSXM files
-        if is_gsxm(griditem) 
+        if is_gsxm_image(griditem) 
             channel_names_before = item.channel_names
             item.channel_names = get_gsxm_channel_names(griditem)
         end
         changed, cache_safe = pre_change_griditem!(griditem, item, what, jump)
         # change back now
-        if is_gsxm(griditem) 
+        if is_gsxm_image(griditem) 
             item.channel_names = channel_names_before
         end
 
         # GSXM files have multiple files, so we have to load the right one
         # if the filename_original was changed (can happen for GSXM files), we have to reload the item
-        if is_gsxm(griditem)
+        if is_gsxm_image(griditem)
             filename_original_before = griditem.filename_original
             change_gsxm_griditem_filename_original!(griditem, griditems[id].channel_name)
 
@@ -693,7 +693,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         datafile = datafiles_curr[1]
         filename_original = basename(datafile)
         id = base_filename(filename_original)
-        is_gsxm(filename_original) && (channel_names_files[id] = get_channels_names_files(datafiles_curr))
+        is_gsxm_image(filename_original) && (channel_names_files[id] = get_channels_names_files(datafiles_curr))
         
         # there can be multiple files (for GSXM), so we compute the mean
         s = stat.(datafiles_curr)
