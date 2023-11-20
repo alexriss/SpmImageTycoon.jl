@@ -41,8 +41,13 @@ end
 """returns the base filename for .nc files"""
 function base_filename(filename::String)::String
     filename = basename(filename)
-    !is_gsxm_image(filename) && return filename
-    return split(filename, "-")[1] * "~merged" * extension_image_gsxm
+    if is_gsxm_image(filename)
+        return split(filename, "-", limit=2)[1] * "~merged" * extension_image_gsxm
+    elseif is_gsxm_spectrum(filename)
+        return splitext(filename)[1] * "~vpdata" * extension_spectrum_gsxm
+    else
+        return filename
+    end
 end
 
 
@@ -101,5 +106,5 @@ end
 
 """checks if the filename is a spectrrum"""
 function is_spectrum(filename::String)::Bool
-    return endswith(filename, extension_spectrum_nanonis)
+    return endswith(filename, extension_spectrum_nanonis) || endswith(filename, extension_spectrum_gsxm)
 end

@@ -201,7 +201,7 @@ function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
     if is_gsxm_image(griditem.filename_original)
         filename_display = splitext(base_filename(griditem.filename_original))[1] * suffix
     else
-        filename_display = splitext(griditem.filename_original)[1] * suffix
+        filename_display = splitext(base_filename(griditem.filename_original))[1] * suffix
     end
 
     if griditem.type == SpmGridSpectrum
@@ -685,7 +685,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         push!(datafiles_curr, datafile)
 
         # gsxm uses one file for each channel
-        if i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
+        if is_gsxm_image(datafile) && i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
+            @show datafile
             continue
         end
 

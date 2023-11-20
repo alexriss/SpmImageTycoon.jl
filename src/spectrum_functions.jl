@@ -216,7 +216,8 @@ function load_spectrum_memcache(filename::AbstractString)::SpmSpectrum
     lock(memcache_spectra_lock) do
         spectrum = get_cache(memcache_spectra, filename)
         if spectrum === missing
-            spectrum = load_spectrum(filename, index_column=true, index_column_type=Float64)
+            add_index_column = is_gsxm_spectrum(filename) ? false : true  # GSXM files already have an index column
+            spectrum = load_spectrum(filename, index_column=add_index_column, index_column_type=Float64)
             set_cache(memcache_spectra, filename, spectrum)
         end
     end
@@ -504,7 +505,8 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
     tasks = Task[]
 
     # spectrum = load_spectrum_memcache(datafile)
-    spectrum = load_spectrum(datafile, index_column=true, index_column_type=Float64)  # we do not use the cache here
+    add_index_column = is_gsxm_spectrum(datafile) ? false : true  # GSXM files already have an index column
+    spectrum = load_spectrum(datafile, index_column=add_index_column, index_column_type=Float64)  # we do not use the cache here
     start_time = spectrum.start_time
     update_start_time = true
     filename_original = basename(datafile)

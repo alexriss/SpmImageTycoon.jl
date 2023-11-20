@@ -1,12 +1,24 @@
-"""Returns true if the griditem is a GSXM file."""
+"""Returns true if the griditem is a GSXM image file."""
 function is_gsxm_image(griditem::SpmGridItem)::Bool
     return endswith(griditem.filename_original, extension_image_gsxm)
 end
 
 
-"""Returns true if the filename is a GSXM file."""
+"""Returns true if the filename is a GSXM image file."""
 function is_gsxm_image(filename::String)::Bool
     return endswith(filename, extension_image_gsxm)
+end
+
+
+"""Returns true if the griditem is a GSXM spectrum file."""
+function is_gsxm_spectrum(griditem::SpmGridItem)::Bool
+    return endswith(griditem.filename_original, extension_spectrum_gsxm)
+end
+
+
+"""Returns true if the filename is a GSXM spectrum file."""
+function is_gsxm_spectrum(filename::String)::Bool
+    return endswith(filename, extension_spectrum_gsxm)
 end
 
 
