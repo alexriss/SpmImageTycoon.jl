@@ -586,7 +586,8 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
         extra_info["Units"] = join(channel_units, ", ")
         return im_spm.header, extra_info
     elseif griditem.type == SpmGridSpectrum
-        spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)  # no caching here
+        add_index_column = is_gsxm_spectrum(filename_original_full) ? false : true  # GSXM files already have an index column
+        spectrum = load_spectrum(filename_original_full, header_only=true, index_column=add_index_column)  # no caching here
         channel_names, channel_units = sort_channel_names_units(spectrum.channel_names, spectrum.channel_units)
         extra_info["Channels"] = join(channel_names, ", ")
         extra_info["Units"] = join(channel_units, ", ")
@@ -675,6 +676,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
     empty!(channel_names_files)
 
     num_parsed = 0
+    num_errors = 0
     num_in_cache = 0
     tasks = Task[]
     datafiles_curr = String[]
@@ -686,7 +688,6 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
 
         # gsxm uses one file for each channel
         if is_gsxm_image(datafile) && i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
-            @show datafile
             continue
         end
 
@@ -736,12 +737,16 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
             use_existing = id in force_ids ? false : true
             if is_image(filename_original)
                 # we load all datafiles here (for gsxm)
-                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
+                ts, err = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
                     dir_cache, datafiles_curr, id, created, last_modified)
-                append!(tasks, ts)
             elseif is_spectrum(filename_original)
-                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
+                ts, err = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
                     dir_cache, datafile, id, created, last_modified)
+            end
+            if err != ""
+                println(err)
+                num_errors += 1
+            else
                 append!(tasks, ts)
             end
         end
@@ -767,7 +772,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
     elapsed_time = Dates.now() - time_start
     if output_info > 0
         num_items = length(filter(x -> x.status >= 0, collect(values(griditems))))
-        msg = "Parsed $(num_parsed) files ($(num_items) items, $(num_in_cache) in cache) in $elapsed_time."
+        err_num_str = (num_errors > 0) ? ", $(num_errors) errors" : ""
+        msg = "Parsed $(num_parsed) files ($(num_items) items, $(num_in_cache) in cache$(err_num_str)) in $elapsed_time."
         log(msg, w)
     end
     cleanup_channel_names_list!(channel_names_list, griditems)

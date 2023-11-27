@@ -38,6 +38,12 @@ function default_channel_names(spectrum::SpmSpectrum)::Tuple{String,String}
     channel_name = (length(spectrum.channel_names) > 1) ? spectrum.channel_names[2] : spectrum.channel_names[1]  # yaxis
     channel2_name = spectrum.channel_names[1]  # xaxis
 
+    # GSXM uses the index column as the first channel_name, so we try to skip it
+    if is_gsxm_spectrum(spectrum.filename) && length(spectrum.channel_names) >= 3
+        channel_name = spectrum.channel_names[3]
+        channel2_name = spectrum.channel_names[2]
+    end
+
     if haskey(spectrum.header, "Experiment")
         experiment = spectrum.header["Experiment"] 
         channels = String[]
@@ -500,13 +506,18 @@ end
 """Parses a spectrum file and creates the preview in the cache directory if necessary."""
 function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
     griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool, use_existing::Bool,
-    dir_cache::String, datafile::String, id::String, created::DateTime, last_modified::DateTime)::Vector{Task}
+    dir_cache::String, datafile::String, id::String, created::DateTime, last_modified::DateTime)::Tuple{Vector{Task},String}
 
     tasks = Task[]
-
-    # spectrum = load_spectrum_memcache(datafile)
     add_index_column = is_gsxm_spectrum(datafile) ? false : true  # GSXM files already have an index column
-    spectrum = load_spectrum(datafile, index_column=add_index_column, index_column_type=Float64)  # we do not use the cache here
+
+    spectrum = missing
+    try
+        spectrum = load_spectrum(datafile, index_column=add_index_column, index_column_type=Float64)  # we do not use the cache here
+    catch e
+        err = basename(datafiles[1]) * ": " * e.msg
+        return tasks, err
+    end
     start_time = spectrum.start_time
     update_start_time = true
     filename_original = basename(datafile)
@@ -588,7 +599,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         end
         griditem = griditems[id]
     end
-    channel_names_list[filename_original] = spectrum.channel_names
+    channel_names_list[base_filename(filename_original)] = spectrum.channel_names
     t = Threads.@spawn create_spectrum!(griditem, spectrum, dir_cache=dir_cache, use_existing=use_existing)
     push!(tasks, t)
     
@@ -614,5 +625,5 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
             push!(tasks, t)
         end
     end
-    return tasks
+    return tasks, ""
 end

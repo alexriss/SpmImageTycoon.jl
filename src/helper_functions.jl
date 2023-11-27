@@ -44,6 +44,7 @@ function base_filename(filename::String)::String
     if is_gsxm_image(filename)
         return split(filename, "-", limit=2)[1] * "~merged" * extension_image_gsxm
     elseif is_gsxm_spectrum(filename)
+        # we wouldn't need this in principle, but this is to avoid name conflicts (if there a nanonis spectrum with the same name as a GSXM spectrum)
         return splitext(filename)[1] * "~vpdata" * extension_spectrum_gsxm
     else
         return filename
@@ -100,7 +101,8 @@ end
 
 """cecks if the filename is an image"""
 function is_image(filename::String)::Bool
-    return endswith(filename, extension_image_nanonis) || endswith(filename, extension_image_gsxm)
+    return endswith(filename, extension_image_nanonis) || endswith(filename, extension_image_gsxm) ||
+        endswith(filename, extension_image_ibw)
 end
 
 

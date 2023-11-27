@@ -31,6 +31,7 @@ const extension_image_nanonis = ".sxm"
 const extension_spectrum_nanonis = ".dat"
 const extension_image_gsxm = ".nc"
 const extension_spectrum_gsxm = ".vpdata"
+const extension_image_ibw = ".ibw"
 
 const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated files here)
 const dir_temp_cache_name = "SpmImageTycoon_temp"  # directory used for temporary caching (if cache dir is write restricted). Will be created in tempdir()

@@ -374,11 +374,16 @@ end
 function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict::Dict{String,Vector{SpmGridItem}},
     griditems_new::Vector{String}, channel_names_list::Dict{String,Vector{String}}, only_new::Bool, use_existing::Bool,
     dir_cache::String, datafiles::Vector{String}, id::String,
-    created::DateTime, last_modified::DateTime)::Vector{Task}
+    created::DateTime, last_modified::DateTime)::Tuple{Vector{Task},String}
 
     tasks = Task[]
-
-    im_spm = load_image(datafiles, output_info=0)  # we dont use the cache here
+    im_spm = missing
+    try
+        im_spm = load_image(datafiles, output_info=0)  # we dont use the cache here
+    catch e
+        err = basename(datafiles[1]) * ": " * e.msg
+        return tasks, err
+    end
     scan_direction = (im_spm.scan_direction == SpmImages.up) ? 1 : 0
     filename_original = basename(datafiles[1])
 
@@ -464,5 +469,5 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
             push!(tasks, t)
         end
     end
-    return tasks
+    return tasks, ""
 end
