@@ -88,6 +88,11 @@ function default_channel_name(im_spm::SpmImage)::String
     if channel_name == ""
         channel_name = im_spm.channel_names[1]
     end
+    # use backwards channel if it exists and forward channel does not exist
+    i_channel_name = findfirst(isequal(channel_name), im_spm.channel_names)
+    if im_spm.channel_indices_fwd[i_channel_name] == 0 && im_spm.channel_indices_bwd[i_channel_name] != 0
+        channel_name = image_channel_name_bwd(channel_name)
+    end
     return channel_name
 end
 
