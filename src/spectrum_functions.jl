@@ -515,7 +515,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
     try
         spectrum = load_spectrum(datafile, index_column=add_index_column, index_column_type=Float64)  # we do not use the cache here
     catch e
-        err = basename(datafiles[1]) * ": " * e.msg
+        err = basename(datafile) * ": " * e.msg
         return tasks, err
     end
     start_time = spectrum.start_time
