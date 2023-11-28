@@ -5,11 +5,11 @@
 # SpmImage Tycoon
 
 Cross-platform app to manage and edit scanning probe microscopy (SPM) images and spectra.
-
-Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra are supported.
+It supports scanning tunneling microscopy (STM) and atomic force microscopy (AFM) images and spectra.
 
 [Features](#features)  
 [Demo](#demo)  
+[Supported file formats](#supported-file-formats)  
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
 [Installation (alternative)](#alternative-installation)  
@@ -99,9 +99,36 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 
 It is best to play around with the app yourself, so [go ahead and install it.](#installation). Example data can be found in the [test directory](test/data).
 
+## Supported file formats
+
+<table>
+  <tr>
+    <td></td>
+    <td>images</td>
+    <td>spectra</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.specs-group.com/nanonis/">Nanonis</a></td>
+    <td>.sxm</td>
+    <td>.dat</td>
+  </tr>
+  <tr>
+    <td><a href="https://gxsm.sourceforge.net/">GSXM</a></td>
+    <td>.nc</td>
+    <td>.vpdata</td>
+  </tr>
+  <tr>
+    <td><a href="https://afm.oxinst.com/">Asylum Research</a></td>
+    <td>.ibw</td>
+    <td></td>
+  </tr>
+</table>
+
+If you encounter any issues or have suggestions for other file formats, please let me know.
+
 ## Disclaimer
 
-_The app should be considered experimental. It has undergone limited testing, and while it works for me, I can not guarantee that it will work flawlessly for you aswell. It is conceivable that some of the calculations potentially give erroneous results under certain circumstances. So please only use the app if you are ok with some surprises._
+_Currently, the app should be considered experimental. It has undergone limited testing and I can not guarantee that it will work flawlessly. It is conceivable that some of the calculations potentially give erroneous results under certain circumstances._
 
 _The app never modifies or deletes your original data. However, in case of any unexpected problems, you might lose the modifications saved within the app. Even though this has never happened to me, I still advice to backup the database regularly (I personally do not do that, though). The app creates a database in each project directory under `_spmimages_cache/db.jld2` (some older versions of this file are kept as well). This file contains all your edits, keywords, etc. and can be copied as a backup. Any filesystem backup solution should handle this._
 
