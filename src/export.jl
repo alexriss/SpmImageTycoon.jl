@@ -169,7 +169,11 @@ function get_image_parameters(griditem::SpmGridItem)::Tuple{String,String}
     r_bias *= "V"
 
     if griditem.z_feedback
-        r_feedback = format_with_prefix(griditem.z_feedback_setpoint) * griditem.z_feedback_setpoint_unit
+        if griditem.z_feedback_setpoint_unit  == ""  # for some files we do not know whether the feedback was active
+            r_feedback = ""
+        else
+            r_feedback = format_with_prefix(griditem.z_feedback_setpoint) * griditem.z_feedback_setpoint_unit
+        end
     else
         r_feedback = "z=const"
     end

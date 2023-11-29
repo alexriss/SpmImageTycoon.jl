@@ -314,9 +314,13 @@ function show_info(id, gzip_info_json, extra_info={}) {
         }
 
         if (window.items[id].z_feedback) {
-            nnp = format_number_prefix(window.items[id].z_feedback_setpoint,1);
-            document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnp.number_formatted +
-            " " + nnp.prefix + window.items[id].z_feedback_setpoint_unit
+            if (window.items[id].z_feedback_setpoint_unit == "") {
+                document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = "";
+            } else {
+                nnp = format_number_prefix(window.items[id].z_feedback_setpoint,1);
+                document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnp.number_formatted +
+                " " + nnp.prefix + window.items[id].z_feedback_setpoint_unit
+            }
         } else {
             nnp = format_number_prefix(window.items[id].z,3);  // we want high precision here
             document.getElementById("image_info_z_feedback_setpoint_or_xaxis_range").innerText = nnp.number_formatted +

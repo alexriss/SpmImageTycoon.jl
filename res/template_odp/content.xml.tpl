@@ -220,7 +220,7 @@
                         </draw:frame>
                         <draw:frame draw:style-name="gr6" draw:text-style-name="P1" draw:layer="layout" svg:width="{{ halfwidth }}cm" svg:height="0.395cm" svg:x="{{ channel_x }}cm" svg:y="{{ channel_y }}cm">
                             <draw:text-box>
-                                <text:p>{{ channel_name }}: {{#bias}}{{ bias }},{{/bias}} {{ feedback }}</text:p>
+                                <text:p>{{ channel_name }}: {{ bias }}{{#feedback}}{{#bias}},{{/bias}}{{/feedback}} {{ feedback }}</text:p>
                             </draw:text-box>
                         </draw:frame>
                         <draw:frame draw:style-name="gr8" draw:text-style-name="P1" draw:layer="layout" svg:width="{{ fullwidth }}cm" svg:height="0.300cm" svg:x="{{ edits_x }}cm" svg:y="{{ edits_y }}cm">
