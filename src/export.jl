@@ -157,16 +157,16 @@ end
 
 
 """returns the formatted sample bias and feedback parameters"""
-function get_image_parameters(griditem::SpmGridItem)::Tuple{String,String}
+function get_image_parameters(griditem::SpmGridItem)::Tuple{String,String,String}
     if isnan(griditem.bias)
-        r_bias = "-"
+        r_bias = ""
     elseif griditem.bias == 0
         r_bias = "0"
     else
         # r_bias = format(bias, precision=1, autoscale=:metric)
         r_bias = format_with_prefix(griditem.bias)
     end
-    r_bias *= "V"
+    r_bias != "" && (r_bias *= "V")
 
     if griditem.z_feedback
         if griditem.z_feedback_setpoint_unit  == ""  # for some files we do not know whether the feedback was active
@@ -174,11 +174,13 @@ function get_image_parameters(griditem::SpmGridItem)::Tuple{String,String}
         else
             r_feedback = format_with_prefix(griditem.z_feedback_setpoint) * griditem.z_feedback_setpoint_unit
         end
-    else
+    elseif griditem.type == SpmGridImage
         r_feedback = "z=const"
+    else
+        r_feedback = ""
     end
-
-    return r_bias, r_feedback
+    r_channelbias_sep = (r_feedback == "" && r_bias == "") ? "" : ": "
+    return r_bias, r_feedback, r_channelbias_sep
 end
 
 
@@ -279,10 +281,7 @@ function export_odp(ids::Vector{String}, dir_data::String, griditems::Dict{Strin
         else
             dict_image["channel_name"] = griditem.channel_name
         end
-        dict_image["bias"], dict_image["feedback"] = get_image_parameters(griditem)
-        if dict_image["bias"] == "-V"
-            dict_image["bias"] = ""
-        end
+        dict_image["bias"], dict_image["feedback"], dict_image["channelbias_sep"] = get_image_parameters(griditem)
 
         dict_image["edits_x"] = x
         dict_image["edits_y"] = dict_image["channel_y"] + odp_lineheight
