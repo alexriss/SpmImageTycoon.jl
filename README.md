@@ -16,6 +16,7 @@ It supports scanning tunneling microscopy (STM) and atomic force microscopy (AFM
 [Cite](#cite)  
 [Case study](#real-world-case-study)  
 [Tips and tricks](#tips-and-tricks)  
+[Accessing the database](#accessing-the-database)  
 [Technical background](#technical-background)  
 [Third party libraries](#third-party-libraries-included)  
 [Contribute](#get-in-touch-and-contribute)  
@@ -24,8 +25,8 @@ It supports scanning tunneling microscopy (STM) and atomic force microscopy (AFM
 
 ## Features
 
-- Load and display Nanonis SPM images: grid and zoom views
-- Load and display Nanonis spectra
+- Load and display SPM images: grid and zoom views
+- Load and display spectra
 - Fast navigation: dropdown menus or keyboard shortcuts
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
@@ -150,7 +151,7 @@ using SpmImageTycoonInstaller
 install()
 ```
 
-This will install a compiled version of [SpmImage Tycoon](https://github.com/alexriss/SpmImageTycoon.jl).
+This will install a compiled version of SpmImage Tycoon.
 The installation will typically take 10 to 20 minutes and take up around 1 GB of space.
 The same procedure can be used to update to the latest version.
 
@@ -213,9 +214,15 @@ If you use the app for your scientific work, please consider citing it:
 
 - Fast access to the file system is crucial - do not use this app on a slow networked file system.
 - The first startup after installation (or update) can be slow - it is due to initial compilations. I am working on a solution to this.
-- To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`
+- To gain a significant speedup through mutlithreading, start Julia with multiple threads, e.g.: `julia --threads=auto`. This is automatically done by the [SpmImage Tycoon Installer](https://github.com/alexriss/SpmImageTycoonInstaller.jl).
 - There is a small overhead to apply color schemes; for performance it is best to use the standard "gray" color scheme.
 - Extra settings (such as default channels and the default color scheme) can be changed in the `<homedir>/.spmimagetycoon/settings.toml` file.
+
+## Accessing the database
+
+The app uses a [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format)-compatible database, which can be read using Python, Julia, or any other language that supports HDF5.
+An example of how to access the database using Python is [shown here](code_examples/access_via_python.md).
+
 
 > ### _Ok, now you really can stop reading._
 
