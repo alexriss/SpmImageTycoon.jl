@@ -374,18 +374,28 @@ function show_info(id, gzip_info_json, extra_info={}) {
             searchable: true,
             // fixedHeight: true,
             paging: false,
-            scrollY: "calc(var(--vh, 1vh) * 100 - 15.6rem - 1rem)",
+            scrollY: "calc(var(--vh, 1vh) * 100 - 15.4rem - 1rem)",
             // fixedColumns: true,
             // columns: { select: [2], sortable: false },
         })
         document.getElementById("table-container").style.display = "block";
+        window.datatable_searchfield = document.querySelector("#table-container .dataTable-input");
     } else {
-        window.datatable.rows().remove("all");
+        const len_rows = window.datatable.data.data.length;
+        const all_rows = [...Array(len_rows)].map((_,i) => i);
+        window.datatable.rows.remove(all_rows);
     }
-    window.datatable.import({
-        type: "json",
-        data: info_json,
-    });
+    const convertedData = simpleDatatables.convertJSON({
+        data: info_json
+    })
+    window.datatable.insert(convertedData)
+    
+    // we need to restart the search
+    // console.log("check for search");
+    // if (window.datatable_searchfield.value != "") {
+    //     window.datatable.search(window.datatable_searchfield.value);
+    //     console.log("searching for: " + window.datatable_searchfield.value);
+    // }
     // t1 = performance.now();
     // console.log("info unparse (create table):" + (t1 - window.t0) + " ms.");
 }

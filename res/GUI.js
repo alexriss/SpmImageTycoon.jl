@@ -46,6 +46,7 @@ window.timeout_image_info = null;  //timeout refrence for get_image_info functio
 window.timeout_image_info_quick = null;  //timeout refrence for get_image_info_quick function
 window.image_info_id = "";  // current image, for which data is displayed
 window.datatable = null;  // holds the datatable
+window.datatable_searchfield = null;  // holds the searchfield for the datatable
 
 window.keywords_input = null;  // holds the keywords object
 window.keywords_all = new Set();  // set of all possible keywords (for suggestions)
@@ -979,7 +980,7 @@ function image_info_search_parameter() {
     if (document.getElementById('sidebar_info').classList.contains("is-hidden")) {   // dont do anything if sidebar is not enabled
         return;
     }
-    document.querySelector(".dataTable-search .dataTable-input").focus();
+    document.querySelector(".datatable-search .datatable-input").focus();
     return false;
 }
 

@@ -430,18 +430,20 @@ sup {
   font-size: 0.75rem;
 }
 
-#table-container .dataTable-container {
+#table-container .datatable-container {
   overflow-y: scroll;
 }
 
-#table-container .dataTable-input {  /* a quick hack to save some vertical space */
+#table-container .datatable-input {  /* a quick hack to save some vertical space */
   position: absolute;
-  right: 0.8rem;
-  width: 6rem;
-  opacity: 0.8;
-  margin-top: 0.37rem;
-  background-color:#ffffffb4;
+  right: 0.05rem;
+  width: 7.5rem;
+  opacity: 1.0;
+  margin-top: 0.56rem;
+  background-color:#f6f6f6;
   border: 1px solid #999;
+  padding: 2px 8px;
+  color:#606060;
 }
 
 #table-container .table.is-narrow td {
