@@ -424,22 +424,24 @@ sup {
 #table-container td, #table-container th {
   overflow-wrap: break-word;
   max-width:200px;
+  padding-top:0px;
+  padding-bottom:6px;
 }
 
 #table-container input  {
   font-size: 0.75rem;
 }
 
-#table-container .datatable-container {
+#table-container .dataTable-container {
   overflow-y: scroll;
 }
 
-#table-container .datatable-input {  /* a quick hack to save some vertical space */
+#table-container .dataTable-input {  /* a quick hack to save some vertical space */
   position: absolute;
-  right: 0.05rem;
-  width: 7.5rem;
+  right: 0.1rem;
+  width: 8.5rem;
   opacity: 1.0;
-  margin-top: 0.56rem;
+  margin-top: 0rem;
   background-color:#f6f6f6;
   border: 1px solid #999;
   padding: 2px 8px;

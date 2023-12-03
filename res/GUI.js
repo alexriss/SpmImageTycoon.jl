@@ -980,7 +980,7 @@ function image_info_search_parameter() {
     if (document.getElementById('sidebar_info').classList.contains("is-hidden")) {   // dont do anything if sidebar is not enabled
         return;
     }
-    document.querySelector(".datatable-search .datatable-input").focus();
+    document.querySelector(".dataTable-search .dataTable-input").focus();
     return false;
 }
 
