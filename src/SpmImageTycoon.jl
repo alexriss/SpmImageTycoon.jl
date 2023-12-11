@@ -581,6 +581,10 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
     extra_info["active_edits_str"] = get_active_edits_str(griditem)
     if griditem.type == SpmGridImage
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
+        if is_gsxm_image(griditem)  # we are not loading all images here, so we have to set the channel names manually
+            im_spm.channel_names = get_gsxm_channel_names(griditem)
+            im_spm.channel_units = fill("", length(im_spm.channel_names))
+        end
         channel_names, channel_units = sort_channel_names_units(im_spm.channel_names, im_spm.channel_units)
         extra_info["Channels"] = join(channel_names, ", ")
         extra_info["Units"] = join(channel_units, ", ")
@@ -673,6 +677,9 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         @js_ w page_start_load_params($(length(datafiles)))
     end
 
+    # we need to sort the datafiles by extension first, then by name (otherwise the gsxm multiple files can be out of order - e.g. some spectrum files could be inbetween the image files)
+    sort!(datafiles, by = x -> (splitext(x)[2], x))
+
     empty!(channel_names_files)
 
     num_parsed = 0
@@ -696,7 +703,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         filename_original = basename(datafile)
         id = base_filename(filename_original)
         is_gsxm_image(filename_original) && (channel_names_files[id] = get_channels_names_files(datafiles_curr))
-        
+
         # there can be multiple files (for GSXM), so we compute the mean
         s = stat.(datafiles_curr)
         ctime = mean(getfield.(s, :ctime))
