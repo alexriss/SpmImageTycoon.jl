@@ -1,2 +1,2 @@
 julia -t auto -e "using SpmImageTycoon; tycoon();"
-timeout /t 60
+timeout /t 10

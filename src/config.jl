@@ -4,23 +4,35 @@ const config_dir = ".spmimagetycoon"  # will be in home directory
 
 
 # default settings - the ones that are not declared as constants can be overriden by values from the config file
+tycoon_mode = ""  # can be set to "pro" to enable pro features
+
 image_channels_feedback_on = ["Z"]
 image_channels_feedback_off = ["Frequency Shift", "Current"]
 spectrum_channels = OrderedDict{String,Vector{String}}(
-    "bias spectroscopy" => ["LIX 1 omega [AVG]", "Frequency Shift [AVG]", "Current [AVG]", "LIX 1 omega", "Frequency Shift", "Current"],
-    "Z spectroscopy" => ["Frequency Shift [AVG]", "Current [AVG]", "Frequency Shift", "Current"],
-    "History Data" => ["Current", "Frequency Shift"],
-    "Frequency Sweep" => ["Amplitude", "Phase"]
+    "bias spectroscopy" => [
+        "LIX 1 omega [AVG]", "LI Demod 1 X [AVG]", "LI Demod 2 X [AVG]",  "Frequency Shift [AVG]", "OC M1 Freq. Shift [AVG]", "Current [AVG]",
+        "LIX 1 omega", "LI Demod 1 X", "LI Demod 2 X", "Frequency Shift", "OC M1 Freq. Shift", "Current"
+    ],
+    "Z spectroscopy" => [
+        "Frequency Shift [AVG]", "OC M1 Freq. Shift [AVG]", "Current [AVG]",
+        "Frequency Shift", "OC M1 Freq. Shift", "Current"
+    ],
+    "History Data" => ["Current", "Frequency Shift", "OC M1 Freq. Shift"],
+    "Frequency Sweep" => ["Amplitude", "OC D1 Amplitude", "Phase", "OC D1 Phase"]
 )
 spectrum_channels_x = OrderedDict{String,Vector{String}}(
     "History Data" => ["Index"]
 )
 
+sort_channel_list = true  # sort channels in the channel list
+
 const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
 const extension_image = ".sxm"
 const extension_spectrum = ".dat"
 
-const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated image files here)
+const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated files here)
+const dir_temp_cache_name = "SpmImageTycoon_temp"  # directory used for temporary caching (if cache dir is write restricted). Will be created in tempdir()
+const dir_edits_name = "edits"  # directory used for edits (julia writes all generated edit files here)
 const dir_colorbars = "colorbars"  # colorbars will be saved in a subdirectory in the cache directory
 const dir_res = "../res/"  # relative to module directory
 
@@ -46,7 +58,15 @@ auto_save_minutes = 10  # auto-save every n minutes
 overview_max_images = 1000  # maximum number of images displayed in the filter_overview
 
 memcache_mb_spectra = 50  # size of memory cache for spectra (in mb)
+memcache_mb_spectradata = 20 # size of memory cache for spectral data (in mb)
 memcache_mb_images = 50 # size of memory cache for images (in mb)
+memcache_mb_imagedata = 20 # size of memory cache for imagedata (in mb)
+
+# keys that contain these string will be excluded from caching
+# this is necessary as some edits (such as FT-Filtering) generate files during the edits
+# we might be able to solve this by using unique filenames (such as filename + "_FT_n_" + hash(all_edits_string).
+# But then we would generate a lot of images. So for now we disable the cache.
+memcache_disable_imagedata = ["\\\"FTF\\\""] 
 
 last_directories = String[]  # last opened directories (will be populated from the config file)
 const last_directories_max = 20  # max number of last directories to save
@@ -175,6 +195,14 @@ function load_config()::Nothing
     if isfile(config_filepath)
         d = TOML.tryparsefile(config_filepath)
         if typeof(d) <: Dict
+            if haskey(d, "tycoon_mode") && isa(d["tycoon_mode"], String)
+                global tycoon_mode = d["tycoon_mode"]
+            end
+
+            if haskey(d, "sort_channel_list") && isa(d["sort_channel_list"], Bool)
+                global sort_channel_list = d["sort_channel_list"]
+            end
+
             if haskey(d, "image_channels_feedback_on") && isa(d["image_channels_feedback_on"], Array)
                 global image_channels_feedback_on = string.(d["image_channels_feedback_on"])
             end
@@ -223,8 +251,16 @@ function load_config()::Nothing
                 global memcache_mb_spectra = d["memcache_mb_spectra"]
             end
 
+            if haskey(d, "memcache_mb_spectradata") && isa(d["memcache_mb_spectradata"], Real)
+                global memcache_mb_spectradata = d["memcache_mb_spectradata"]
+            end
+
             if haskey(d, "memcache_mb_images") && isa(d["memcache_mb_images"], Real)
                 global memcache_mb_images = d["memcache_mb_images"]
+            end
+
+            if haskey(d, "memcache_mb_imagedata") && isa(d["memcache_mb_imagedata"], Real)
+                global memcache_mb_imagedata = d["memcache_mb_imagedata"]
             end
 
             if haskey(d, "last_directories") && isa(d["last_directories"], Array)
@@ -261,7 +297,11 @@ function save_config(new_directory::String="")::Nothing
 
     if new_directory != ""
         filter!(x -> x != new_directory, last_directories)
-        pushfirst!(last_directories, new_directory)
+        if length(last_directories) == 0
+            global last_directories = String[new_directory]
+        else
+            pushfirst!(last_directories, new_directory)
+        end
         while length(last_directories) > last_directories_max
             pop!(last_directories)
         end
@@ -274,16 +314,24 @@ function save_config(new_directory::String="")::Nothing
         "image_channels_feedback_off" => image_channels_feedback_off,
         "spectrum_channels" => spectrum_channels,
         "spectrum_channels_x" => spectrum_channels_x,
+        "sort_channel_list" => sort_channel_list,
         "auto_save_minutes" => auto_save_minutes,
         "overview_max_images" => overview_max_images,
         "memcache_mb_spectra" => memcache_mb_spectra,
+        "memcache_mb_spectradata" => memcache_mb_spectradata,
         "memcache_mb_images" => memcache_mb_images,
+        "memcache_mb_imagedata" => memcache_mb_imagedata,
         "export" => OrderedDict{String,Any}(
             "channel_names_short" => odp_channel_names_short,
             "ignore_comment_lines" => odp_ignore_comment_lines,
         ),
         "last_directories" => last_directories
     )
+
+    # only add if it is set
+    if tycoon_mode != ""
+        d["tycoon_mode"] = tycoon_mode
+    end
 
     try
         open(config_filepath,"w") do f

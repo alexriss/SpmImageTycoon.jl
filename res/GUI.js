@@ -2,6 +2,7 @@ window.versions = {}  // versions for julia packages, set by julia
 
 window.dir_res = "";  // resources directory. sey by julia
 window.dir_cache = "";  // cache directory, set by julia
+window.dir_temp_cache = "";  // temp cache directory, set by julia
 window.dir_data = "";  // directory with all data
 window.dir_colorbars = "";  // colorbars are saved here, set by julia
 window.filenames_colorbar = {};  // dictionary specifying the filenames for the colorbars, set by julia
@@ -12,22 +13,26 @@ window.topright = [];   // top right of overall scan range
 window.last_directories = [];  // array of last directories used (set by julia)
 window.auto_save_minutes = 0  // auto-save every n minutes (set by julia)
 window.overview_max_images = 0  // maximum number of images to display in the filter overview (set by julia)
+window.background_corrections = {};  // dictionary with background corrections for "image" and "spectrum" (set by julia)
 
 window.space_pressed = false;  // true if user is holding space down (for dragging etc)
+window.dblClickLast = new Date().getTime(); // last time a double click was registered
 
-window.last_selected = "";  // last selected item
+window.last_clicked = "";  // last clicked item
+window.last_selected = ""; // last selected item that is active/selected
 window.zoom_control_setup = false;  // whether drag/zoom for zoomview is setup
 window.zoom_last_selected = "";  // last selected image for zoom
 window.sidebar_imagezoomtools = false;  // sidebar in imagezoom mode is visible
 window.grid_last_scrolltop = 0;  // last y-scroll position in grid view (does not seem to be properly restored when hiding/showing grid view)
 
+window.zoom_drag_objects = {};  // holds the zoom-drag objects (zoomview and editing FT)
+
 window.last_copy_from = "";  // last item that was selected as a source for copy/paste
 
 window.line_profile_object = null;  // hold the line profile object
-
 window.histogram_object = null;  // holds the histogram object
-
 window.spectrum_plot_object = null;  // hold the spectrum plot object
+window.draw_rect_objects = {};  // holds the drawRects objects (for FT Filter)
 
 window.filter_overview_selection_object = null;  // holds the selection object for overview filter
 window.filter_overview_selecting = false;  // user is currently making a selection
@@ -52,8 +57,11 @@ window.keywords_modes = ["set", "add", "remove"];   // different modes for editi
 window.keywords_modes_display = ["set", "add", "remove"];  // these descriptions are shown to the user
 window.keywords_modes_display_css_classes = ["is-success", "is-info", "is-danger"];  // tcss classes for the respective modes
 
-window.timeout_filter = null;  // timeout refrence for filter function
-window.queue_filter_items = [];  // queue for filter_items functions - only one instance should run at a time
+window.queue_edits_range == null  // queue object, used for edits and range adjustment
+
+window.filter_items_object = null;  // holds the FilterItems object
+
+window.timeout_notification = {};  // holds the timeout for the notifications
 
 window.t0 = 0;   // for performance measurements
 
@@ -74,19 +82,42 @@ function create_regexp(inputstring) {
     return new RegExp(pattern, flags); 
 }
 
+function file_url_querystring(item) {
+    // returns the display filename url
+    return "?" + item.channel_name + "_" + item.channel2_name + "_" + item.background_correction + "_" + item.colorscheme +
+    "_" + item.scan_direction + 
+    "_range_" + item.channel_range_selected +
+    "_edits_" + JSON.stringify(item.edits);  
+}
+
 function file_url(id) {
     // returns the display filename url
     const item = window.items[id];
-    return 'file:///' + window.dir_cache + item.filename_display +
-         "?" + item.channel_name + "_" + item.channel2_name + "_" + item.background_correction + "_" + item.colorscheme +
-         "_" + item.scan_direction + 
-         "_range_" + item.channel_range_selected;  // to prevent caching and force reload
+    let basedir = window.dir_cache;
+    if (item.status == 10) {
+        basedir = window.dir_temp_cache;
+    }
+    return 'file:///' + basedir + item.filename_display +
+    file_url_querystring(item); // to prevent caching and force reload
 }
 
 function file_url_colorbar(id) {
     // returns the colorbar url
     const item = window.items[id];
     return 'file:///' + window.dir_colorbars + window.filenames_colorbar[item.colorscheme];
+}
+
+function file_url_colorbar_name(name) {
+    // returns the colorbar url
+    return 'file:///' + window.dir_colorbars + window.filenames_colorbar[name];
+}
+
+function file_url_edit(id, suffix) {
+    // returns the edit filename url
+    const item = window.items[id];
+    const ext = item.filename_display.substring(item.filename_display.lastIndexOf("."));  // get extension)        
+    const base = item.filename_display.substring(0, item.filename_display.lastIndexOf("."));  // get base name
+    return 'file:///' + window.dir_edits + base + "_" + suffix + ext + file_url_querystring(item);
 }
 
 function insertAfter(newNode, referenceNode) {
@@ -97,7 +128,7 @@ function insertAfter(newNode, referenceNode) {
 
 // GUI functions
 
-function open_jobs(diff) {
+function open_jobs(diff, ids=[], julia_queue_type="") {
     // tracks the number of open julia jobs and displays spinner as long as there are some
     window.num_open_jobs += diff;
     if (window.num_open_jobs > 0) {
@@ -105,13 +136,18 @@ function open_jobs(diff) {
     } else {
         document.getElementById("spinner_title").classList.add("is-invisible");
     }
+    if (julia_queue_type != "") {
+        window.queue_edits_range.remove_julia_queue(ids, julia_queue_type);
+    }
 }
 
 function reset_all() {
     // resets view and all selections etc
-    window.last_selected = "";
+    window.last_clicked = "";
     window.zoom_last_selected = "";
+    window.last_selected = "";
     window.last_copy_from = "";
+    window.num_open_jobs = 0;
     if (window.timeout != null) {
         clearTimeout(window.timeout);
         window.timeout = null;
@@ -125,8 +161,12 @@ function reset_all() {
         window.timeout_image_info_quick = null;
     }
     window.image_info_id = "";
-    document.getElementById("sidebar_content_none").classList.remove("is-hidden");
-    document.getElementById("sidebar_content").classList.add("is-hidden");
+    document.getElementById("sidebar_info_content_none").classList.remove("is-hidden");
+    document.getElementById("sidebar_info_content").classList.add("is-invisible");
+
+    if (window.filter_overview_selection_object != null) {
+        zoom_drag_filter_overview_reset(document.getElementById('filter_overview_container'));
+    }
 
     clear_all_filters();
     show_message(); // empty footer message
@@ -174,13 +214,13 @@ function toggle_error() {
     }
 }
 
-function toggle_dev_tools() {
-    // toggles dev tools
-    require('electron').remote.getCurrentWindow().toggleDevTools();
-}
-
 function toggle_start_project(target="project", save=false) {
     // toggles between project page and start page
+
+    if (get_view() == "start_loading" && target != "project") {
+        return;  // we do not want to interrupt the loading process
+    }
+
     if (target == "re-project") {  // undo close project
         if (window.dir_data != "") {
             target = "project";
@@ -197,6 +237,8 @@ function toggle_start_project(target="project", save=false) {
         document.getElementById("page_start").classList.add("is-hidden");
         document.getElementById("page_project").classList.remove("is-hidden");
         document.getElementById("footer_project").classList.remove("is-hidden");
+        document.getElementById("menu_main").classList.remove("is-hidden");
+        document.getElementById("menu_sidebar").classList.remove("is-hidden");
         start_page_logo_spin(false);
     } else {
         const template_last_dir = document.getElementById("page_start_last_dir");
@@ -229,6 +271,10 @@ function toggle_start_project(target="project", save=false) {
         document.getElementById("page_project").classList.add("is-hidden");
         document.getElementById("footer_project").classList.add("is-hidden");
         document.getElementById("page_start").classList.remove("is-hidden");
+
+        document.getElementById("menu_main").classList.add("is-hidden");
+        document.getElementById("menu_sidebar").classList.add("is-hidden");
+
         start_page_logo_spin(true);
     }
 }
@@ -236,8 +282,9 @@ function toggle_start_project(target="project", save=false) {
 function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
     // toggles sidebar
 
-    let sidebars = document.getElementsByClassName("sidebar");
-    let sidebar = document.getElementById('sidebar_' + what);
+    const sidebars = document.getElementsByClassName("sidebar");
+    const sidebar = document.getElementById('sidebar_' + what);
+    const icon = document.getElementById('menu_icon_sidebar_' + what);
 
     // hide all other sidebars
     if (hide_others) {
@@ -247,15 +294,15 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
             }
         }
     }
-    
+
     // toggle the selected sidebar
-    if (sidebar.classList.contains("is-hidden") || show_sidebar) {
+    if (show_sidebar) {
         sidebar.classList.remove("is-hidden");
         if (what == "info") {
             get_image_info();  // update info of current or last image
         }
     } else {
-        sidebar.classList.add("is-hidden");
+        sidebar.classList.toggle("is-hidden");
     }
 
     if (what == "filter") {
@@ -264,25 +311,41 @@ function toggle_sidebar(what="info", show_sidebar=false, hide_others=false) {
             zoom_drag_filter_overview_setup(document.getElementById("filter_overview_container")); // set up zoom and drag for filter overview
         }
     }
+
+    if (sidebar.classList.contains("is-hidden")) {
+        icon.classList.remove("active");
+    } else {
+        icon.classList.add("active");
+    }
 }
 
 function toggle_sidebar_imagezoomtools(restore_previous=false) {
     // toggles sidebar in imagezoom mode
     const sidebar = document.getElementById('sidebar_imagezoomtools');
+    const line_profile_container = document.getElementById("line_profile_container");
     const griditem = window.items[window.zoom_last_selected];
+    const icon = document.getElementById('menu_icon_sidebar_imagezoomtools');
+    
+    if (get_view() == "zoom") {
+        if (griditem.type == "SpmGridImage") {
+            line_profile_container.classList.remove("is-hidden");
+        } else {
+            line_profile_container.classList.add("is-hidden");
+        }
+    }
 
     if (restore_previous && get_view() == "zoom") {
-        if (window.sidebar_imagezoomtools && griditem.type == "SpmGridImage") {
+        if (window.sidebar_imagezoomtools) {
             if (sidebar.classList.contains("is-hidden")) {
+                get_image_info(window.zoom_last_selected, true);
                 sidebar.classList.remove("is-hidden");
             }
         } else {
-            if (!sidebar.classList.contains("is-hidden")) {
-                sidebar.classList.add("is-hidden");
-            }
+            sidebar.classList.add("is-hidden");
         }
-    } else if (get_view() == "zoom" && griditem.type == "SpmGridImage") {
+    } else if (get_view() == "zoom") {
         if (sidebar.classList.contains("is-hidden")) {
+            get_image_info(window.zoom_last_selected, true);
             sidebar.classList.remove("is-hidden");
             window.sidebar_imagezoomtools = true;
         } else {
@@ -290,19 +353,29 @@ function toggle_sidebar_imagezoomtools(restore_previous=false) {
             window.sidebar_imagezoomtools = false;
         }
     } else {
-        if (!sidebar.classList.contains("is-hidden")) {
-            sidebar.classList.add("is-hidden");
-        }
+        sidebar.classList.add("is-hidden");
     }
+
     if (!sidebar.classList.contains("is-hidden") && window.line_profile_object !== null) {
         window.line_profile_object.setup();  // will set up or remove event handlers
+    }
+
+    // menu icon
+    if (sidebar.classList.contains("is-hidden")) {
+        icon.classList.remove("active");
+    } else {
+        icon.classList.add("active");
+    }
+    if (get_view() == "zoom") {
+        icon.classList.remove("disabled");
+    } else {
+        icon.classList.add("disabled");
     }
 }
 
 function standard_view() {
     // sets standard view, for instance when a new project is opened
     toggle_imagezoom("grid");
-    toggle_sidebar("info", true);
 }
 
 function get_view() {
@@ -343,7 +416,7 @@ function toggle_imagezoom_mouse(event) {
     }
 }
 
-function toggle_imagezoom(target_view = "") {
+function toggle_imagezoom(target_view = "", id="") {
     // toggles between grid and imagezoom views
 
     const grid = document.getElementById('imagegrid_container');
@@ -362,8 +435,18 @@ function toggle_imagezoom(target_view = "") {
         image_info_quick_timeout_clear();  // if we leave zoom-mode, we might need to get rid of the quick image info (if mouse is not hovering anything)
         toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
         gridsub.scrollTop = window.grid_last_scrolltop;
+        check_hover_enabled();
     } else {
-        let el = grid.querySelector('div.item:hover');
+        let el = null;
+        if (target_view == "zoom" && id != "") {  // this is used for automated testing - here the hover doesn't work so well
+           el = document.getElementById(id);
+        } else {
+           el = grid.querySelector('div.item:hover');
+           if (el == null && window.image_info_id != "") {
+               el = document.getElementById(window.image_info_id);
+           }
+        }
+
         if (el != null) {
             window.grid_last_scrolltop = gridsub.scrollTop;
             grid.classList.add("is-hidden");
@@ -375,12 +458,12 @@ function toggle_imagezoom(target_view = "") {
 
             const zoom_content = document.getElementById('imagezoom_content');
             if (!window.zoom_control_setup) {
-                zoom_drag_setup(zoom_content);
+                window.zoom_drag_objects["imagezoom"] = new ZoomDrag(zoom_content);
                 window.zoom_control_setup = true;
             }
             if (window.zoom_last_selected != el.id) {
                 // document.getElementById('imagezoom_image').src = file_url(el.id);
-                zoom_drag_reset(zoom_content);
+                window.zoom_drag_objects["imagezoom"].zoom_drag_reset();
             }
             window.zoom_last_selected = el.id;
             next_item(0); // sets the img src and displays colorbar etc
@@ -455,7 +538,7 @@ function clear_all_active() {
     check_hover_enabled();
 }
 
-function toggle_all_active(ignore_filter_status=false) {
+function toggle_all_active(ignore_filter_status=false, force_all=false) {
     // toggles between select-all and select-none
     if (get_view() != "grid") {
         return;
@@ -463,21 +546,17 @@ function toggle_all_active(ignore_filter_status=false) {
 
     if (ignore_filter_status) {
         const els = document.querySelectorAll('#imagegrid .item:not(.active)');
-        if (els.length == 0) {
+        if (els.length == 0 && !force_all) {
             clear_all_active();
         } else {
-            for (let i = 0; i < els.length; i++) {
-                els[i].classList.add('active');
-            }
+            els.forEach(el => el.classList.add('active'));
         }
     } else {
         const els = document.querySelectorAll('#imagegrid .item:not(.is-hidden):not(.active)');
-        if (els.length == 0) {
+        if (els.length == 0 && !force_all) {
             clear_all_active();
         } else {
-            for (let i = 0; i < els.length; i++) {
-                els[i].classList.add('active');
-            }
+            els.forEach(el => el.classList.add('active'));
         }
     }
     check_hover_enabled();
@@ -572,14 +651,94 @@ function set_copyfrom_id(message, message_fail) {
     }
 }
 
+function update_selected_filter_overview(active_els) {
+    // updates the items in the filter_overview
+    const overview = document.getElementById('filter_overview');
+
+    // filter overview
+    const els_with_background = overview.querySelectorAll(".with_background");
+    if (active_els.length == 0 || active_els.length > window.overview_max_images) {  // remove all backgrounds
+        for (let i=0; i < els_with_background.length; i++) {
+            els_with_background[i].firstElementChild.style.backgroundImage = "none";
+            els_with_background[i].classList.remove("with_background");
+        }
+        document.getElementById("filter_overview_selected_zoom").classList.add("notactive");
+    } else {  // update images
+        // remove all other images
+        const prefix = "filter_overview_item_";
+        const prefix_length = prefix.length;
+        const ids = Array.from(active_els).map(function(el) {
+            return el.id;
+        });
+
+        els_with_background.forEach(function(el) {
+            if (!ids.includes(el.id.substring(prefix_length))) {  // we cut off the prefix
+                el.firstElementChild.style.backgroundImage = "none";
+                el.classList.remove("with_background");
+            }
+        });
+
+        for (let i=0; i<ids.length;i++) {
+            let el = document.getElementById(prefix + ids[i]);
+            if (window.items[ids[i]].type == "SpmGridImage") {
+                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/").replace(/\"/g, "") + '")';  // we seem to have to replace backward for forward slashed for the css
+            }
+            el.classList.add("with_background");
+        }
+        document.getElementById("filter_overview_selected_zoom").classList.remove("notactive");
+    }
+}
+
+function update_menu_main(grid=null) {
+    // updates main menu numbers for spectra and images and loads channels
+
+    let num_images = 0;
+    let num_spectra = 0;
+    let num_vc = 0;
+    if (get_view() === "zoom") {
+        const item = window.items[window.zoom_last_selected];
+        if (item.type === "SpmGridImage") {
+            num_images = 1;
+        } else if (item.type === "SpmGridSpectrum") {
+            num_spectra = 1;
+        }
+        if (item.virtual_copy > 0) {
+            num_vc = 1;
+        }
+    } else {
+        num_images = grid.querySelectorAll('.item.active.SpmGridImage').length;
+        num_spectra = grid.querySelectorAll('.item.active.SpmGridSpectrum').length;
+        num_vc = grid.querySelectorAll('.item.active.SpmGridVirtualCopy').length;
+    }
+    document.getElementById("menu_main_num_images").innerText = num_images;
+    document.getElementById("menu_main_num_spectra").innerText = num_spectra;
+
+    if (num_images >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridImage");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridImage");
+    }
+    if (num_spectra >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridSpectrum");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridSpectrum");
+    }
+    if (num_vc >= 1) {
+        document.getElementById("menu_main").classList.add("selected-SpmGridVirtualCopy");
+    } else {
+        document.getElementById("menu_main").classList.remove("selected-SpmGridVirtualCopy");
+    }
+    setup_menu_selection();
+}
+
 function check_hover_enabled() {
     // checks whether the imagedrid should get the class hover_enabled
     // this is the case only if no active div.item elements are found
-    // also writes the number of selected images into the footer.
+    // also writes the number of selected images into the footer and navbar.
     // also adds images to the filter_overview window
     const grid = document.getElementById('imagegrid');
-    const els = grid.getElementsByClassName('item active');
-    const overview = document.getElementById('filter_overview');
+    const els = grid.querySelectorAll('.item.active');
+
 
     if (els.length == 0) {
         grid.classList.add('hover_enabled');
@@ -595,37 +754,8 @@ function check_hover_enabled() {
         document.getElementById('footer_num_images_container').classList.remove("has-text-weight-bold");
     }
 
-    // filter overview
-    const els_with_background = Array.from(overview.getElementsByClassName("with_background"));
-    if (els.length == 0 || els.length > window.overview_max_images) {  // remove all backgrounds
-        for (let i=0; i < els_with_background.length; i++) {
-            els_with_background[i].firstElementChild.style.backgroundImage = "none";
-            els_with_background[i].classList.remove("with_background");
-        }
-        document.getElementById("filter_overview_selected_zoom").classList.add("notactive");
-    } else {  // update images
-        // remove all other images
-        const prefix = "filter_overview_item_";
-        const prefix_length = prefix.length;
-        const ids = Array.from(els).map(function(el) {
-            return el.id;
-        });
-
-        for (let i=0; i < els_with_background.length; i++) {
-            if (!ids.includes(els_with_background[i].id.substring(prefix_length))) {  // we cut off the prefix
-                els_with_background[i].firstElementChild.style.backgroundImage = "none";
-                els_with_background[i].classList.remove("with_background");
-            }
-        }
-        for (let i=0; i<ids.length;i++) {
-            let el = document.getElementById(prefix + ids[i]);
-            if (window.items[ids[i]].type == "SpmGridImage") {
-                el.firstElementChild.style.backgroundImage = 'url("' + file_url(ids[i]).replace(/\\/g, "/") + '")';  // we seem to have to replace backward for forward slashed for the css
-            }
-            el.classList.add("with_background");
-        }
-        document.getElementById("filter_overview_selected_zoom").classList.remove("notactive");
-    }
+    update_menu_main(grid);
+    update_selected_filter_overview(els);
 }
 
 function next_item(jump) {
@@ -670,7 +800,7 @@ function next_item(jump) {
             if (window.histogram_object === null) {
                 window.histogram_object = new Histogram();
             }
-            window.histogram_object.set_range_initial(window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
+            window.histogram_object.set_range_initial(el.id, window.items[el.id].channel_range, window.items[el.id].channel_range_selected, window.items[el.id].channel_unit);
 
             if (window.line_profile_object === null) {
                 window.line_profile_object = new LineProfile(document.getElementById("imagezoom_canvas"), document.getElementById('imagezoom_image'));
@@ -688,6 +818,7 @@ function next_item(jump) {
         }
 
         image_info_timeout(null, el.id, zoomview=true, timeout_ms=30);
+        update_menu_main();
     }
     toggle_sidebar_imagezoomtools(restore_previous=true);
 }
@@ -699,7 +830,7 @@ function scroll_to_selected(next=true) {
         return;
     }
 
-    const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden).active'));
+    const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden).active, #imagegrid .item:not(.is-hidden).is-marked'));
     if (items.length == 0) {
         return;
     }
@@ -740,8 +871,8 @@ function select_item(event) {
     const modifier = event.shiftKey;
     const items = Array.from(document.querySelectorAll('#imagegrid .item:not(.is-hidden)'));
     let end = items.indexOf(this);
-    let start = items.indexOf(document.getElementById(window.last_selected));
-    if (modifier && window.last_selected != "" && start != end) {
+    let start = items.indexOf(document.getElementById(window.last_clicked));
+    if (modifier && window.last_clicked != "" && start != end) {
         if (start > end) {
             [start, end] = [end, start];
         }
@@ -764,7 +895,10 @@ function select_item(event) {
     } else {
         this.classList.toggle('active');
     }
-    window.last_selected = this.id;
+    window.last_clicked = this.id;
+    if (this.classList.contains('active')) {
+        window.last_selected = this.id;
+    }
     check_hover_enabled();
 }
 
@@ -855,6 +989,10 @@ function add_image(id, id_after=null) {
     const t = document.getElementById('griditem');
     const el = t.content.firstElementChild.cloneNode(true)
     el.id = id;
+    el.classList.add(window.items[id].type);
+    if (window.items[id].virtual_copy > 0) {
+        el.classList.add("SpmGridVirtualCopy");
+    }
     el.querySelector('img').src = file_url(id);
     if (id_after === null) {
         grid.append(el);
@@ -940,8 +1078,13 @@ function open_in_explorer(what="") {
     const ids = get_active_element_ids(only_current=true);
     if (ids.length > 0) {
         const item = window.items[ids[0]];
+
+        let basedir = window.dir_cache;
+        if (item.status == 10) {
+            basedir = window.dir_temp_cache;
+        }        
         if (what == "image") {
-            file_path = window.dir_cache + item.filename_display;  // generated image
+            file_path = basedir + item.filename_display;  // generated image
         } else {
             file_path = window.dir_data + item.filename_original;  // original file
         }
@@ -1016,5 +1159,24 @@ function check_update() {
         // "Not Found"
         document.getElementById("modal_about_unknown_version").classList.remove("is-hidden");
         console.log(response.statusText);
+    });
+}
+
+function tycoon_mode_setup_showhide(el) {
+    el.querySelectorAll('.tycoon_mode_pro').forEach((el) => {
+        if (window.tycoon_mode === "pro") {
+            el.classList.remove("is-hidden");
+        } else {
+            el.classList.add("is-hidden");
+        }
+    });
+}
+
+function tycoon_mode_setup() {
+    // shows/hides elements depending on the tycoon mode
+    tycoon_mode_setup_showhide(document);
+    // also update the elements in the templates
+    document.querySelectorAll('template').forEach((el) => {
+        tycoon_mode_setup_showhide(el.content);
     });
 }

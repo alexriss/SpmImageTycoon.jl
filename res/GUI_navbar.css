@@ -1,0 +1,432 @@
+/* menu */
+
+#navbar_main {
+  height:4.25rem;
+}
+
+#navbar_main .navbar-start-menu {
+    overflow: hidden;  /* so that :active elements do not extend over the bottom of the navbar */
+}
+
+#navbar_main .navbar-brand {
+  height:4.25rem;
+}
+
+#navbar_main a {
+    cursor: default;  # we could also make the cursor a `pointer` on the icons
+}
+
+/* icon menu */
+
+#menu_main_num_container {
+    min-width:40px;
+}
+
+#menu_main_num_images, #menu_main_num_spectra,
+#menu_main_num_images_title, #menu_main_num_spectra_title {
+    opacity: 0.6;
+}
+
+#navbar_main .icon_menu_container {
+  position: relative;
+  opacity: 0.5;
+  margin-left: 0.8rem;
+  height: 3.9rem;
+  width: 2.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#navbar_main .icon_menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* #navbar_main .icon_menu:hover {
+  opacity: 0.8;
+} */
+
+#navbar_main .icon_menu_container:hover {
+  opacity: 0.5;
+}
+
+/* #navbar_main .icon_menu:hover {
+  opacity: 0.9;
+  /* filter: invert(12%) saturate(6234%) hue-rotate(246deg); */
+} */
+
+
+#navbar_main .icon_menu img {
+  width: 24px;
+  height: 24px;
+  margin: 6px;
+}
+
+#navbar_main .icon_menu_title {
+  position: absolute;
+  top: -1.45rem;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+#navbar_main .icon_menu_container:hover .icon_menu_title {
+  opacity: 1;
+}
+
+#navbar_main .icon_menu_info_disabled {
+  position: absolute;
+  bottom: -1.05rem;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+#navbar_main .icon_menu_options {
+  position: absolute;
+  bottom: -0.2rem;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: visible;
+  display: none;
+}
+
+/* helps with the hover effect */
+#navbar_main .icon_menu_options_dummy { 
+    position: absolute;
+    bottom: -0.2rem;
+    opacity: 0;
+    width:100%;
+    height:2rem;
+    z-index: 0;
+}
+
+#navbar_main .icon_menu_option {
+  position: relative;
+  padding: 0.2rem;
+  opacity: 0.6;
+}
+
+#navbar_main .icon_menu_option:hover {
+  opacity:1.0;
+}
+
+#navbar_main .icon_menu_option:active {
+  top:1px;
+}
+
+#navbar_main .navbar-item {
+    color: #ffffff;
+}
+
+#navbar_main .navbar-dropdown {
+    max-height: 80vh;
+    overflow-y: auto;
+    background-color:#485fc7;
+    color: #ffffff;
+    margin-top: 3px;
+    border-top: 1px solid #c0c0c0;
+    box-shadow: 0px 4px 5px 4px #00000090;
+}
+
+#navbar_main .navbar-dropdown hr.navbar-divider {
+    margin: 0.25rem 0;
+}
+
+#navbar_main .navbar-dropdown .icon.colorscheme img,
+#navbar_main .navbar-dropdown .icon.colorscheme {
+    width: 3rem;
+    height: 1rem;
+}
+
+#navbar_main .navbar-dropdown .icon.colorscheme {
+    margin-right: 0.5rem;
+}
+
+#navbar_main .navbar-dropdown .icon.rating img,
+#navbar_main .navbar-dropdown .icon.rating {
+    width: 5.4rem;
+    height: 1rem;
+}
+
+#navbar_main .navbar-dropdown .icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-right: 0.5rem;
+}
+
+#navbar_main .navbar-dropdown .icon.colorscheme {
+    margin-right: 0.5rem;
+}
+
+#navbar_main .navbar-dropdown .navbar-item {
+    background-color:#485fc7;
+    color: #ffffff;
+    line-height:1.3;
+    width: 100%;
+    padding: 0.2rem 1rem;
+}
+
+#navbar_main .navbar-dropdown .navbar-item:not(.disabled):hover {
+    background-color:#3a51bb;
+    color: #ffffff;
+}
+
+#navbar_main hr.navbar-divider {
+    background-color: #ffffff;
+    opacity: 0.2;
+}
+
+
+
+/* disable interaction when no elements are selected */
+
+#navbar_main .icon_menu_container .icon_menu_options {
+    display: none;
+}
+#navbar_main .icon_menu_container .icon_menu_dropdown_container {
+    display: none;
+}
+
+#menu_main .icon_menu_container.for-SpmGridImage:hover .icon_menu_info_disabled,
+#menu_main .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_info_disabled {
+  opacity: 1;
+}
+  
+#menu_main .navbar-dropdown .navbar-item {
+    opacity:0.5;
+    pointer-events:none;
+}
+
+#menu_main .icon_menu_container .icon_menu_button:active .icon {
+    padding-top: 0px;
+}
+
+/* options available for any state (even if none selected) */
+
+#menu_main .icon_menu_container.for-any {
+    opacity:0.6;
+}
+
+#menu_main .icon_menu_container.for-any:hover {
+    opacity:1;
+}
+
+#menu_main .icon_menu_container.for-any:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main .icon_menu_container.for-any:hover .icon_menu_options,
+#menu_main .icon_menu_container.for-any .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main .navbar-dropdown .navbar-item.for-any {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main .navbar-dropdown .navbar-item.for-any:hover {
+    opacity:1;
+}
+
+#menu_main .icon_menu_container.for-any .icon_menu_button:active .icon {
+    padding-top: 2px;
+} 
+  
+
+/* show image-specific menu items when images selected */
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage {
+    opacity:0.6;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage:hover .icon_menu_options,
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main.selected-SpmGridImage .navbar-dropdown .navbar-item.for-SpmGridImage {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main.selected-SpmGridImage .navbar-dropdown .navbar-item.for-SpmGridImage:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridImage .icon_menu_container.for-SpmGridImage .icon_menu_button:active .icon {
+    padding-top: 2px;
+} 
+
+
+/* show spectrum-specific menu items when spectra selected */
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum {
+    opacity:0.6;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum:hover .icon_menu_options,
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main.selected-SpmGridSpectrum .navbar-dropdown .navbar-item.for-SpmGridSpectrum {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main.selected-SpmGridSpectrum .navbar-dropdown .navbar-item.for-SpmGridSpectrum:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridSpectrum .icon_menu_container.for-SpmGridSpectrum .icon_menu_button:active .icon {
+    padding-top: 2px;
+}
+
+
+/* show virtual-copy-specific menu items when virtual copies selected */
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy {
+    opacity:0.6;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy:hover .icon_menu_info_disabled {
+    opacity: 0;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy:hover .icon_menu_options,
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy .icon_menu_dropdown_container {
+    display: block;
+    opacity: 1;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .navbar-dropdown .navbar-item.for-SpmGridVirtualCopy {
+    opacity:1;
+    pointer-events: auto;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .navbar-dropdown .navbar-item.for-SpmGridVirtualCopy:hover {
+    opacity:1;
+}
+
+#menu_main.selected-SpmGridVirtualCopy .icon_menu_container.for-SpmGridVirtualCopy .icon_menu_button:active .icon {
+    padding-top: 2px;
+}
+
+
+
+
+/* sidebar icons */
+
+#navbar_main .icon_sidebar {
+  position: relative;
+  opacity: 0.5;
+  margin-left: 0.8rem;
+  height: 3.9rem;
+  width: 2.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#navbar_main .icon_sidebar:hover {
+  opacity: 0.8;
+}
+
+#navbar_main .icon_sidebar.active {
+  opacity: 1.0;
+}
+
+#navbar_main .icon_sidebar.disabled {
+  opacity: 0.5;
+}
+
+#navbar_main .icon_sidebar.active:hover {
+  opacity: 0.9;
+  /* filter: invert(12%) saturate(6234%) hue-rotate(246deg); */
+}
+
+#navbar_main .icon_sidebar.disabled:hover {
+  opacity: 0.5;
+}
+
+#navbar_main .icon_sidebar img {
+  width: 24px;
+  height: 24px;
+  margin: 6px;
+}
+
+#navbar_main .icon_sidebar_title {
+  position: absolute;
+  top: -0.25rem;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+#navbar_main .icon_sidebar:hover .icon_sidebar_title {
+  opacity: 1;
+}
+
+#navbar_main .icon_sidebar_info_disabled {
+  position: absolute;
+  bottom: 0.2rem;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+#navbar_main .icon_sidebar.disabled:hover .icon_sidebar_info_disabled {
+  opacity: 1;
+}
+
+
+/* general button styles */
+
+#navbar_main .icon_button {
+  position: relative;
+  transition-duration: 0.2s;
+}
+
+#navbar_main .icon_menu_button {
+    position: relative;
+    transition-duration: 0.2s;
+  }
+
+#navbar_main .icon_button:not(.disabled):active .icon {
+  padding-top: 2px;  /* make the button look like it is pressed */
+}
+
+#navbar_main .a_button:active {
+  margin-top: 1px;  /* make the button look like it is pressed */
+}
+
+#navbar_main .navbar-dropdown .a_button:not(.disabled):active {
+  margin-top: 1px; 
+  margin-bottom: -1px; 
+}

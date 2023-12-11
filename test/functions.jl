@@ -20,10 +20,14 @@ function delete_files(i::Int=1; dir_cache::String="", fname_odp::String="")::Not
                 print(".")
             end
             if i > 5
-                throw(e)
+                if SpmImageTycoon.Precompiling
+                    println(" giving up.")
+                else
+                    throw(e)
+                end
             end
             sleep(1)
-            delete_files(i+1)
+            i <= 5 && delete_files(i+1)
         else
             throw(e)
         end
@@ -32,14 +36,16 @@ function delete_files(i::Int=1; dir_cache::String="", fname_odp::String="")::Not
 end
 
 """Compare two dictionaries of items."""
-function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
+function compare_dicts(dict1, dict2, tol=1e-6; basekey="", show_all=false)
+    res = true
     for (k,v1) in dict1
         if k in ["created", "last_modified", "filename_display_last_modified"]  # these won't be the same
             continue
         end
 
         if !haskey(dict2, k)
-            return false
+            !show_all && return false
+            show_all && (res = false)
         end
         v2 = dict2[k]
 
@@ -52,40 +58,53 @@ function compare_dicts(dict1, dict2, tol=1e-6; basekey="")
                 curr_basekey = k
             end
             if !compare_dicts(v1, v2, basekey=curr_basekey)
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isa(v1, AbstractArray)
             if !(length(v1) == length(v2))
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
-            if !all(abs.(v1 .- v2) .< tol)
+            if length(v1) > 0 && isa(v1[1], Number)
+                if !all(abs.(v1 .- v2) .< tol)
+                    println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
+                    !show_all && return false
+                    show_all && (res = false)
+                end
+            elseif !all(v1 .== v2)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isa(v1, String)
             if v1 != v2
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isnan(v1)
             if !isnan(v2)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         elseif isa(v1, Number)
             if !(abs(v1 - v2) < tol)
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         else
             if v1 != v2
                 println("$(basekey): not equal $(k):\n $(v1)\n $(v2)")
-                return false
+                !show_all && return false
+                show_all && (res = false)
             end
         end
     end
-    return true
+    return res
 end
 
 
@@ -147,12 +166,18 @@ function send_double_click(sel::String; window=nothing)
 end
 
 """Hovers the mouse over all elements set by the css selector."""
-function send_hover_mouse(sel::String; window=nothing)
+function send_hover_mouse(sel::String; send_event::Bool=true, window=nothing)
     w_ = isnothing(window) ? w : window
-    @js w_ test_hover_mouse($sel)
+    @js w_ test_hover_mouse($sel, $send_event)
     sleep(0.2)
 end
 
+function change_value(sel::String, val::Union{String,Bool,Real}, indices=[]; window=nothing)
+    w_ = isnothing(window) ? w : window
+    indices .-= 1  # js indices start at 0
+    @js w_ test_set_value($sel, $val, $indices)
+    sleep(0.2)
+end
 
 function setmtime(path::AbstractString, mtime::Real, atime::Real=mtime; follow_symlinks::Bool=true)
     req = Libc.malloc(_sizeof_uv_fs)

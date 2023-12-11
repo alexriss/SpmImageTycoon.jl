@@ -181,6 +181,7 @@ end
 """Saves an OpenOffice Document presentation"""
 function export_odp(ids::Vector{String}, dir_data::String, griditems::Dict{String, SpmGridItem}, filename_export::String)
     dir_cache = get_dir_cache(dir_data)
+    dir_temp_cache = get_dir_temp_cache(dir_data)
     
     dict_template = Dict{String,Any}()
     dict_template["title"] = splitpath(dir_data)[end]
@@ -279,6 +280,10 @@ function export_odp(ids::Vector{String}, dir_data::String, griditems::Dict{Strin
             dict_image["bias"] = ""
         end
 
+        dict_image["edits_x"] = x
+        dict_image["edits_y"] = dict_image["channel_y"] + odp_lineheight
+        dict_image["edit_entries_str"] = get_active_edits_str(griditem)
+
         filename_display = griditem.filename_display
         filename_odp = joinpath(dir_media_odp, filename_display)
         filename_odp = replace(filename_odp, "\\" => "/")  # we seem to need forward-slashes for the ZipFile
@@ -290,11 +295,12 @@ function export_odp(ids::Vector{String}, dir_data::String, griditems::Dict{Strin
         push!(dict_template["pages"][end]["images"], dict_image)
 
         # save png/svg to zip files
+        dir_cache_ = (griditem.status === 10) ? dir_temp_cache : dir_cache  # we use the temp cache when write permissions are restricted
         f = ZipFile.addfile(zipfile, filename_odp; method=ZipFile.Deflate)
         if griditem.type == SpmGridImage
-            write(f, read(joinpath(dir_cache, filename_display), String))
+            write(f, read(joinpath(dir_cache_, filename_display), String))
         else  # we adapt the svg file for spectra
-            svg_str = read(joinpath(dir_cache, filename_display), String)
+            svg_str = read(joinpath(dir_cache_, filename_display), String)
             channel_ranges = copy(griditem.channel_range)
             if length(griditem.channel_range_selected) == length(channel_ranges)
                 channel_ranges[1] = griditem.channel_range[1] + (channel_ranges[2] - channel_ranges[1]) * griditem.channel_range_selected[1]

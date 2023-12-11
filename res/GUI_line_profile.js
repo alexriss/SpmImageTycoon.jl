@@ -186,14 +186,22 @@ LineProfile.prototype = {
     mouseEvents(e) {
         //this.mouse.x = e.pageX;
         //this.mouse.y = e.pageY;
-        if (e.shiftKey || e.ctrlKey || window.space_pressed) {
+        if (e.shiftKey || e.ctrlKey || e.altKey || window.space_pressed) {
             return;  // modifier keys will be used for dragging
         }
         var mousepos = this.getMousePos(this.canvas, e)
         this.mouse.x = mousepos.x;
         this.mouse.y = mousepos.y;
+
         const lb = this.mouse.button;
-        this.mouse.button = e.type === "mousedown" ? true : e.type === "mouseup" ? false : this.mouse.button;
+        if (e.type === "mousedown" && e.button === 0) {
+            if (new Date().getTime() - window.dblClickLast > 200) {
+                this.mouse.button = true;
+            }
+        } else if (e.type === "mouseup" && e.button === 0) {
+            this.mouse.button = false;
+
+        }
         if (lb !== this.mouse.button) {
             if (this.mouse.button) {
                 this.mouse.drag = true;
@@ -206,6 +214,13 @@ LineProfile.prototype = {
                 this.showInfo();
             }
         }
+
+        if (e.type === "mouseout") {
+            this.mouse.drag = false;
+            this.mouse.dragEnd = true;
+            this.mouse.button = false;
+        }
+
         if (this.mouse.drag) {
             this.showInfo();
         }
@@ -406,7 +421,7 @@ LineProfile.prototype = {
 
     // main update function
     update(timer) {
-        that = window.line_profile_object;  // requestAnimationFrame sends a different "this"
+        var that = window.line_profile_object;  // requestAnimationFrame sends a different "this"
         if (window.space_pressed) {
             that.cursor = "grab";
         }
@@ -651,12 +666,15 @@ LineProfile.prototype = {
             }
 
             if (!this.first_setup_events) {
-                ["down", "up", "move"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
+                ["down", "up", "move", "out"].forEach(name => this.canvas.addEventListener("mouse" + name, (e) => this.mouseEvents(e)));
                 const that = this;
                 document.querySelectorAll("#table_line_profile input").forEach((el) => {
                     el.addEventListener("change", (e) => {
                         that.inputEvents(e);
                     });
+                });
+                document.getElementById("line_profile_clipboard").addEventListener("click", (e) => {
+                    that.export_to_clipboard();
                 });
                 this.first_setup_events = true;
             }
@@ -665,6 +683,50 @@ LineProfile.prototype = {
         } else {
             this.unsetup();
         }
-    }
+    },
+
+    export_to_clipboard() {
+        const item = window.items[window.zoom_last_selected];
+        const channelName = item.channel_name;
+        const channelUnit = item.channel_unit;
+
+        const elStartX = document.getElementById("line_profile_start_x");
+        const elStartY = document.getElementById("line_profile_start_y");
+        const elEndX = document.getElementById("line_profile_end_x");
+        const elEndY = document.getElementById("line_profile_end_y");
+        const elLength = document.getElementById("line_profile_length");
+        const elWidth = document.getElementById("line_profile_width");
+        const elAngle = document.getElementById("line_profile_angle");
+        const elAngleGlobal = document.getElementById("line_profile_angle_global_value");
+
+        const dataLength = this.plot_object.data[0].length
+
+        let text = "d [nm]\t" + channelName + " [" + channelUnit + "]\t" + "File:\t" + item.filename_original + "\n";
+        let text_line = {
+            0: "Start:\t" + elStartX.value + "\t" + elStartY.value + "\t" + "nm",
+            1: "End:\t" + elEndX.value + "\t" + elEndY.value + "\t" + "nm",
+            2: "Length:\t" + elLength.value + "\t" + "nm",
+            3: "Width:\t" + elWidth.value + "\t" + "nm",
+            4: "Angle:\t" + elAngle.value + "\t" + "deg",
+            5: "Angle global:\t" + elAngleGlobal.innerText + "\t" + "deg",
+            6 : "",
+            7: "exported by SpmImageTycoon."
+        }
+        for (let i = 0; i < dataLength; i++) {
+            text += this.plot_object.data[0][i] + "\t" + this.plot_object.data[1][i];
+
+            if (i in text_line) {
+                text += "\t" + text_line[i];
+            }
+            text += "\n";
+        }
+        for (const [num, value] of Object.entries(text_line)) {
+            if (num >= dataLength) {
+                text += "\t\t" + value + "\n";
+            }
+        }
+        const {clipboard} = require('electron');
+        clipboard.writeText(text);
+    },
 }
 

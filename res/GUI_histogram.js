@@ -7,7 +7,6 @@ function Histogram() {
     this.unit_exponent = 0;  // exonent for the unit
     this.drag = false;  // specifies whether we are dragging the colorbar
     this.drag_left = false;  // specifies whether we are dragging the left or right edge of the colorbar
-    this.timeout_change_item_range = null;  // timeout reference for change_item_range function
 
     this.imagezoom_histogram_table_container = document.getElementById('imagezoom_histogram_table_container')
     this.imagezoom_histogram_container = document.getElementById('imagezoom_histogram_container');
@@ -60,7 +59,7 @@ Histogram.prototype = {
 
     format_number(number, decimals=2) {
         // formats a number using a unit-prefix and a certain amount of decimals
-        return number.toFixed(2);
+        return number.toFixed(decimals);
     },
 
     convert_absolute_to_absolute_display(range) {
@@ -137,7 +136,7 @@ Histogram.prototype = {
 
     plot_histogram(width, counts) {
         // plots a bar chart to the canvas. counts are assumed to be normalized between 0 and 1
-        
+
         // this seems to reset the canvas without any blinking
         this.canvas.width = this.canvas_width;
         this.canvas.height = this.canvas_height;
@@ -154,11 +153,15 @@ Histogram.prototype = {
         }
     },
 
-    set_range_initial(range, range_selected, unit) {
+    set_range_initial(id, range, range_selected, unit) {
         // sets the initial histogram range (and after an update from julia)
         if (this.drag) {
             return;
         }
+        if (window.queue_edits_range.queue_length(id) > 1) {
+            return;  // there are other operations waiting, so we don't update now
+        }
+
         if (range_selected.length != 2) {
             range_selected = [0.0, 1.0];
         }
@@ -198,7 +201,7 @@ Histogram.prototype = {
         // triggers when the selected-range input fields are changed by the user
         let range_selected = this.convert_absolute_display_to_relative([this.imagezoom_range_selected_start.value, this.imagezoom_range_selected_end.value]);
         range_selected = this.limit_range_selected(range_selected);
-        this.change_item_range_timeout(window.zoom_last_selected, range_selected, timeout_ms=40);  // call julia
+        this.change_item_range(window.zoom_last_selected, range_selected);  // call julia
     },
 
     set_range_user(event, mode="") {
@@ -207,7 +210,7 @@ Histogram.prototype = {
         if (mode == "reset") {
             this.colorbar.style.left = "0";
             this.colorbar.style.right = "0";
-            this.change_item_range_timeout(window.zoom_last_selected, [0, 1]);
+            this.change_item_range(window.zoom_last_selected, [0, 1]);
             return;
         }
 
@@ -257,19 +260,12 @@ Histogram.prototype = {
             const range_selected_end = (colorbar_rect.right - histogram_rect.left) / histogram_width;
             const range_selected = this.limit_range_selected([range_selected_start, range_selected_end]);
             this.set_range_selected(range_selected);
-            this.change_item_range_timeout(window.zoom_last_selected, range_selected);
+            this.change_item_range(window.zoom_last_selected, range_selected);
         }
     },
 
-    change_item_range_timeout(id, range_selected, timeout_ms=20) {
-        // clear old timeout
-        if (this.timeout_change_item_range != null && num_open_jobs > 0) {  // only clear if some jobs are running
-            clearTimeout(this.timeout_change_item_range);
-        }
-
-        this.timeout_change_item_range = window.setTimeout(function() {
-            change_item_range(id, range_selected);  // call Julia
-        }, timeout_ms);
+    change_item_range(id, range_selected) {
+        window.queue_edits_range.add(id, "range_selected", () => change_item_range(id, range_selected));  // queue to call Julia
     },
 
     setup_event_handlers() {

@@ -1,12 +1,12 @@
 // keyboard events etc
 
-let key_commands = {
+const key_commands = {
     c: { command: change_item, args: ["channel", "change channel."] },
     y: { command: change_item, args: ["channel", "change channel.", 1] },
     x: { command: change_item, args: ["channel2", "change x-channel.", 1] },
     d: { command: change_item, args: ["direction", "change direction."] },
     b: { command: change_item, args: ["background_correction", "change background."] },
-    p: { command: change_item, args: ["colorscheme", "change colorscheme."] },
+    p: { command: change_item, args: ["colorscheme", "change palette."] },
     i: { command: change_item, args: ["inverted", "invert."] },
     C: { command: change_item, args: ["channel", "change channel.", -1] },
     Y: { command: change_item, args: ["channel", "change channel.", -1] },
@@ -43,24 +43,24 @@ let key_commands = {
 }
 
 // with shift-modifier (some of the normal ones also work with the shift key)
-let shift_key_commands = {
+const shift_key_commands = {
     E: { command: open_in_explorer, args: [] },
     Delete: { command: virtual_copy, args: ["delete"] },
     ArrowDown: { command: scroll_to_selected, args: [] },
     ArrowUp: { command: scroll_to_selected, args: [false] },
 }
 
-let alt_key_commands = {
+const alt_key_commands = {
     e: { command: open_in_explorer, args: ["image"] },
 }
 
 // mac will send different key-values when alt-key is pressed
-let alt_keycode_commands = {
+const alt_keycode_commands = {
     KeyE: { command: open_in_explorer, args: ["image"] },
 }
 
 // with ctrl-modifier
-let ctrl_key_commands = {
+const ctrl_key_commands = {
     a: { command: toggle_all_active, args: [true] },
     s: { command: save_all, args: [false, true] },  // exit=false, force=true
     c: { command: set_copyfrom_id, args: ["set copy.", "can't set copy - select one item."] },
@@ -73,6 +73,14 @@ let ctrl_key_commands = {
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [true] },
 }
+
+const icon_sidebar = {
+    "imagezoomtools": { icon: "media/pencil-square.svg", title: "editing", command: toggle_sidebar_imagezoomtools, args: [], info_disabled: "zoom view" },
+    "info": { icon: "media/info-square.svg", title: "details", command: toggle_sidebar, args: ["info"] },
+    "filter": { icon: "media/filter-square.svg", title: "filter", command: toggle_sidebar, args: ["filter"] },
+}
+
+// icon_menu is defined in GUI_menu.js
 
 // for debugging, F5 for reload, F12 for dev tools
 document.addEventListener("keydown", function (event) {
@@ -137,6 +145,10 @@ document.addEventListener("keyup", function (event) {
     }
 });
 
+document.addEventListener("dblclick", function (event) {
+    window.dblClickLast = new Date().getTime();
+});
+
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', afterDOMLoaded);
@@ -167,6 +179,11 @@ function clear_all_filters() {
 
 function event_handlers() {
     //extra event handlers, this functions is called form "load_page", when all elements are present
+
+    // imagegrid - we want to show image info of selected items when hovering stops
+    document.getElementById("imagegrid").addEventListener("mouseleave", (e) => {
+        if (get_view() == "grid") { image_info_timeout(); }
+    });
 
     // star ratings
     document.getElementsByName("image_info_rating").forEach((el) => {
@@ -208,6 +225,33 @@ function event_handlers() {
     // make keywords modal draggable
     dragElement(document.getElementById("modal_keywords"), document.getElementById("modal_keywords_header"));
 
+
+    // notifications
+    document.querySelectorAll('.notification .delete').forEach((elDelete) => {
+        const notification = elDelete.parentNode;
+    
+        elDelete.addEventListener('click', () => {
+            notification.classList.add('is-hidden');
+        });
+    });
+    document.querySelectorAll('.notification .toggle_details').forEach((el) => {
+        const details = el.nextElementSibling;
+    
+        el.addEventListener('click', () => {
+            details.classList.toggle('is-hidden');
+        });
+    });
+    document.querySelectorAll('.notification').forEach((el) => {
+        el.addEventListener('click', () => {
+            if ("id" in el.dataset) {
+                const id = el.dataset.id;
+                if (id in window.timeout_notification) {
+                    clearTimeout(window.timeout_notification[id]);
+                }
+            }
+        });
+    });
+
     // imagezoom
     document.getElementById('zoomview_container').addEventListener('dblclick', (e) => {
         if (e.ctrlKey) {
@@ -222,8 +266,20 @@ function event_handlers() {
     resizeObserver.observe(document.getElementById('imagezoom_content'));
 
     // filter sidebar
+    if (window.filter_items_object == null) {
+        window.filter_items_object = new FilterItems();
+    }
+
+    document.getElementById('filter_sort_by').addEventListener('click', function() {
+        window.filter_items_object.sort_items()
+    });
+
+    document.querySelectorAll('.filter_sort_order_radio').forEach((el) => {
+        el.addEventListener('click', () =>  window.filter_items_object.sort_items());
+    });
+
     document.querySelectorAll('#sidebar_filter_table input,select').forEach((el) => {
-        el.addEventListener("input", filter_timeout);
+        el.addEventListener("input", () => window.filter_items_object.filter_items());
     });
 
     document.getElementById('filter_info_show_more').addEventListener('click', function() {
@@ -263,28 +319,35 @@ function event_handlers() {
                 document.getElementById('filter_rating_0').checked = true;
                 document.getElementById('filter_rating_comparator').value= ">=";
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             })
         } else if (el.id == "button_delete_filter_type") {
             el.addEventListener('click', function(e) {
                 document.getElementById('filter_type').value = "any";
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         } else if (el.id == "button_delete_filter_selected") {
             el.addEventListener('click', function(e) {
                 document.getElementById('filter_selected').checked = false;
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
+                }
+            });
+        } else if (el.id == "button_delete_filter_virtual_copy") {
+            el.addEventListener('click', function(e) {
+                document.getElementById('filter_virtual_copy').checked = false;
+                if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
+                    window.filter_items_object.filter_items();
                 }
             });
         } else if (el.id == "button_delete_filter_overview") {
             el.addEventListener('click', function(e) {
                 filter_overview_clear_selection();
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         } else {
@@ -292,7 +355,7 @@ function event_handlers() {
             el.addEventListener('click', function(e) {
                 document.getElementById(id_field).value = '';
                 if (e.screenX) {  // "reset all" will click all buttons, then we do not want to trigger the filter here
-                    filter_items();
+                    window.filter_items_object.filter_items();
                 }
             });
         }
@@ -300,7 +363,7 @@ function event_handlers() {
 
     document.getElementById('button_delete_all_filters').addEventListener('click', function() {
         clear_all_filters();
-        filter_items();
+        window.filter_items_object.filter_items();
     });
 
     // sidebar accordion
@@ -339,14 +402,13 @@ function event_handlers() {
     });
 
     // on close
-    require('electron').remote.getCurrentWindow().on('close', (e) => {
+    window.addEventListener('beforeunload', (e) => {
         save_all(true);
-        return false;
-    });
+    })
 
     // auto-save every n minutes
     if (window.auto_save_minutes > 0) {
-        setInterval(save_all, 1000 * 60 * window.auto_save_minutes);
+        setInterval(() => save_all(false, false), 1000 * 60 * window.auto_save_minutes);
     }
 
     // open links externally by default
@@ -358,11 +420,12 @@ function event_handlers() {
         });
     }
 
-    event_handlers_clipboard()
+    event_handlers_clipboard();
+    input_number_dragable_all();
 }
 
 
-// sets up douyble click events that copy to clipboard
+// sets up double click events that copy to clipboard
 function event_handlers_clipboard() {
     // double click elements to copy to clipboard
     const els = {
@@ -419,7 +482,6 @@ function event_handlers_clipboard() {
     }
 
     for (const [key, func] of Object.entries(els)) {
-        console.log(key);
         document.getElementById(key).addEventListener('dblclick', (e) => {
             if (window.image_info_id != "") {
                 const el = window.items[window.image_info_id];
@@ -432,3 +494,4 @@ function event_handlers_clipboard() {
         });
     }
 }
+

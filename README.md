@@ -12,6 +12,7 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 [Demo](#demo)  
 [Disclaimer](#disclaimer)  
 [Installation](#installation)  
+[Installation (alternative)](#alternative-installation)  
 [Cite](#cite)  
 [Case study](#real-world-case-study)  
 [Tips and tricks](#tips-and-tricks)  
@@ -25,11 +26,12 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
 
 - Load and display Nanonis SPM images: grid and zoom views
 - Load and display Nanonis spectra
-- Fast keyboard-based navigation
+- Fast navigation: dropdown menus or keyboard shortcuts
 - Cycle through channels, switch between forward and backward directions
 - Different types of background corrections
 - Various color palettes
-- Line profiles *(experimental and not yet fully tested)*
+- Non-destructive edits: Gaussian, Laplacian, Fourier Filter, etc.
+- Line profiles
 - Star-rating and keyword systems
 - Powerful search and filtering (e.g., by keywords, data type, location, scan size)
 - Overview and position-based filtering
@@ -72,6 +74,27 @@ Currently, [Nanonis](https://www.specs-group.com/nanonis/) scanning tunneling mi
     <td>Spectrum display<br />(Screenshot)</td>
     <td>Spectra demo <br />(YouTube)</td>
   </tr>
+  <tr>
+    <td>
+      <a href="https://www.youtube.com/watch?v=rnk2hWuwpuI" target="_blank"><img src="http://img.youtube.com/vi/rnk2hWuwpuI/0.jpg" width="230" /></a>
+    </td>
+    <td>
+      <a href="https://www.youtube.com/watch?v=VE_RGMeDTFc" target="_blank"><img src="http://img.youtube.com/vi/VE_RGMeDTFc/0.jpg" width="230" /></a>
+    </td>
+    <td>
+      <a href="https://www.youtube.com/watch?v=9Up7eEEuHNw" target="_blank"><img src="http://img.youtube.com/vi/9Up7eEEuHNw/0.jpg" width="230" /></a>
+    </td>
+    <!-- <td align="center">
+      <i>More features coming soon...</i>
+      &nbsp;
+      <br /><br />
+    </td> -->
+  </tr>
+  <tr>
+    <td>Non-destructive edits<br />(YouTube)</td>
+    <td>Fourier filter<br />(YouTube)</td>
+    <td>Menus<br />(YouTube)</td>
+  </tr>
 </table>
 
 It is best to play around with the app yourself, so [go ahead and install it.](#installation). Example data can be found in the [test directory](test/data).
@@ -86,7 +109,27 @@ _The app never modifies or deletes your original data. However, in case of any u
 
 _Please only use the app if you read the disclaimer above and feel brave enough to do so._
 
-To install and use, do the following:
+Use [SpmImage Tycoon Installer](https://github.com/alexriss/SpmImageTycoonInstaller.jl). It will install a compiled version of SpmImage Tycoon with much improved startup speed. Furthermore, it can create startmenu and desktop shortcuts. This way of installation also allows to copy the app from one computer to another, by simply copying the installation directory.
+
+Usage is simple:
+
+1. Install [Julia](https://julialang.org/)
+2. Start Julia and type the following two commands:
+
+```julia
+using Pkg
+Pkg.add("SpmImageTycoonInstaller")
+using SpmImageTycoonInstaller
+install()
+```
+
+This will install a compiled version of [SpmImage Tycoon](https://github.com/alexriss/SpmImageTycoon.jl).
+The installation will typically take 10 to 20 minutes and take up around 1 GB of space.
+The same procedure can be used to update to the latest version.
+
+## Alternative Installation
+
+As an alternative to the automatic installation process described above, you can manually install SpmImage Tycoon:
 
 1. Install [Julia](https://julialang.org/)
 2. Start Julia and type the following two commands:
@@ -103,7 +146,7 @@ tycoon()
 
 4. As a more convenient alternative to 3, just use one of the scripts in the [helpers directory](helpers/) to start the app. There is a [shell script](helpers/SpmImageTycoon.sh) for linux, as well as a [bat script](helpers/windows_tray/SpmImageTycoon.bat) for windows and also an [autohotkey script](helpers/windows_tray/SpmImageTycoon.ahk). You can find more information on autohotkey [here](https://www.autohotkey.com/).
 
-### Update an existing installation
+### Update an existing manual installation
 
 1. Start Julia and type the following two commands:
 ```julia
@@ -167,11 +210,12 @@ The program relies on
 
 The following javascript and css libraries are included in the app:
 
-- [tagify](https://github.com/yairEO/tagify): MIT License
-- [Simple-DataTables](https://github.com/fiduswriter/Simple-DataTables): LGPL License
 - [Bulma](https://bulma.io/): MIT License
 - [μPlot](https://github.com/leeoniya/uPlot): MIT License
 - [SelectionJS](https://github.com/Simonwep/selection): MIT License
+- [Simple-DataTables](https://github.com/fiduswriter/Simple-DataTables): LGPL License
+- [Sortable](https://github.com/SortableJS/Sortable): MIT License
+- [tagify](https://github.com/yairEO/tagify): MIT License
 
 ### Automated tests
 

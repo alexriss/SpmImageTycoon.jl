@@ -2,10 +2,10 @@
 
 function load_page(versions) {
     // loads the page contents
-    const nodes = document.querySelectorAll('link[rel="import"]');  // blink.jl loads it into an html import
-    const link = nodes[nodes.length - 1];
-    document.body.innerHTML = link.import.querySelector('body').innerHTML;
-    link.remove();  // remove this node, we wont need it anymore
+    const nodes = document.querySelectorAll('div.htmlimport');  // blink.jl loads it into an html import
+    const last = nodes[nodes.length - 1];
+    document.body.innerHTML = last.innerHTML;
+    last.remove();  // remove this node, we wont need it anymore
 
     // set version numbers in about-modal
     window.versions = versions;
@@ -13,25 +13,42 @@ function load_page(versions) {
     document.getElementById("about_version_spmimages").innerText = versions["SpmImages"];
     document.getElementById("about_version_spmspectroscopy").innerText = versions["SpmSpectroscopy"];
 
+    // shows/hides elements for pro mode
+    tycoon_mode_setup();
+
+    // setup menu
+    setup_menu();
+
     // set-up extra event handlers
     event_handlers();
+
+    // show info sidebar
+    toggle_sidebar("info", true);
 }
 
-function set_params(dir_res, auto_save_minutes, overview_max_images) {
+function set_params(dir_res, auto_save_minutes, overview_max_images, bg_corrections, directions_list, editing_entries, tycoon_mode) {
     // set base directory for all relative paths (dir_res) and continuous auto-save
     const el = document.createElement('base');
     el.href = "file:///" + dir_res;
     document.getElementsByTagName('head')[0].appendChild(el);
     window.auto_save_minutes = auto_save_minutes;
     window.overview_max_images = overview_max_images;
+    window.background_corrections = bg_corrections;
+    window.directions_list = directions_list;
+    window.editing_entry_list = editing_entries;
+    window.tycoon_mode = tycoon_mode;
 }
 
-function set_params_project(dir_data, dir_cache, dir_colorbars, filenames_colorbar) {
+function set_params_project(dir_data, dir_cache, dir_temp_cache, dir_colorbars, dir_edits, filenames_colorbar) {
     //  sets the global variables needed for this current directory
     window.dir_data = dir_data;
     window.dir_cache = dir_cache;
+    window.dir_temp_cache = dir_temp_cache;
     window.dir_colorbars = dir_colorbars;
+    window.dir_edits = dir_edits;
     window.filenames_colorbar = filenames_colorbar;
+
+    setup_menu_project();
 }
 
 function set_last_directories(dirs) {
@@ -101,16 +118,16 @@ function load_images(gzip_json_griditems_arr, bottomleft, topright, delete_previ
         })
     }
 
-    filter_items();
+    window.filter_items_object.filter_items([], -1, sort=true);
     document.getElementById('footer_num_images_total').innerText = griditems_arr.length;
-    check_hover_enabled()
+    check_hover_enabled();
 
     if (open_job_close) {
         open_jobs(-1);
     }
 }
 
-function update_images(gzip_json_griditems) {  // "griditems" is a dictionary here
+function update_images(gzip_json_griditems, julia_queue_type="") {  // "griditems" is a dictionary here
     // updates images
 
     // let t1 = performance.now();
@@ -119,7 +136,9 @@ function update_images(gzip_json_griditems) {  // "griditems" is a dictionary he
     let json_griditems = require("zlib").gunzipSync(new Buffer.from(gzip_json_griditems));
     let griditems = JSON.parse(json_griditems.toString("utf-8"));
 
+    let ids = [];
     for (let key in griditems) {
+        ids.push(key);
         window.items[key] = griditems[key];
         update_image(key);
         griditems[key].keywords.forEach((keyword) => {
@@ -139,10 +158,10 @@ function update_images(gzip_json_griditems) {  // "griditems" is a dictionary he
     // t1 = performance.now();
     // console.log("Update info get2:" + (t1 - window.t0) + " ms.");
 
-    filter_items(Object.keys(griditems));
-    check_hover_enabled()
+    window.filter_items_object.filter_items(Object.keys(griditems), -1, sort=true);
+    check_hover_enabled();
 
-    open_jobs(-1);
+    open_jobs(-1, ids, julia_queue_type);
 }
 
 function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {
@@ -167,9 +186,9 @@ function insert_images(griditems, ids_after, bottomleft=[], topright=[]) {
         i++;
     }
 
-    filter_items(Object.keys(griditems));
+    window.filter_items_object.filter_items(Object.keys(griditems), -1, sort=true);
     document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
-    check_hover_enabled()
+    check_hover_enabled();
 
     open_jobs(-1);
 }
@@ -186,9 +205,9 @@ function delete_images(ids) {
 
     // TODO: we could update the window.keywords - but for now we just leave it as is
 
-    filter_items([]);  // no need to apply extra filtering now, so give empty array, so we will update the value in the filter sidebar
+    window.filter_items_object.filter_items([]);  // no need to apply extra filtering now, so give empty array, so we will update the value in the filter sidebar
     document.getElementById('footer_num_images_total').innerText = document.querySelectorAll('#imagegrid .item').length;
-    check_hover_enabled()
+    check_hover_enabled();
 
     open_jobs(-1);
 }
@@ -206,9 +225,9 @@ function show_info(id, gzip_info_json, extra_info={}) {
     let info_json = require("zlib").gunzipSync(new Buffer.from(gzip_info_json));
     let nnp;
 
-    if (document.getElementById("sidebar_content").classList.contains("is-hidden")) {
-        document.getElementById("sidebar_content_none").classList.add("is-hidden");
-        document.getElementById("sidebar_content").classList.remove("is-hidden");
+    if (document.getElementById("sidebar_info_content").classList.contains("is-invisible")) {
+        document.getElementById("sidebar_info_content_none").classList.add("is-hidden");
+        document.getElementById("sidebar_info_content").classList.remove("is-invisible");
     }
     // let t1 = performance.now();
     // console.log("info unparse:" + (t1 - window.t0) + " ms.");
@@ -217,6 +236,8 @@ function show_info(id, gzip_info_json, extra_info={}) {
     document.getElementById("image_info_filename").innerText = filename_original.substring(0, window.items[id].filename_original.length - 4);
     document.getElementById("image_info_channel_name").innerText = window.items[id].channel_name;
     document.getElementById("image_info_background_correction").innerText = window.items[id].background_correction;
+    document.getElementById("image_info_edits").innerText = extra_info["active_edits_str"]
+    
     if (window.items[id].type == "SpmGridSpectrum") {
         document.getElementById("image_info_scansize_or_xaxis").innerText = window.items[id].channel2_name;
         document.getElementById("image_info_angle_or_points").innerText = window.items[id].points + " pts";
@@ -319,6 +340,12 @@ function show_info(id, gzip_info_json, extra_info={}) {
         document.getElementById("image_info_virtual_copy").classList.add("is-hidden");
     }
 
+    if (window.items[id].status == 10) {
+        document.getElementById("editing_entry_main_filename_temp_cache").classList.remove("is-hidden");
+    } else {
+        document.getElementById("editing_entry_main_filename_temp_cache").classList.add("is-hidden");
+    }
+
     const rating = window.items[id].rating;
     document.getElementsByName("image_info_rating")[rating].checked = true;
 
@@ -334,12 +361,16 @@ function show_info(id, gzip_info_json, extra_info={}) {
         document.getElementById("sidebar_keywords_container").appendChild(el_keyword);
     });
 
+    if (!document.getElementById("sidebar_imagezoomtools").classList.contains("is-hidden")) {
+        window.editing_object.setup_form(id, extra_info);
+    }  
+
     if (window.datatable == null) {
         window.datatable = new simpleDatatables.DataTable("#image_info", {
             searchable: true,
             // fixedHeight: true,
             paging: false,
-            scrollY: "calc(var(--vh, 1vh) * 100 - 15.6rem)",
+            scrollY: "calc(var(--vh, 1vh) * 100 - 15.6rem - 1rem)",
             // fixedColumns: true,
             // columns: { select: [2], sortable: false },
         })
@@ -362,7 +393,6 @@ function show_histogram(id, width, counts) {
             window.histogram_object.plot_histogram(width, counts);
         }
     }
-    open_jobs(-1);
 }
 
 function show_line_profile(id, distances, values, start_point_value, end_point_value) {
@@ -375,6 +405,12 @@ function show_line_profile(id, distances, values, start_point_value, end_point_v
     open_jobs(-1);
 }
 
+function set_channels_menu(channels, channels2) {
+    // we dont check whether the ids match, to save time
+    setup_menu_selection_callback(channels, channels2);
+    open_jobs(-1);
+}
+
 function show_spectrum(id, gzip_json_spectrum_data) {
     if (get_view() == "zoom" && window.zoom_last_selected == id) {
         let json_spectrum_data = require("zlib").gunzipSync(new Buffer.from(gzip_json_spectrum_data));
@@ -384,6 +420,9 @@ function show_spectrum(id, gzip_json_spectrum_data) {
             window.spectrum_plot_object.plotSpectrum(spectrum_data);
         }
     }
+}
+
+function show_info_done() {
     open_jobs(-1);
 }
 
@@ -395,6 +434,18 @@ function saved_all(saved) {
         console.log("no db changes.")
     }
     open_jobs(-1);
+}
+
+function export_start(ids, fname) {
+    // julia starts exporting a presentation
+    open_jobs(1);
+    let plural_s = "";
+    if (ids.length > 1) {
+        plural_s = "s";
+    }
+    const str_num_files = "" + ids.length + " file" + plural_s;
+    console.log("Export " + str_num_files + " to " + fname);
+    show_message("export " + str_num_files + " to presentation.")
 }
 
 function exported() {
@@ -438,33 +489,17 @@ function page_start_load_error(message) {
     el_error.classList.add("bounce");
 }
 
-function select_directory() {
-    // select directory - open dialog
-    if (get_view() != "start") {
-        return;
-    }
-    const {remote} = require('electron');
-    const dialog = remote.dialog;
-    const win = remote.getCurrentWindow();
-    let options = {
-        title: "Load images from folder",
-        properties: ['openDirectory'],
-        multiSelections: false,
-        defaultPath : window.dir_data,
-        buttonLabel : "Open folder",
-        // filters :[
-        //  {name: 'Nanonis SPM images', extensions: ['sxm']},
-        //  {name: 'All Files', extensions: ['*']}
-        // ]
-    }
-    let directory = dialog.showOpenDialog(win, options);
-    if (directory !== undefined) {
-        if (Array.isArray(directory))
-            load_directory(directory[0]);
-        else {
-            load_directory(directory[0]);
-        }
-    }
+function load_notification_temp_cache(fnames) {
+    // displays a notification if the temp cache was used for some items
+    console.log("temp cache used for " + fnames);
+    document.getElementById("notification_temp_cache_items").innerHTML = fnames.join("<br />");
+
+    const el = document.getElementById("notification_temp_cache");
+    el.classList.remove("is-hidden");
+
+    window.timeout_notification["temp_cache"] = window.setTimeout(function() {
+        el.classList.add("is-hidden");
+    }, 5000);
 }
 
 function header_data(json) {
@@ -482,15 +517,30 @@ function change_item(what, message, jump=1) {
     console.log("change: " + what);
     let ids = get_active_element_ids();
 
-    let full_resolution = false;
-    if (get_view() == "zoom") {
-        full_resolution = true;
-    }
+    const full_resolution = (get_view() == "zoom") ? true : false;
 
     if (ids.length > 0) {
         Blink.msg("grid_item", ["next_" + what, ids, jump, full_resolution]);
         open_jobs(1);
-        show_message(message)
+        show_message(message);
+    }
+}
+
+function recalculate_items(ids, state, queue_type="", message="") {
+    console.log("recalculate");
+    
+    if (ids == null) {
+        ids = get_active_element_ids();
+    }
+
+    const full_resolution = (get_view() == "zoom") ? true : false;
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["set_multiple", ids, state, queue_type, full_resolution]);
+        open_jobs(1);
+        if (message !== "") {
+            show_message(message);
+        }
     }
 }
 
@@ -498,10 +548,7 @@ function reset_item(what, message) {
     console.log(what);
     let ids = get_active_element_ids();
 
-    let full_resolution = false;
-    if (get_view() == "zoom") {
-        full_resolution = true;
-    }
+    const full_resolution = (get_view() == "zoom") ? true : false;
 
     if (ids.length > 0) {
         Blink.msg("grid_item", [what, ids, full_resolution]);
@@ -557,6 +604,9 @@ function virtual_copy(mode) {
                 open_jobs(1);
                 if (ids_virtual.length == 1) {
                     show_message("delete virtual copy.");
+                    if (get_view() == "zoom") {  // we deleted the one that was shown
+                        toggle_imagezoom("grid");
+                    }
                 } else {
                     show_message("delete virtual copies.");
                 }    
@@ -597,8 +647,12 @@ function get_image_info(id="", zoomview=false) {
         }
         else {
             ids = get_active_element_ids();
-            if (ids.length == 1) {
-                id = ids[0];
+            if (ids.length >= 1) {
+                if (ids.includes(window.last_selected)) {
+                    id = window.last_selected;
+                } else {
+                    id = ids[0];
+                }
             } else {
                 id = window.image_info_id;
             }
@@ -615,7 +669,7 @@ function get_image_info(id="", zoomview=false) {
 
 function set_rating(rating, only_current=false) {
     // sets the rating for items.
-    // if "only_current" is true, then only set the rating for the item displayed int he sidebar.
+    // if "only_current" is true, then only set the rating for the item displayed in the sidebar.
     console.log("set rating to: " + rating);
 
     let ids = get_active_element_ids(only_current);
@@ -640,7 +694,18 @@ function set_keywords() {
     }
 }
 
+function get_channels() {
+    // gets the channels and channels2 for the current selection
+    let ids = get_active_element_ids();
+
+    if (ids.length > 0) {
+        Blink.msg("grid_item", ["get_channels", ids]);
+        open_jobs(1);
+    }
+}
+
 function get_line_profile(id, start_point, end_point, width) {
+    console.log(start_point, end_point, width);
     // request line profile for a certain image
     if (get_view() != "zoom" || id == "") {
         return;
@@ -672,42 +737,16 @@ function export_to(what) {
     if (get_view() != "grid") {
         return;
     }
-
-    console.log("Export to " + what);
     let ids = get_active_element_ids(only_current=false, all_visible_if_none_selected=true);
-
     if (ids.length > 0) {
-        const {remote} = require('electron');
-        const dialog = remote.dialog;
-        const win = remote.getCurrentWindow();
-        let options = {
-            title: "Export as OpenDocument Presentation",
-            defaultPath : window.dir_data,  // we could specify a filename here
-            buttonLabel : "Export",
-            filters :[
-             {name: 'OpenDocument Presentations', extensions: ['odp']},
-             {name: 'All Files', extensions: ['*']}
-            ]
-        }
-        let filename = dialog.showSaveDialog(win, options)
-        console.log(filename)
-
-        if (filename !== undefined) {
-            Blink.msg("grid_item", ["export_odp", ids, filename]);
-            open_jobs(1);
-            let plural_s = "";
-            if (ids.length > 1) {
-                plural_s = "s";
-            }
-            show_message("export " + ids.length + " file" + plural_s + " to presentation.")
-        }
+        Blink.msg("grid_item", ["export_odp", ids]);
     }
 }
 
 function save_all(exit=false, force=false) {
     // saves the current state to disk
     if (get_view() != "start") {
-        console.log("save all")
+        console.log("save all");
         Blink.msg("save_all", [exit, force]);
         show_message("saving.")
         open_jobs(1);
@@ -722,6 +761,14 @@ function send_cancel() {
     Blink.msg("cancel", []);
 }
 
+function select_directory() {
+    // select directory - open dialog
+    if (get_view() != "start") {
+        return;
+    }
+    Blink.msg("select_directory", [window.dir_data]);
+}
+
 function load_directory(directory) {
     // loads directory
     console.log("load directory: " + directory);
@@ -733,6 +780,12 @@ function load_directory(directory) {
     document.getElementById("page_start_progress_directory").innerText = directory;  // "/home/riss/awesome projects/2022/project 51/";
     document.getElementById("page_start_progress").classList.remove("is-hidden");
     
-    Blink.msg("load_directory", directory);
+    Blink.msg("load_directory", [directory]);
 }
+
+function toggle_dev_tools() {
+    // toggles dev tools
+    Blink.msg("devtools", []);
+}
+
 

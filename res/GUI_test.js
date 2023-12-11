@@ -35,12 +35,12 @@ function test_dblclick_mouse(selector) {
         const rect = el.getBoundingClientRect();
         const posx = rect.left + 1;
         const posy = rect.top + 1;
-        require("electron").remote.getCurrentWebContents().sendInputEvent({type: 'mouseMove', x: posx, y: posy});
+        Blink.msg("send_input_event", ["mouseMove", posx, posy])
         el.dispatchEvent(event);
     });
 }
 
-function test_hover_mouse(selector) {
+function test_hover_mouse(selector, send_event) {
     // hovers mouse on all elements selected by selector (for testing purposes)
     const event = new MouseEvent('mouseenter', {
         'view': window,
@@ -48,18 +48,46 @@ function test_hover_mouse(selector) {
         'cancelable': true
       });
     document.querySelectorAll(selector).forEach(el => {
-        // we have to move the mouse as well (dblclick handlers can rely on a hover-state()
-        el.focus();
-        const rect = el.getBoundingClientRect();
-        const posx = rect.left + 5;
-        const posy = rect.top + 5;
-        require("electron").remote.getCurrentWebContents().sendInputEvent({type: 'mouseMove', x: posx, y: posy});
-        el.dispatchEvent(event);
+        if (send_event) {
+            // we have to move the mouse as well (dblclick handlers can rely on a hover-state()
+            el.focus();
+            const rect = el.getBoundingClientRect();
+            const posx = rect.left + 5;
+            const posy = rect.top + 5;
+            Blink.msg("send_input_event", ["mouseMove", posx, posy])
+            el.dispatchEvent(event);
 
-        // check if `hover` worked
-        const elHover = document.getElementById('imagegrid').querySelector('div.item:hover');
-        if (elHover != el) { // didn't work, we set `image_info_id` manually - bit hacky
-            window.image_info_id = el.id;
+            // check if `hover` worked
+            const elHover = document.getElementById('imagegrid').querySelector('div.item:hover');
+            if (elHover != el) { // didn't work, we set `image_info_id` manually - bit hacky
+                window.image_info_id = el.id;
+            }
+        }
+        // set it anyways - it does not seem to work under some circumstances
+        window.image_info_id = el.id;
+    });
+}
+
+function test_set_value(selector, value, indices, event="change") {
+    // sets value on all elements selected by selector (for testing purposes)
+    document.querySelectorAll(selector).forEach((el, el_i) => {
+        if (indices != null && indices.length > 0 && !indices.includes(el_i)) {
+            return;
+        }
+        if (el.tagName == "SELECT") {
+            for (let i = 0; i < el.options.length; i++) {
+                if (el.options[i].value == value || el.options[i].text == value) {
+                    el.selectedIndex = i;
+                    break;
+                }
+            }
+        } else if (el.tagName == "INPUT" && el.type == "checkbox") {
+            el.checked = value;
+        } else {
+            el.value = value;
+        }
+        if (event != "") {
+            el.dispatchEvent(new Event(event));
         }
     });
 }

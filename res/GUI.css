@@ -1,6 +1,12 @@
 body {
   /* min-height: 100vh; */
   margin-bottom: 2.5rem;
+  padding-right: 0.6rem !important;
+}
+
+body, html {
+  overflow: hidden !important;
+  height: 100%;
 }
 
 .img-icon {
@@ -33,8 +39,12 @@ body {
   }
 }
 
-@media only screen and (max-width: 900px) {
+@media only screen and (max-width: 1270px) {
   #footer_citation {
+    display: none;
+  }
+
+  #menu_main {
     display: none;
   }
 }
@@ -48,7 +58,21 @@ sup {
   margin-left:auto;  /* new bulma versions should have a ml-auto, then this can be removed */
 }
 
+
+#page_project {
+  top: 1rem;
+  position: relative;
+}
+
+
 /* start page */
+
+#page_start {
+  overflow: auto;
+  height: 100%;
+  top: 1rem;
+  position: relative;
+}
 
 #page_start_last_dir_container li {
   word-break: break-word;
@@ -60,12 +84,11 @@ sup {
   max-width: 640px;
 }
 
-
 /* imagegrid */
 
 #imagegrid_container {
   transform: translateZ(0);  /* this will cause the child with to be relaive to this container */
-  height: calc(100vh - 5rem);
+  height: calc(100vh - 5rem - 1rem);
   background-color:#eef6fc;
 }
 
@@ -114,12 +137,6 @@ sup {
   vertical-align: middle;
 }
 
-.imagegrid div.item.active {
-  /* outline: 6px solid #2a5aa1; */
-  box-shadow: 0px 0px 8px 7px  #234b88;
-  transform: scale(0.92);
-}
-
 .imagegrid div.item.active:before {
   background-color: #2a5aa1;
   color: white;
@@ -140,6 +157,12 @@ sup {
   transform: scale(1.0);
 }
 
+.imagegrid div.item.active {
+  /* outline: 6px solid #2a5aa1; */
+  box-shadow: 0px 0px 8px 7px  #234b88;
+  transform: scale(0.92);
+}
+
 /* .imagegrid.hover_enabled div.item:not(.active):hover    we do not need the not-active now, because hover_enabled takes care of it */
 .imagegrid.hover_enabled div.item:hover {
   /* outline: 6px solid #d1607c; */
@@ -153,7 +176,23 @@ sup {
 
 .imagegrid div.item.active:hover {
   /* outline: 6px solid #a5475f; */
-  box-shadow: 0px 0px 3px 7px #1c3c6d;
+  box-shadow: 0px 0px 3px 7px #1c3d6e;
+}
+
+.imagegrid div.item.is-marked:after {
+  background-color: #00d182ac;
+  color: white;
+  content: "\2605";
+  position: absolute;
+  margin: 0px;
+  top: 0px;
+  right: 0px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  text-align: center;
+  line-height: 24px;
+  font-size: 16px;
 }
 
 .unselectable {
@@ -169,6 +208,14 @@ sup {
   image-rendering: pixelated;
 }
 
+/* notifications */
+#notification_temp_cache {
+  width: 500px;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 10;
+}
 
 /* zoom view */
 
@@ -178,7 +225,7 @@ sup {
 
 #imagezoom_content {
 	width: 100%;
-	height: calc(100vh - 6rem - 4rem);  /* substract header/footer and histogram */
+	height: calc(100vh - 6rem - 4rem - 1rem);  /* substract header/footer and histogram */
   overflow: hidden;
 }
 
@@ -312,7 +359,7 @@ sup {
 
 #spectrumzoom_content {
 	width: 100%;
-	height: calc(100vh - 6rem - 8rem);  /* substract header/footer and histogram */
+	height: calc(100vh - 6rem - 8rem - 1rem);  /* substract header/footer and histogram */
   overflow: hidden;
 }
 
@@ -340,16 +387,20 @@ sup {
 /* sidebar */
 
 .sidebar {
-  height: calc(var(--vh, 1vh) * 100 - 5rem);
+  height: calc(var(--vh, 1vh) * 100 - 5rem - 1rem);
   width: 30%;
   max-width:400px;
   min-width:300px;
   padding-top: 15px;
-  position: sticky;
-  top: 3rem;
-  transition: 0.1s;
+  /* position: sticky; */
+  top: 4rem;
+  transition: 0.15s;
   background-color:#37a8ff;
   border-left:1px solid #afdafa;
+}
+
+#sidebar_info_content {
+  min-width: 383px;
 }
 
 
@@ -358,16 +409,21 @@ sup {
 #table-container {
   max-width: 400px;
   display: flex;
-  height: 85vh; 
-  height: calc(var(--vh, 1vh) * 100 - 13.3rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
+  /* height: 85vh;  */
+  height: calc(var(--vh, 1vh) * 100 - 13.3rem  - 1rem);  /* there is some similar calc in the js that creates the table; also js reacts to the resize event */
   overflow-y: hidden;
-  display: none;
+  position: relative;
 }
 
 #table-container table {
   table-layout: fixed;
-  overflow-wrap: break-word;  
+  overflow-wrap: break-word;
   overflow-y: scroll;
+}
+
+#table-container td, #table-container th {
+  overflow-wrap: break-word;
+  max-width:200px;
 }
 
 #table-container input  {
@@ -386,6 +442,10 @@ sup {
   margin-top: 0.37rem;
   background-color:#ffffffb4;
   border: 1px solid #999;
+}
+
+#table-container .table.is-narrow td {
+  padding: 0.1rem 0.5rem;
 }
 
 /* star rating in sidebar */
@@ -536,6 +596,34 @@ sup {
 #sidebar_filter {
   overflow-y: auto;  /* we need this for overview */
   overflow-x: hidden;
+}
+
+#sidebar_filter .filter_sort_order_wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-evenly;
+  height: 100%;
+}
+
+#sidebar_filter .filter_sort_order_wrapper .filter_sort_order_label {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.45;
+  padding: 0px 5px;
+}
+
+#sidebar_filter .filter_sort_order_wrapper input[type="radio"] {
+  display: none;
+}
+
+#filter_sort_order_asc:checked:checked ~ .filter_sort_order_asc_label,
+#filter_sort_order_desc:checked:checked ~ .filter_sort_order_desc_label {
+  opacity:1;
 }
 
 #sidebar_filter_table {
@@ -717,26 +805,28 @@ sup {
 /* sidebar imagezoomtools */
 
 #sidebar_imagezoomtools {
-  width: 350px;  /* we have to give a fixed with, because the plot is done on canvas with fixed witdth */
+  width: 350px;  /* we have to give a fixed with, because the plot is done on canvas with fixed width */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar_accordion {
-  background-color: #eef6fc;
-  /* color: #363636;
-  font-weight: 600; */
+  background-color: #296fa8;
+  color: #f5f5f5;
+  font-weight: 600;
   cursor: pointer;
   padding: 8px;
   margin: 0;
   width: 100%;
   text-align: left;
   border: none;
-  border-top: 1px solid #909090;
+  /*  border-top: 1px solid #909090; */
   outline: none;
   transition: 0.1s;
 }
 
 .sidebar_accordion_active, .sidebar_accordion:hover {
-  background-color: #cee7fa;
+  background-color: #4288c2;
 }
 
 .sidebar_panel {
@@ -745,7 +835,7 @@ sup {
 }
 
 .sidebar_accordion:after {
-  content: "\25bc";
+  content: "\25b2";
   font-size: 10px;
   color: #a0a0a0;
   float: right;
@@ -754,7 +844,7 @@ sup {
 }
 
 .sidebar_accordion_active:after {
-  content: "\25b2";
+  content: "\25bc";
 }
 
 #table_line_profile {
@@ -804,4 +894,193 @@ sup {
 
 #line_profile_plot_container div.u-marker {
   display: none;  /* not needed for just one series */
+}
+
+#line_profile_clipboard {
+  cursor:pointer;
+  margin-top:11px;
+  opacity:0.4;
+}
+
+#line_profile_clipboard:hover {
+  opacity:0.6;
+}
+
+
+.editing_entry_move {
+  cursor: grab;
+  margin-top:5px;
+  opacity:0.4;
+}
+
+.editing_entry_move:hover {
+  opacity:0.6;
+}
+
+.editing-entry-ghost {
+  opacity: 0.5;
+}
+
+#editing_container sub {
+  vertical-align: sub;
+  font-size: smaller;
+}
+
+#editing_container .field {
+  margin:0;
+  padding:0;
+}
+
+#editing_container .editing_entry_delete {
+  background-color: #cb2d4d;
+  margin-top:7px;
+  opacity:0.4;
+}
+
+#editing_container .editing_entry_delete:hover {
+  opacity:0.6;
+}
+
+#editing_container .editing_entry {
+  background-color: #f5f5ff;
+  border: 1px solid #dbdbdb;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem
+}
+
+#editing_container header {
+  background-color: #cee7fa;
+  display: flex;
+  font-weight: bold;
+  padding-right:0.25rem;
+}
+
+#editing_container header p {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+}
+
+#editing_container table {
+  background-color: #ffffff00;
+}
+
+#editing_container table td, #editing_container table th {
+  vertical-align: middle;
+  height: 3em;
+  padding: .2em .65em;
+}
+
+#editing_container table input {
+  text-align: right;
+  height: 1.6rem; 
+  /* width: 3.75rem; */
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+  padding-top: 0.05rem;
+  padding-bottom: 0.05rem;
+}
+
+#editing_container table select {
+  width: 100%;
+}
+
+#editing_container table td {
+  padding-right: 1px;
+  padding-left: 1px;
+}
+
+/* remove up and down arrows */
+#editing_container table input::-webkit-outer-spin-button,
+#editing_container table input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#editing_container .editing_entry.inactive {
+  opacity:0.5;
+}
+
+#editing_container .editing_entry_collapse {
+  transition: 0.5s;
+}
+
+#editing_container .editing_entry.inactive header {
+  background-color: #d0e6f6;
+}
+
+/* made bigger than td, so that is is more convenient for the mouse dragging */
+#editing_container .editing_entry_FT_container_events {
+  margin: -50px;
+  padding: 50px;
+}
+
+#editing_container div.editing_entry_FT_container {
+  width: 100%;
+  position:relative;
+  overflow: hidden;
+}
+
+#editing_container div.editing_entry_FT_container section { 
+  width: 100%;
+  height: 100%;
+  display: flex; /* add */
+  justify-content: center; /* add to align horizontal */
+  align-items: center; /* add to align vertical */
+  position:relative;
+}
+
+#editing_container div.editing_entry_FT_container img {
+  user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  max-width: 100%;
+  /* object-fit: contain; */
+  /* height: 100%; */
+}
+
+#editing_container div.editing_entry_FT_container img.fullwidth {
+  width: 100%;
+  height: auto;
+}
+
+#editing_container div.editing_entry_FT_container img.fullheight {
+  width: auto;
+  height: 100%;
+}
+
+#editing_container div.editing_entry_FT_container canvas { 
+  position: absolute; 
+  width: 100%; 
+  height: 100%; 
+  outline: none;  /* remove the dotted outline associated with tabindex (we need it to capture keydown events) */
+}
+
+#editing_container .editing_entry_FT_footer td {
+  height:1.0rem;
+  border: none;
+}
+
+#editing_container .editing_entry_more_click_container {
+  position:relative;
+  opacity:0.8;
+  top: -0.31rem;
+}
+
+#editing_container .editing_entry_FT_clear_all  { 
+  opacity:0.8;
+}
+
+#editing_container .editing_entry_more, #editing_container .editing_entry_more td{
+  height:0.6rem;
+  line-height: 0;
+  border: none;
+}
+
+#editing_container .editing_entry_more_click_container a {
+  background-color: #eef6fc;
+  padding-left: 10px;
 }

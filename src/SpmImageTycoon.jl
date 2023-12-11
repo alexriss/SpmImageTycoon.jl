@@ -6,12 +6,17 @@ using ColorSchemes
 using DataFrames
 using DataStructures: OrderedDict
 using Dates
+using DSP
+using FFTW
 using Images
+using ImageFiltering
 using ImageIO
 using JLD2
+using JSExpr
 using JSON
 using NaturalSort
-using SnoopPrecompile
+using SkipNan
+using PrecompileTools
 using SpmImages
 using SpmSpectroscopy
 using StatsBase
@@ -25,7 +30,7 @@ const VERSION = VersionNumber(TOML.parsefile(joinpath(@__DIR__, "../Project.toml
 @enum SpmGridItemType SpmGridImage SpmGridSpectrum
 
 # entries for SPM images and SPM spectra
-mutable struct SpmGridItem_v129
+mutable struct SpmGridItem_v130
     id::String                                 # id (will be filename and suffixes for virtual copies)
     type::SpmGridItemType                      # type of the griditem
     filename_original::String                  # original filename (.sxm for images or .dat for spectra)
@@ -56,28 +61,28 @@ mutable struct SpmGridItem_v129
     colorscheme::String                        # color scheme
     channel_range::Vector{Float64}             # min/max of current channel (for spectra this contains the min/max of channel and channel2)
     channel_range_selected::Vector{Float64}    # selected min/max for current channel
-    filters::Vector{String}                    # array of filters used (not implemented yet)
+    edits::Vector{String}                      # array of edits used
     keywords::Vector{String}                   # keywords
     rating::Int64                              # rating (0 to 5 stars)
-    status::Int64                              # status, i.e. 0: normal, -1: deleted by user, -2: deleted on disk (not  fully implemented yet)
-    virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies (not implemented yet)
+    status::Int64                              # status, i.e. 0: normal, 10: writen to temp-cache (due to write permissions), -2: being parsed/generated
+    virtual_copy::Int64                        # specifies whether this is a virtual copy, i.e. 0: original image, >=1 virtual copies
 
-    SpmGridItem_v129(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
+    SpmGridItem_v130(; id="", type=SpmGridImage, filename_original="", created=DateTime(-1), last_modified=DateTime(-1), recorded=DateTime(-1),
         filename_display="", filename_display_last_modified=DateTime(-1),  # for non-excisting files mtime will give 0, so we set it to -1 here
         channel_name="", channel_unit="", channel2_name="", channel2_unit="",
         scansize=[], scansize_unit="nm", center=[], angle=0, scan_direction=0,
         bias=0, z_feedback=false, z_feedback_setpoint=0, z_feedback_setpoint_unit="", z=0.0, points=0,
         comment="", background_correction="none", colorscheme="gray",
-        channel_range=[], channel_range_selected=[], filters=[], keywords=[], rating=0, status=0, virtual_copy=0) =
+        channel_range=[], channel_range_selected=[], edits=[], keywords=[], rating=0, status=0, virtual_copy=0) =
     new(id, type, filename_original, created, last_modified, recorded,
         filename_display, filename_display_last_modified,
         channel_name, channel_unit, channel2_name, channel2_unit,
         scansize, scansize_unit, center, angle, scan_direction,
         bias, z_feedback, z_feedback_setpoint, z_feedback_setpoint_unit, z, points,
         comment, background_correction, colorscheme,
-        channel_range, channel_range_selected, filters, keywords, rating, status, virtual_copy)
+        channel_range, channel_range_selected, edits, keywords, rating, status, virtual_copy)
 end
-SpmGridItem = SpmGridItem_v129
+SpmGridItem = SpmGridItem_v130
 
 
 include("config.jl")
@@ -88,6 +93,7 @@ include("spectrum_functions.jl")
 include("export.jl")
 include("event_handlers.jl")
 include("db_functions.jl")
+include("editing.jl")
 
 
 exit_tycoon = false  # if set to true, then keep-alive loop will end
@@ -97,6 +103,26 @@ griditems_last_changed = 0.  # time of last (potential) change of griditems - we
 griditems_lock = ReentrantLock()
 
 Precompiling = false
+
+"""sorts channel names"""
+function sort_channel_names(channel_names::Vector{String})::Vector{String}
+    if sort_channel_list  # global config variable
+        return NaturalSort.sort(channel_names, by = x -> lowercase(x))
+    else
+        return channel_names
+    end
+end
+
+
+"""sorts channel names and units"""
+function sort_channel_names_units(channel_names::Vector{String}, channel_units::Vector{String})::Tuple{Vector{String}, Vector{String}}
+    if sort_channel_list  # global config variable
+        perm = NaturalSort.sortperm(channel_names, by = x -> lowercase(x))
+        return channel_names[perm], channel_units[perm]
+    else
+        return channel_names, channel_units
+    end
+end
 
 
 """sets keywords"""
@@ -130,13 +156,13 @@ end
 
 
 """gets a dictionary "original_id" => (array of virtual copies) with all virtual copies in griditems"""
-function get_virtual_copies_dict(griditems::Dict{String, SpmGridItem})::Dict{String,Array{SpmGridItem}}
+function get_virtual_copies_dict(griditems::Dict{String, SpmGridItem})::Dict{String,Vector{SpmGridItem}}
     virtual_copies = filter(x -> last(x).virtual_copy > 0, griditems)
-    virtual_copies_dict = Dict{String, Array{SpmGridItem}}()  # create a dict for quick lookup
+    virtual_copies_dict = Dict{String, Vector{SpmGridItem}}()  # create a dict for quick lookup
     for virtual_copy in values(virtual_copies)
         id_original = virtual_copy.filename_original
         if !haskey(virtual_copies_dict, id_original)
-            virtual_copies_dict[id_original] = Array{SpmGridItem}(undef, 0);
+            virtual_copies_dict[id_original] = Vector{SpmGridItem}(undef, 0);
         end
         push!(virtual_copies_dict[id_original], virtual_copy)
     end
@@ -146,7 +172,7 @@ end
 
 
 """gets the virtual copies that have been created for id. Returns an array of SpmGridItem"""
-function get_virtual_copies(griditems::Dict{String, SpmGridItem}, id::String)::Array{SpmGridItem}
+function get_virtual_copies(griditems::Dict{String, SpmGridItem}, id::String)::Vector{SpmGridItem}
     virtual_copies = filter(x -> last(x).filename_original==id && last(x).virtual_copy > 0, griditems)
     return collect(values(virtual_copies))
 end
@@ -177,6 +203,43 @@ function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
     end
     
     return filename_display
+end
+
+"""Gets channels and channels2 for the given ids"""
+function get_channels(ids::Vector{String}, griditems::Dict{String, SpmGridItem}, channel_names_list::Dict{String,Vector{String}})::Tuple{OrderedDict{String,Dict},OrderedDict{String,Dict}}
+    channels = OrderedDict{String,Dict}()
+    channels2 = OrderedDict{String,Dict}()
+
+    for id in ids
+        !haskey(griditems, id) && continue
+        filename_original = griditems[id].filename_original
+        !haskey(channel_names_list, filename_original) && continue  # should never happen, though
+        for ch in channel_names_list[filename_original]
+            (griditems[id].type == SpmGridSpectrum) && endswith(ch, " [bwd]") && continue
+
+            if !haskey(channels, ch)
+                channels[ch] = Dict(
+                    "val" => ch,
+                    "for" => [griditems[id].type]
+                )
+            else
+                push!(channels[ch]["for"], griditems[id].type)
+            end
+            
+            if griditems[id].type === SpmGridSpectrum
+                if !haskey(channels2, ch)
+                    channels2[ch] = Dict(
+                        "val" => ch,
+                        "for" => [griditems[id].type]
+                    )
+                end
+            end
+        end
+    end
+    # always sort here
+    NaturalSort.sort!(channels, by = x -> lowercase(x))
+    NaturalSort.sort!(channels2, by = x -> lowercase(x))
+    return channels, channels2
 end
 
 
@@ -231,12 +294,109 @@ function get_scan_range(griditems::Dict{String, SpmGridItem})::Tuple{Vector{Floa
 end
 
 
+"""Changes the griditem fieldnames. Cycles/toggles the respective property. Returns if caching is safe."""
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, what::String, jump::Int=1)::Tuple{Bool,Bool}
+    # multiple dispatch for update functions
+    if what == "channel"
+        next_channel_name!(griditem, item, jump)
+    elseif what == "channel2"
+        next_channel2_name!(griditem, item, jump)
+    elseif what == "direction"
+        next_direction!(griditem, item)
+    elseif what == "background_correction"
+        next_background_correction!(griditem, item, jump)
+    elseif what == "colorscheme"
+        next_colorscheme!(griditem, item, jump)
+    elseif what == "inverted"
+        next_invert!(griditem, item)
+    else
+        println("Unknown property to change: ", what)  # this should never happen, though
+        return false, true
+    end
+    return true, true
+end
+
+
+"""Changes the griditem fieldnames. Changes multiple properties to specific values. Returns if caching is safe."""
+function pre_change_griditem!(griditem::SpmGridItem, item::Union{SpmImage,SpmSpectrum}, state::Dict, jump::Int)::Tuple{Bool,Bool}
+    # set new properties for griditem - we also do some checks
+    cache_safe = true
+    changed = false
+    for (k,v) in state
+        if k =="channel_name"
+            v_ = v
+            if griditem.type == SpmGridImage
+                if is_image_channel_name_fwd(griditem.channel_name)
+                    v = image_channel_name_fwd(v)
+                else
+                    v = image_channel_name_bwd(v)
+                end
+            end
+            if (v_ in item.channel_names) && (v != griditem.channel_name)
+                griditem.channel_name = v
+                changed = true
+            end
+        elseif k == "channel2_name" && griditem.type == SpmGridSpectrum
+            if (v in item.channel_names) && (v != griditem.channel2_name)
+                griditem.channel2_name = v
+                changed = true
+            end
+        elseif k == "scan_direction" && griditem.type == SpmGridSpectrum
+            v = parse(Int, v)
+            if v in (0, 1, 2) && v != griditem.scan_direction
+                griditem.scan_direction = v
+                changed = true
+            end
+        elseif k == "scan_direction" && griditem.type == SpmGridImage
+            v = parse(Int, v)
+            c = griditem.channel_name
+            if v == 0
+                c = image_channel_name_fwd(c)
+            elseif v == 1
+                c = image_channel_name_bwd(c)
+            end
+
+            if v in (0, 1) && c != griditem.channel_name
+                griditem.channel_name = c
+                changed = true
+            end
+        elseif k == "background_correction"
+            vs = (griditem.type == SpmGridImage) ? background_correction_list_image : background_correction_list_spectrum
+            if v in keys(vs) && v != griditem.background_correction
+                griditem.background_correction = v
+                changed = true
+            end
+        elseif k == "colorscheme" && griditem.type == SpmGridImage
+            if v == "_invert"
+                v = griditem.colorscheme
+                if endswith(v, " inv")
+                    v = v[1:end-4]
+                else
+                    v *= " inv"
+                end
+            end
+            if v in keys(colorscheme_list) && v != griditem.colorscheme
+                griditem.colorscheme = v
+                changed = true
+            end
+        elseif k == "edits"
+            if griditem.edits != v
+                cache_safe = false
+                changed = true  # always recreate in case of edits (for now)
+            end
+            griditem.edits = v
+        end
+    end
+    return changed, cache_safe
+end
+
+
 """Cycles the channel, switches direction (backward/forward), changes background correction, changes colorscheme, or inverts colorscheme
 for the images/spectra specified by ids. The type of change is specified by the argument "what".
 The argument "jump" specifies whether to cycle backward or forward (if applicable).
 The argument "full_resolution" specifies whether the images will be served in full resolution or resized to a smaller size.
 Modifies the griditems array."""
-function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::String, jump::Int, full_resolution::Bool)::Nothing
+function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String}, dir_data::String, what::Union{String,Dict}, full_resolution::Bool, jump::Int=0)::Nothing
     dir_cache = get_dir_cache(dir_data)
     Threads.@threads for id in ids
         filename_original_full = joinpath(dir_data, griditems[id].filename_original)
@@ -249,30 +409,17 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
             continue
         end
 
-        # multiple dispatch for update functions
-        if what == "channel"
-            next_channel_name!(griditems[id], item, jump)
-        elseif what == "channel2"
-            next_channel2_name!(griditems[id], item, jump)
-        elseif what == "direction"
-            next_direction!(griditems[id], item)
-        elseif what == "background_correction"
-            next_background_correction!(griditems[id], item, jump)
-        elseif what == "colorscheme"
-            next_colorscheme!(griditems[id], item, jump)
-        elseif what == "inverted"
-            next_invert!(griditems[id], item)
-        else
-            println("Unknown property to change: ", what)  # this should never happen, though
-            return nothing
-        end
+        changed, cache_safe = pre_change_griditem!(griditems[id], item, what, jump)
+        full_resolution && (changed = true)  # always recreate in full resolution
+
+        !changed && continue
 
         # update the image or spectrum
         if griditems[id].type == SpmGridImage
             resize_to_ = full_resolution ? 0 : resize_to
-            create_image!(griditems[id], item, resize_to=resize_to, base_dir=dir_cache)    
+            create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache, cache_safe=cache_safe)    
         elseif griditems[id].type == SpmGridSpectrum
-            create_spectrum!(griditems[id], item, base_dir=dir_cache)
+            create_spectrum!(griditems[id], item, dir_cache=dir_cache, cache_safe=cache_safe)
         end
     end
     return nothing
@@ -300,9 +447,9 @@ function reset_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{String
         if changed
             if griditems[id].type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(griditems[id], item, resize_to=resize_to, base_dir=dir_cache)    
+                create_image!(griditems[id], item, resize_to=resize_to, dir_cache=dir_cache)    
             elseif griditems[id].type == SpmGridSpectrum
-                create_spectrum!(griditems[id], item, base_dir=dir_cache)
+                create_spectrum!(griditems[id], item, dir_cache=dir_cache)
             end
         end
     end
@@ -323,13 +470,14 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         filename_original_full = joinpath(dir_data, griditem.filename_original)
         if griditem.type == SpmGridImage
             item = load_image_memcache(filename_original_full)
-            properties = [:channel_name, :background_correction, :filters, :colorscheme, :channel_range_selected]
+            properties = [:channel_name, :background_correction, :edits, :colorscheme, :channel_range_selected]
         elseif griditem.type == SpmGridSpectrum
             item = load_spectrum_memcache(filename_original_full)
-            properties = [:channel_name, :channel_unit, :channel2_name, :channel2_unit, :scan_direction, :background_correction, :filters, :channel_range_selected]
+            properties = [:channel_name, :channel_unit, :channel2_name, :channel2_unit, :scan_direction, :background_correction, :edits, :channel_range_selected]
         end
 
         changed = false
+        cache_safe = true
         for p in properties
             v = getfield(griditems[id_from], p)
 
@@ -340,6 +488,9 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
             if v != getfield(griditem, p)
                 setfield!(griditem, p, v)
                 changed = true
+                if (p == :edits) && changed
+                    cache_safe = false
+                end
             end
         end
 
@@ -347,9 +498,9 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         if changed
             if griditem.type == SpmGridImage
                 resize_to_ = full_resolution ? 0 : resize_to
-                create_image!(griditem, item, resize_to=resize_to_, base_dir=dir_cache)    
+                create_image!(griditem, item, resize_to=resize_to_, dir_cache=dir_cache, cache_safe=cache_safe)    
             elseif griditem.type == SpmGridSpectrum
-                create_spectrum!(griditem, item, base_dir=dir_cache)
+                create_spectrum!(griditem, item, dir_cache=dir_cache, cache_safe=cache_safe)
             end
         end
     end
@@ -388,13 +539,18 @@ end
 function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{OrderedDict{String,String}, OrderedDict{String,String}}
     filename_original_full = joinpath(dir_data, griditem.filename_original)
     extra_info = OrderedDict{String,String}()
+    extra_info["active_edits_str"] = get_active_edits_str(griditem)
     if griditem.type == SpmGridImage
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
+        channel_names, channel_units = sort_channel_names_units(im_spm.channel_names, im_spm.channel_units)
+        extra_info["Channels"] = join(channel_names, ", ")
+        extra_info["Units"] = join(channel_units, ", ")
         return im_spm.header, extra_info
     elseif griditem.type == SpmGridSpectrum
         spectrum = load_spectrum(filename_original_full, header_only=true, index_column=true)  # no caching here
-        extra_info["Channels"] = join(spectrum.channel_names, ", ")
-        extra_info["Units"] = join(spectrum.channel_units, ", ")
+        channel_names, channel_units = sort_channel_names_units(spectrum.channel_names, spectrum.channel_units)
+        extra_info["Channels"] = join(channel_names, ", ")
+        extra_info["Units"] = join(channel_units, ", ")
         # we add this information to the header
         spectrum.header["Channels"] = extra_info["Channels"]
         spectrum.header["Units"] = extra_info["Units"]
@@ -424,7 +580,7 @@ end
 
 """Sets the virtual_copy-field values in the SpmGridItems to consecutive numbers (starting with 1). Creates a position to insert a new virtual copy (after the items with id 'id').
 Returns the new position."""
-function update_virtual_copies_order!(virtual_copies::Array{SpmGridItem}, id::String)::Int
+function update_virtual_copies_order!(virtual_copies::Vector{SpmGridItem}, id::String)::Int
     sort!(virtual_copies, by=x -> x.virtual_copy)
     i_new = -1
     i = 1
@@ -449,17 +605,21 @@ end
 
 
 """Parses files in a directory and creates the images for the default channels in a cache directory (which is a subdirectory of the data directory)"""
-function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Array{String}}
+function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
+    only_new::Bool=false, output_info::Int=1)::Tuple{Dict{String, SpmGridItem},Vector{String},Dict{String, Vector{String}}}
+
+    time_start = Dates.now()
+
     dir_cache = get_dir_cache(dir_data)
     if !isdir(dir_cache)
         mkpath(dir_cache)
     end
 
     # load saved data - if available
-    griditems = load_all(dir_data, w)
+    griditems, channel_names_list = load_all(dir_data, w)
 
     griditems_new = String[]
-    virtual_copies_dict = Dict{String, Array{SpmGridItem}}()
+    virtual_copies_dict = Dict{String, Vector{SpmGridItem}}()
     if !only_new
         # get all virtual copies that are saved
         virtual_copies_dict = get_virtual_copies_dict(griditems)
@@ -474,7 +634,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
     end
 
     num_parsed = 0
-    time_start = Dates.now()
+    num_in_cache = 0
     tasks = Task[]
     for datafile in datafiles
         filename_original = basename(datafile)
@@ -499,20 +659,23 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
         end
 
         # if the filename data/lmod and the generated image/spectrum lmode didn't change, we can skip it
-        if haskey(griditems, id) && griditems[id].created == created && griditems[id].last_modified == last_modified && griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache)
+        if haskey(griditems, id) && griditems[id].last_modified == last_modified &&  # && griditems[id].created == created 
+            griditem_cache_up_to_date(griditem_and_virtual_copies, dir_cache) && haskey(channel_names_list, filename_original)
             griditems[id].status = 0
+            num_in_cache += 1
             if haskey(virtual_copies_dict, id)
                 for virtual_copy in virtual_copies_dict[id]
                     griditems[virtual_copy.id].status = 0
+                    num_in_cache += 1
                 end
             end
         else
             if endswith(filename_original, extension_image)
-                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, only_new,
+                ts = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
                 append!(tasks, ts)
             elseif endswith(filename_original, extension_spectrum)
-                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, only_new,
+                ts = parse_spectrum!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new,
                     dir_cache, datafile, id, filename_original, created, last_modified)
                 append!(tasks, ts)
             end
@@ -537,10 +700,11 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing; only_ne
 
     elapsed_time = Dates.now() - time_start
     if output_info > 0
-        msg = "Parsed $(num_parsed) files and created $(length(griditems)) items in $elapsed_time."
+        num_items = length(filter(x -> x.status >= 0, collect(values(griditems))))
+        msg = "Parsed $(num_parsed) files ($(num_items) items, $(num_in_cache) in cache) in $elapsed_time."
         log(msg, w)
     end
-    return griditems, griditems_new
+    return griditems, griditems_new, channel_names_list
 end
 
 
@@ -574,6 +738,40 @@ function log(msg::AbstractString, w::Union{Window,Nothing}; new_line::Bool=true)
 end
 
 
+"""Loads html from files and assembles into one file"""
+function read_html_files(fname::String)
+    s = open(fname) do file
+        read(file, String)
+    end
+
+    ms = eachmatch(r"{{{([^}]*)}}}", s)
+    for m in ms
+        fname2 = m.captures[1]
+        s2 = read_html_files(path_asset(string(fname2)))
+        s = replace(s, m.match => s2)
+    end
+
+    return s
+end
+
+
+"""loads html from a file into a div.htmlimport - this is then loaded into the document body by the js function `load_page`"""
+function loadhtml!(w::Window,  fname::String)::Nothing
+    s = read_html_files(fname)
+
+    expr = JSExpr.@js begin
+        @var el = document.createElement("div")
+        el.style.display = "none"
+        el.className = "htmlimport"
+        el.innerHTML = $s
+        document.body.appendChild(el)
+    end
+
+    Blink.js(w, expr, callback=true)
+    return nothing
+end
+
+
 """Loads images in specific directory"""
 function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothing
     # parse images etc
@@ -583,7 +781,7 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
     global memcache_images = ListNodeCache{SpmImage}(memcache_mb_images)
     global memcache_spectra = ListNodeCache{SpmSpectrum}(memcache_mb_spectra)
 
-    griditems, _ = parse_files(dir_data, w, output_info=output_info)
+    griditems, _, channel_names_list = parse_files(dir_data, w, output_info=output_info)
     bottomleft, topright = get_scan_range(griditems)
     if cancel_sent
         msg = "Cancelled loading $dir_data"
@@ -600,16 +798,27 @@ function load_directory(dir_data::String, w::Window; output_info::Int=1)::Nothin
     # call js functions to setup everything
     dir_data_js = add_trailing_slash(dir_data)
     dir_cache = get_dir_cache(dir_data)
+    dir_temp_cache = get_dir_temp_cache(dir_data)
     dir_cache_js = add_trailing_slash(dir_cache)
+    dir_temp_cache_js = add_trailing_slash(dir_temp_cache)
     dir_colorbars_js = add_trailing_slash(joinpath(dir_cache, dir_colorbars))
-    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_colorbars_js, $filenames_colorbar)
+    dir_edits = add_trailing_slash(get_dir_edits(dir_cache))
+    @js_ w set_params_project($dir_data_js, $dir_cache_js, $dir_temp_cache_js, $dir_colorbars_js, $dir_edits, $filenames_colorbar)
     
     # only send the images with status >=0 (deleted ones are not sent, but still saved)
     griditems_values = NaturalSort.sort!(filter(im->im.status >= 0, collect(values(griditems))), by=im -> (im.recorded, im.filename_original, im.virtual_copy))  # NaturalSort will sort number suffixes better
     json_compressed = transcode(GzipCompressor, JSON.json(griditems_values))
     @js_ w load_images($json_compressed, $bottomleft, $topright, true)
 
-    set_event_handlers(w, dir_data, griditems)
+    griditems_values_temp_cache = filter(im -> im.status === 10, griditems_values)
+    if length(griditems_values_temp_cache) > 0
+        fname_temp_cache = map(griditems_values_temp_cache) do im
+            return im.filename_display
+        end
+        @js_ w load_notification_temp_cache($fname_temp_cache)
+    end
+
+    set_event_handlers(w, dir_data, Dict("griditems" => griditems, "channel_names_list" => channel_names_list))
 
     save_config(dir_data)  # set and save new last dirs
     @js_ w set_last_directories($last_directories)
@@ -623,17 +832,21 @@ end
 """Start the main GUI and loads images from dir_data (if specified)"""
 function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool=true)::Union{Window,Nothing}
     global Precompiling = false
-    global exit_tycoon = false
     
     file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
-        "webPreferences" => Dict("webSecurity" => false),  # to load local files
+        "webPreferences" => Dict(
+            "webSecurity" => false,  # to load local files
+            "nodeIntegration" => true,  # for require("..") within the renderer process
+            "contextIsolation" => false  # for require("..") within the renderer process
+        ),
         "title" => "SpmImage Tycoon",
         "icon" => file_logo,
+        :icon => file_logo,
     ))
-    @js w require("electron").remote.getCurrentWindow().setMenuBarVisibility(false)
-    @js w require("electron").remote.getCurrentWindow().setIcon($file_logo)
-    @js w require("electron").remote.getCurrentWindow().maximize()
+    Blink.AtomShell.@dot w setMenuBarVisibility(false)
+    Blink.AtomShell.@dot w setIcon($file_logo)
+    Blink.AtomShell.@dot w maximize()
 
     load_config()
     if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
@@ -642,8 +855,9 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 
     # load main html file
     file_GUI = path_asset("GUI.html")
-    load!(w, file_GUI)
-
+    # load!(w, file_GUI)
+    loadhtml!(w, file_GUI)
+    
     # load all .css and .js asset files
     dir_asset = path_asset("");
     dir_asset_external = path_asset("external/");
@@ -655,30 +869,41 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     for asset_file in asset_files
         load!(w, asset_file)
     end
-
+    
     # get versions
     versions = Dict{String,String}(
         "SpmImageTycoon" => string(VERSION),
         "SpmImages" => string(SpmImages.VERSION),
         "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
     )
+    
+    bg_corrections = Dict(
+        "image" => keys(background_correction_list_image),
+        "spectrum" => keys(background_correction_list_spectrum),
+    )
+    directions_list = Dict(
+        "image" => Dict("0" => "forward", "1" => "backward"),
+        "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
+    )
 
-    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images)
+    @js w set_params($dir_asset, $auto_save_minutes, $overview_max_images, $bg_corrections, $directions_list, $editing_entries, $tycoon_mode)
     @js w set_last_directories($last_directories)
     @js w load_page($versions)
     @js w show_start()
 
     set_event_handlers_basic(w)
 
+    global exit_tycoon = false
+
     if dir_data != ""
         load_directory(abspath(dir_data), w)
     end
     
     # bring window to front
-    @js w require("electron").remote.getCurrentWindow().show()
+    Blink.AtomShell.@dot w show()
 
     if keep_alive
-        while active(w) && !exit_tycoon
+        while !exit_tycoon
             yield()
             sleep(0.1)
         end
@@ -691,10 +916,12 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
 end
 
 
-@precompile_setup begin
+@setup_workload begin
     global Precompiling = true
-    fname_spec = joinpath(@__DIR__ , "../test/data/Z-Spectroscopy420.dat")
-    fname_img = joinpath(@__DIR__ , "../test/data/Image_002.sxm")
+    fname_spec_base = "Z-Spectroscopy420.dat"
+    fname_img_base = "Image_002.sxm"
+    fname_spec = joinpath(@__DIR__ , "../test/data/", fname_spec_base)
+    fname_img = joinpath(@__DIR__ , "../test/data/", fname_img_base)
     DIR_db_old = joinpath(@__DIR__ , "../test/data/old_db/")
     DIR_data = joinpath(@__DIR__ , "../test/data/")
     DIR_cache = get_dir_cache(DIR_data) 
@@ -708,10 +935,18 @@ end
         "SpmImages" => string(SpmImages.VERSION),
         "SpmSpectroscopy" => string(SpmSpectroscopy.VERSION),
     )
+    bg_corrections = Dict(
+        "image" => keys(background_correction_list_image),
+        "spectrum" => keys(background_correction_list_spectrum),
+    )
+    directions_list = Dict(
+        "image" => Dict("0" => "forward", "1" => "backward"),
+        "spectrum" => Dict("0" => "forward", "1" => "backward", "2" => "both")
+    )
     include(joinpath(@__DIR__ , "../test/functions.jl"))
 
-
-    @precompile_all_calls begin
+    @compile_workload begin
+        global Precompiling = true
         spec = load_spectrum(fname_spec)
         ima = load_image(fname_img, output_info=0)
         df = get_channel(ima, "Frequency shift")
@@ -724,54 +959,83 @@ end
         normalize01!(d)
         clamp01nan!(d)
 
-        SpmImageTycoon.load_all(DIR_db_old, nothing)
+        load_config()
+        if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
+            generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
+        end
 
-        # we need to make it global for the test-functions below (send_click)
+        SpmImageTycoon.load_all(DIR_db_old, nothing)
+        griditems, _, _ = SpmImageTycoon.parse_files(DIR_data)
+        # these can give write permission errors, so let's remove for now
+        # SpmImageTycoon.create_spectrum!(griditems[fname_spec_base], spec, dir_cache=DIR_cache)
+        # SpmImageTycoon.create_image!(griditems[fname_img_base], ima, dir_cache=DIR_cache)
+        SpmImageTycoon.get_spectrum_data_dict(griditems[fname_spec_base], DIR_data)
+        try  # there might be some write errors, so let's wrap it in a try-block
+            state = Dict{String, Any}("edits" => Any[
+                "{\"id\":\"FTF\",\"n\":\"1\",\"off\":0,\"exp\":1,\"pars\":{\"ps\":[144,144],\"mf\":[0.5,0.5],\"f\":\"r\",\"w\":\"\",\"wf\":1,\"s\":\"ln\",\"d\":\"a\",\"r\":[[444779,97294],[516654,197127],[538510,19546],[615733,114572],[919854,21529],[919854,21529]]}}",
+                "{\"id\":\"FTF\",\"n\":\"2\",\"off\":0,\"exp\":1,\"pars\":{\"ps\":[144,144],\"mf\":[0.5,0.5],\"f\":\"p\",\"w\":\"hn\",\"wf\":1,\"s\":\"li\",\"d\":\"r\",\"r\":[[282630,209644],[443513,402923]]}}",
+                "{\"id\":\"G\",\"n\":\"3\",\"off\":0,\"exp\":1,\"pars\":{\"s\":0.05}}"],
+                "channel_name" => "Frequency Shift", "background_correction" => "none"
+            )
+            SpmImageTycoon. change_griditem!(griditems, ["Image_004.sxm"], DIR_data, state, true)
+        catch e
+            
+        end
+
         w = Window(
             Dict(
-                "webPreferences" => Dict("webSecurity" => false),
+                "webPreferences" => Dict(
+                    "webSecurity" => false,
+                    "nodeIntegration" => true,
+                    "contextIsolation" => false
+                ),
                 :transparent => true,
                 :frame => false,
                 :titleBarStyle => "hidden",
                 :show => false
             )
         )
-        # @js w require("electron").remote.getCurrentWindow().hide()
-        # @js w require("electron").remote.getCurrentWindow().setIgnoreMouseEvents(true)
+        # Blink.AtomShell.@dot w hide()
+        # Blink.AtomShell.@dot w setIgnoreMouseEvents(true)
 
-        load_config()
-        if length(colorscheme_list) != 2*length(colorscheme_list_pre)  # only re-generate if necessary
-            generate_colorscheme_list!(colorscheme_list, colorscheme_list_pre)  # so we have 1024 steps in each colorscheme - also automatically create the inverted colorschemes
-        end
-        load!(w, file_GUI)
+        loadhtml!(w, file_GUI)
         filter!(
             x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
             asset_files
-        )
-        for asset_file in asset_files
-            load!(w, asset_file)
-        end
-        @js w set_params($dir_asset, 0, 100)
+            )
+            for asset_file in asset_files
+                load!(w, asset_file)
+            end
 
+        @js w set_params($dir_asset, 0, 100, $bg_corrections, $directions_list, $editing_entries, "")
         @js w load_page($versions)
         @js w show_start()
-   
+        
         set_event_handlers_basic(w)
-
+        
         delete_files(;dir_cache=DIR_cache, fname_odp=FNAME_odp)
         load_directory(abspath(DIR_data), w, output_info=0)
-
+        
         selected = ["Image_004.sxm"]
         sel = selector(selected)
-        send_hover_mouse(sel, window=w)
-
+        # send_hover_mouse(sel, send_event=false, window=w)
+        
         @js w get_image_info("Image_004.sxm")
-
+        
         selected = ["Image_002.sxm", "Image_004.sxm"]
         sel = selector(selected)
         send_click(sel, window=w)
         send_key(["b", "b", "b", "b", "b", "c", "c", "i", "p"], window=w)
-    
+        
+        @js w toggle_imagezoom("zoom", "Image_004.sxm")
+        send_key("t", window=w)
+
+        # send_key(["ArrowRight"], window=w)  # this seems to sometimes hang, seems a bit like in compilation mode the spectrum display hangs
+
+        start = Dict(:x => 1.2, :y => 1.2)
+        stop = Dict(:x => 2.4, :y => 2.4)
+        @js w get_line_profile("Image_398.sxm", $start, $stop, 0.2)
+
         items = get_items(window=w)
     end
 end

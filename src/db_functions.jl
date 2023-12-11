@@ -1,7 +1,8 @@
 """load data from saved file"""
-function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmGridItem}
+function load_all(dir_data::String, w::Union{Window,Nothing})::Tuple{Dict{String, SpmGridItem}, Dict{String, Vector{String}}}
     griditems = Dict{String, SpmGridItem}()
-    
+    channel_names_list = Dict{String, Vector{String}}()
+
     f = joinpath(get_dir_cache(dir_data), filename_db)
     if isfile(f)
         loaded = JLD2.load(f)
@@ -12,6 +13,10 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmG
         else
             println("Warning: Empty database found.")  # this should not happen
             return griditems
+        end
+
+        if haskey(loaded, "channel_names_list")
+            channel_names_list = loaded["channel_names_list"]
         end
 
         if length(griditems_save) == 0
@@ -49,14 +54,17 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Dict{String, SpmG
         end
     end
 
-    return griditems
+    return griditems, channel_names_list
 end
 
 
 """saves the griditems dictionary to file"""
-function save_all(dir_data::String, griditems::Dict{String, SpmGridItem})::Nothing
+function save_all(dir_data::String, griditems::Dict{String, SpmGridItem}, channel_names_list::Dict{String,Vector{String}})::Nothing
     f = joinpath(get_dir_cache(dir_data), filename_db)
-    JLD2.save(f, Dict("griditems" => griditems))
+    JLD2.save(f, Dict(
+        "griditems" => griditems,
+        "channel_names_list" => channel_names_list
+    ))
 
     backup_database(dir_data)
 

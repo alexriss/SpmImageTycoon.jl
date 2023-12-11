@@ -9,10 +9,10 @@ end
 """scales and offsets an array, so that each value lies between 0 and 1.
 If range_selected is given, this range is normalized to lie between 0 and 1.
 Returns the minimum and maximum value of the original array."""
-function normalize01!(d::AbstractArray; range_selected::Array{<:Number}=Float64[])::Tuple{Number,Number}
-    d_ = filter(!isnan, d)
-    if length(d_) > 0
-        vmin_original, vmax_original = minimum(d_), maximum(d_)  # minimum and maximum function return NaN otherwise
+function normalize01!(d::AbstractArray; range_selected::Vector{<:Number}=Float64[])::Tuple{Number,Number}
+    d_ = skipnan(d)
+    if !isempty(d_)
+        vmin_original, vmax_original = extrema(d_)  # minimum and maximum function return NaN otherwise
     else
         vmin_original = 0
         vmax_original = 0
@@ -50,6 +50,18 @@ end
 """returns the cache directory (which is a subdirectory of dir_data"""
 function get_dir_cache(dir_data::String)::String
     return joinpath(dir_data, dir_cache_name)
+end
+
+"""returns temp cache from dir_data"""
+function get_dir_temp_cache(dir_data::String)::String
+    d = splitdir(dir_data)[end]
+    return joinpath(tempdir(), dir_temp_cache_name, dir_cache_name, d)
+end
+
+"""returns temp cache from dir_data"""
+function get_dir_temp_cache_cache(dir_cache::String)::String
+    dir_data = splitdir(dir_cache)[1]
+    return get_dir_temp_cache(dir_data)
 end
 
 
