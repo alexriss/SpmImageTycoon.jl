@@ -107,25 +107,29 @@ It is best to play around with the app yourself, so [go ahead and install it.](#
     <td></td>
     <td>images</td>
     <td>spectra</td>
+    <td></td>
   </tr>
   <tr>
     <td><a href="https://www.specs-group.com/nanonis/">Nanonis</a></td>
     <td>.sxm</td>
     <td>.dat</td>
+    <td><i>release</i></td>
   </tr>
   <tr>
     <td><a href="https://gxsm.sourceforge.net/">GSXM</a></td>
     <td>.nc</td>
     <td>.vpdata</td>
+    <td><i>testing</i></td>
   </tr>
   <tr>
     <td><a href="https://afm.oxinst.com/">Asylum Research</a></td>
     <td>.ibw</td>
     <td></td>
+    <td><i>testing</i></td>
   </tr>
 </table>
 
-If you encounter any issues or have suggestions for other file formats, please let me know.
+Currently, Nanonis files have the most extensive support. GSXM and Asylum Research file support is implemented and needs further testing. If you want to contribute to the development or testing, <a href="issues">please get in touch with me</a>. If you come across any issues or have suggestions for other file formats, <a href="issues">please let me know</a>.
 
 ## Disclaimer
 
@@ -261,7 +265,7 @@ The following javascript and css libraries are included in the app:
 
 Contributions are very welcome. Please post issues, suggestions, and pull requests on github. If you want to contribute to the code, take a look at the [technical background](#technical-background) and [contribution guidelines](CONTRIBUTING.md); and please get in touch with me.
 
-<a href="https://twitter.com/00alexx">Follow me on twitter</a> for updates and more information about this project: 
+<a href="https://twitter.com/00alexx">Follow me on X (twitter)</a> for updates and more information about this project: 
 <a href="https://twitter.com/00alexx"><img src="https://img.shields.io/twitter/follow/00alexx?style=social" alt="Twitter"></a>
 
 ## Related projects
