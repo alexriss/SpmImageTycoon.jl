@@ -229,7 +229,9 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
                     "filters" => [
                         Dict("name" => "OpenDocument Presentations", "extensions" => ["odp"]),
                         Dict("name" => "All Files", "extensions" => ["*"])
-                    ]
+                    ],
+                    # showOverwriteConfirmation for Linux, createDirectory for Mac, see https://www.electronjs.org/docs/latest/api/dialog
+                    "properties" => ["showOverwriteConfirmation", "createDirectory"]
                 )
 
                 if length(args) == 3  # filename is directly given, used for tests
@@ -238,6 +240,17 @@ function set_event_handlers(w::Window, dir_data::String, current_data::Dict{Stri
                 else
                     filename_export = @js shell(w) require("electron").dialog.showSaveDialogSync(windows[$(w.id)], $options)
                     if !isnothing(filename_export)
+                        # on Linux, the file extension is not added automatically, see https://github.com/electron/electron/issues/21935
+                        if lowercase(splitext(filename_export)[2]) != ".odp"
+                            filename_export = filename_export * ".odp"
+                            # but now the overwrite warning is not shown, so we add a number suffix
+                            i = 1
+                            filename_export_base = filename_export[begin:end-4]
+                            while isfile(filename_export)
+                                filename_export = filename_export_base * "_$i.odp"
+                                i += 1
+                            end
+                        end
                         @js_ w export_start($ids, $(filename_export))
                         export_odp(ids, dir_data, griditems, filename_export)
                         @js_ w exported()
