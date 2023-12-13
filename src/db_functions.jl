@@ -12,7 +12,7 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Tuple{Dict{String
             griditems_save = loaded["images_parsed_save"]
         else
             println("Warning: Empty database found.")  # this should not happen
-            return griditems
+            return griditems, channel_names_list
         end
 
         if haskey(loaded, "channel_names_list")
@@ -20,7 +20,7 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Tuple{Dict{String
         end
 
         if length(griditems_save) == 0
-            return griditems
+            return griditems, channel_names_list
         end
 
         first_value = first(values(griditems_save))
