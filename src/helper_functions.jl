@@ -41,18 +41,18 @@ end
 """returns the base filename for .nc files"""
 function base_filename(filename::String)::String
     filename = basename(filename)
-    if is_gsxm_image(filename)
-        return split(filename, "-", limit=2)[1] * "~merged" * extension_image_gsxm
-    elseif is_gsxm_spectrum(filename)
-        # we wouldn't need this in principle, but this is to avoid name conflicts (if there a nanonis spectrum with the same name as a GSXM spectrum)
-        return splitext(filename)[1] * "~vpdata" * extension_spectrum_gsxm
+    if is_gxsm_image(filename)
+        return split(filename, "-", limit=2)[1] * "~merged" * extension_image_gxsm
+    elseif is_gxsm_spectrum(filename)
+        # we wouldn't need this in principle, but this is to avoid name conflicts (if there a nanonis spectrum with the same name as a GXSM spectrum)
+        return splitext(filename)[1] * "~vpdata" * extension_spectrum_gxsm
     else
         return filename
     end
 end
 
 
-"""Gets a list of the files for each channel in `fnames`. Used for GSXM files, for which each channel is stored in a separate file."""
+"""Gets a list of the files for each channel in `fnames`. Used for GXSM files, for which each channel is stored in a separate file."""
 function get_channels_names_files(fnames::Vector{String})::Dict{String, String}
     names, units, files_fwd, files_bwd = SpmImages.get_channel_names_units_netCDF(basename.(fnames))
     res = Dict{String, String}()
@@ -101,12 +101,12 @@ end
 
 """cecks if the filename is an image"""
 function is_image(filename::String)::Bool
-    return endswith(filename, extension_image_nanonis) || endswith(filename, extension_image_gsxm) ||
+    return endswith(filename, extension_image_nanonis) || endswith(filename, extension_image_gxsm) ||
         endswith(filename, extension_image_ibw)
 end
 
 
 """checks if the filename is a spectrrum"""
 function is_spectrum(filename::String)::Bool
-    return endswith(filename, extension_spectrum_nanonis) || endswith(filename, extension_spectrum_gsxm)
+    return endswith(filename, extension_spectrum_nanonis) || endswith(filename, extension_spectrum_gxsm)
 end

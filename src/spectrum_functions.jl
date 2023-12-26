@@ -38,8 +38,8 @@ function default_channel_names(spectrum::SpmSpectrum)::Tuple{String,String}
     channel_name = (length(spectrum.channel_names) > 1) ? spectrum.channel_names[2] : spectrum.channel_names[1]  # yaxis
     channel2_name = spectrum.channel_names[1]  # xaxis
 
-    # GSXM uses the index column as the first channel_name, so we try to skip it
-    if is_gsxm_spectrum(spectrum.filename) && length(spectrum.channel_names) >= 3
+    # GXSM uses the index column as the first channel_name, so we try to skip it
+    if is_gxsm_spectrum(spectrum.filename) && length(spectrum.channel_names) >= 3
         channel_name = spectrum.channel_names[3]
         channel2_name = spectrum.channel_names[2]
     end
@@ -222,7 +222,7 @@ function load_spectrum_memcache(filename::AbstractString)::SpmSpectrum
     lock(memcache_spectra_lock) do
         spectrum = get_cache(memcache_spectra, filename)
         if spectrum === missing
-            add_index_column = is_gsxm_spectrum(filename) ? false : true  # GSXM files already have an index column
+            add_index_column = is_gxsm_spectrum(filename) ? false : true  # GXSM files already have an index column
             spectrum = load_spectrum(filename, index_column=add_index_column, index_column_type=Float64)
             set_cache(memcache_spectra, filename, spectrum)
         end
@@ -509,7 +509,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
     dir_cache::String, datafile::String, id::String, created::DateTime, last_modified::DateTime)::Tuple{Vector{Task},String}
 
     tasks = Task[]
-    add_index_column = is_gsxm_spectrum(datafile) ? false : true  # GSXM files already have an index column
+    add_index_column = is_gxsm_spectrum(datafile) ? false : true  # GXSM files already have an index column
 
     spectrum = missing
     try

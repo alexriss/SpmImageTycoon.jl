@@ -29,8 +29,8 @@ sort_channel_list = true  # sort channels in the channel list
 const resize_to = 2048  # we set it very high, so probably no images will be resized. A smaller value might improve performance (or not)
 const extension_image_nanonis = ".sxm"
 const extension_spectrum_nanonis = ".dat"
-const extension_image_gsxm = ".nc"
-const extension_spectrum_gsxm = ".vpdata"
+const extension_image_gxsm = ".nc"
+const extension_spectrum_gxsm = ".vpdata"
 const extension_image_ibw = ".ibw"
 
 const dir_cache_name = "_spmimages_cache"  # directory used for caching (julia writes all generated files here)

@@ -314,10 +314,10 @@ end
 
 """Reverts a spectrum to its default settings, returns `true` if anything was changed."""
 function reset_default!(griditem::SpmGridItem, im_spm::SpmImage)::Bool
-    # we need all channel names to change GSXM files
-    is_gsxm_image(griditem) && (im_spm.channel_names = get_gsxm_channel_names(griditem))
+    # we need all channel names to change GXSM files
+    is_gxsm_image(griditem) && (im_spm.channel_names = get_gxsm_channel_names(griditem))
     channel_name = default_channel_name(im_spm)
-    change_gsxm_griditem_filename_original!(griditem, channel_name)
+    change_gxsm_griditem_filename_original!(griditem, channel_name)
 
     if griditem.channel_name != channel_name
         griditem.channel_name = channel_name

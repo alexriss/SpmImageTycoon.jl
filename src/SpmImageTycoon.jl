@@ -90,7 +90,7 @@ include("cache.jl")
 include("helper_functions.jl")
 include("image_functions.jl")
 include("spectrum_functions.jl")
-include("gsxm_functions.jl")
+include("gxsm_functions.jl")
 include("export.jl")
 include("event_handlers.jl")
 include("db_functions.jl")
@@ -103,7 +103,7 @@ griditems_last_saved = 0.  # time of last save of griditems
 griditems_last_changed = 0.  # time of last (potential) change of griditems - we do not keep track of actual changes, but only if certain events happen
 griditems_lock = ReentrantLock()
 
-channel_names_files = Dict{String,Dict{String,String}}()  # list of channel names and the respective files (used for GSXM, where each channel has one file)
+channel_names_files = Dict{String,Dict{String,String}}()  # list of channel names and the respective files (used for GXSM, where each channel has one file)
 
 Precompiling = false
 
@@ -198,7 +198,7 @@ end
 
 """Generates the display filename for `griditem`."""
 function get_filename_display(griditem::SpmGridItem, suffix::String="")::String
-    if is_gsxm_image(griditem.filename_original)
+    if is_gxsm_image(griditem.filename_original)
         filename_display = splitext(base_filename(griditem.filename_original))[1] * suffix
     else
         filename_display = splitext(base_filename(griditem.filename_original))[1] * suffix
@@ -419,22 +419,22 @@ function change_griditem!(griditems::Dict{String,SpmGridItem}, ids::Vector{Strin
             continue
         end
 
-        # we need all channel names to change GSXM files
-        if is_gsxm_image(griditem) 
+        # we need all channel names to change GXSM files
+        if is_gxsm_image(griditem) 
             channel_names_before = item.channel_names
-            item.channel_names = get_gsxm_channel_names(griditem)
+            item.channel_names = get_gxsm_channel_names(griditem)
         end
         changed, cache_safe = pre_change_griditem!(griditem, item, what, jump)
         # change back now
-        if is_gsxm_image(griditem) 
+        if is_gxsm_image(griditem) 
             item.channel_names = channel_names_before
         end
 
-        # GSXM files have multiple files, so we have to load the right one
-        # if the filename_original was changed (can happen for GSXM files), we have to reload the item
-        if is_gsxm_image(griditem)
+        # GXSM files have multiple files, so we have to load the right one
+        # if the filename_original was changed (can happen for GXSM files), we have to reload the item
+        if is_gxsm_image(griditem)
             filename_original_before = griditem.filename_original
-            change_gsxm_griditem_filename_original!(griditem, griditems[id].channel_name)
+            change_gxsm_griditem_filename_original!(griditem, griditems[id].channel_name)
 
             if griditem.filename_original != filename_original_before
                 filename_original_full = joinpath(dir_data, griditem.filename_original)
@@ -503,8 +503,8 @@ function paste_params!(griditems::Dict{String,SpmGridItem}, ids::Vector{String},
         griditem.type == type_from || continue
         id != id_from || continue
 
-        # GSXM files have multiple files, so we have to load the right one
-        change_gsxm_griditem_filename_original!(griditem, griditems[id_from].channel_name)
+        # GXSM files have multiple files, so we have to load the right one
+        change_gxsm_griditem_filename_original!(griditem, griditems[id_from].channel_name)
 
         filename_original_full = joinpath(dir_data, griditem.filename_original)
         if griditem.type == SpmGridImage
@@ -581,8 +581,8 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
     extra_info["active_edits_str"] = get_active_edits_str(griditem)
     if griditem.type == SpmGridImage
         im_spm = load_image(filename_original_full, header_only=true, output_info=0)
-        if is_gsxm_image(griditem)  # we are not loading all images here, so we have to set the channel names manually
-            im_spm.channel_names = get_gsxm_channel_names(griditem)
+        if is_gxsm_image(griditem)  # we are not loading all images here, so we have to set the channel names manually
+            im_spm.channel_names = get_gxsm_channel_names(griditem)
             im_spm.channel_units = fill("", length(im_spm.channel_names))
         end
         channel_names, channel_units = sort_channel_names_units(im_spm.channel_names, im_spm.channel_units)
@@ -590,7 +590,7 @@ function get_griditem_header(griditem::SpmGridItem, dir_data::String)::Tuple{Ord
         extra_info["Units"] = join(channel_units, ", ")
         return im_spm.header, extra_info
     elseif griditem.type == SpmGridSpectrum
-        add_index_column = is_gsxm_spectrum(filename_original_full) ? false : true  # GSXM files already have an index column
+        add_index_column = is_gxsm_spectrum(filename_original_full) ? false : true  # GXSM files already have an index column
         spectrum = load_spectrum(filename_original_full, header_only=true, index_column=add_index_column)  # no caching here
         channel_names, channel_units = sort_channel_names_units(spectrum.channel_names, spectrum.channel_units)
         extra_info["Channels"] = join(channel_names, ", ")
@@ -677,7 +677,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         @js_ w page_start_load_params($(length(datafiles)))
     end
 
-    # we need to sort the datafiles by extension first, then by name (otherwise the gsxm multiple files can be out of order - e.g. some spectrum files could be inbetween the image files)
+    # we need to sort the datafiles by extension first, then by name (otherwise the gxsm multiple files can be out of order - e.g. some spectrum files could be inbetween the image files)
     sort!(datafiles, by = x -> (splitext(x)[2], x))
 
     empty!(channel_names_files)
@@ -693,8 +693,8 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         datafile = datafiles[i_datafile]
         push!(datafiles_curr, datafile)
 
-        # gsxm uses one file for each channel
-        if is_gsxm_image(datafile) && i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
+        # gxsm uses one file for each channel
+        if is_gxsm_image(datafile) && i_datafile < length(datafiles) && base_filename(datafiles[i_datafile+1]) == base_filename(datafile)
             continue
         end
 
@@ -702,9 +702,9 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         datafile = datafiles_curr[1]
         filename_original = basename(datafile)
         id = base_filename(filename_original)
-        is_gsxm_image(filename_original) && (channel_names_files[id] = get_channels_names_files(datafiles_curr))
+        is_gxsm_image(filename_original) && (channel_names_files[id] = get_channels_names_files(datafiles_curr))
 
-        # there can be multiple files (for GSXM), so we compute the mean
+        # there can be multiple files (for GXSM), so we compute the mean
         s = stat.(datafiles_curr)
         ctime = mean(getfield.(s, :ctime))
         mtime = mean(getfield.(s, :mtime))
@@ -743,7 +743,7 @@ function parse_files(dir_data::String, w::Union{Window,Nothing}=nothing;
         else
             use_existing = id in force_ids ? false : true
             if is_image(filename_original)
-                # we load all datafiles here (for gsxm)
+                # we load all datafiles here (for gxsm)
                 ts, err = parse_image!(griditems, virtual_copies_dict, griditems_new, channel_names_list, only_new, use_existing,
                     dir_cache, datafiles_curr, id, created, last_modified)
             elseif is_spectrum(filename_original)

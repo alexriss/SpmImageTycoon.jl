@@ -116,7 +116,7 @@ It is best to play around with the app yourself, so [go ahead and install it.](#
     <td><i>release</i></td>
   </tr>
   <tr>
-    <td><a href="https://gxsm.sourceforge.net/">GSXM</a></td>
+    <td><a href="https://gxsm.sourceforge.net/">GXSM</a></td>
     <td>.nc</td>
     <td>.vpdata</td>
     <td><i>testing</i></td>
@@ -129,7 +129,7 @@ It is best to play around with the app yourself, so [go ahead and install it.](#
   </tr>
 </table>
 
-Currently, Nanonis files have the most extensive support. GSXM and Asylum Research file support is implemented and needs further testing. If you want to contribute to the development or testing, please get in touch with me. If you come across any issues or have suggestions for other file formats, [please let me know](https://github.com/alexriss/SpmImageTycoon.jl/issues/new).
+Currently, Nanonis files have the most extensive support. GXSM and Asylum Research file support is implemented and needs further testing. If you want to contribute to the development or testing, please get in touch with me. If you come across any issues or have suggestions for other file formats, [please let me know](https://github.com/alexriss/SpmImageTycoon.jl/issues/new).
 
 ## Disclaimer
 
