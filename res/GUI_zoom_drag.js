@@ -177,8 +177,10 @@ function zoom_drag_filter_overview_setup(divMain) {
         divSection.addEventListener('mousemove', (event) => {
             // only do this when the primary mouse button is pressed (event.buttons = 1)
             if (event.buttons) {
+                console.log(        window.filter_overview_selecting                     );
                 if (window.filter_overview_selecting) {
                     if (!event.altKey && !window.space_pressed) {  // dragging only with modifier - line profile dragging has priority
+                        console.log("return");
                         return;
                     }
                 }

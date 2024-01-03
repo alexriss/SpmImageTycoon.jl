@@ -77,21 +77,16 @@ function filter_overview_setup() {
     window.filter_overview_selection_object = new SelectionArea({
         selectables: ['#filter_overview > .filter_overview_item'],
         boundaries: ['#filter_overview'],
-        overlap: 'keep',
         class: "filter_overview_selection_area",
-        startThreshold: 1,
-        allowTouch: false,
+        behavior: {overlap: 'keep'},
     }).on('beforestart', ({store, event}) => {
         if (event.altKey || window.space_pressed) {
             return false;
         }
+        window.filter_overview_selecting = true;
+        return true;
     }).on('start', ({store, event}) => {
         if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {  // Remove class if the user isn't pressing the control key or ⌘ key
-            window.filter_overview_selecting = true;
-            // Unselect all elements
-            //for (const el of store.stored) {
-            //    el.classList.remove('selected');
-            //}
             Array.from(document.getElementById('filter_overview').getElementsByClassName('selected')).forEach(el => {
                 el.classList.remove('selected');
             });
@@ -100,6 +95,7 @@ function filter_overview_setup() {
             window.filter_overview_selection_object.clearSelection();
         }
     }).on('move', ({store: {changed: {added, removed}}}) => {
+        window.filter_overview_selecting = true;
         for (const el of added) {
             el.classList.add('selected');
         }
@@ -107,7 +103,7 @@ function filter_overview_setup() {
             el.classList.remove('selected');
         }
     }).on('stop', () => {
-        window.filter_overview_selection_object.keepSelection();
+        console.log('stop');
         window.filter_overview_selecting = false;
 
         filter_overview_display_num_selected();

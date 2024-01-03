@@ -1,0 +1,37 @@
+#dropdown-menu-node-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+#dropdown-menu-node-wrapper article {
+    min-width: 6rem;
+    font-size: small;
+    padding: 0;
+}
+
+#dropdown-menu-node-wrapper .message-header {
+    padding: 0.2rem 0.6rem;
+}
+
+#dropdown-menu-node-wrapper .dropdown-content {
+    padding-top:0;
+}
+
+#dropdown-menu-node {
+    min-width: 6rem;
+    background-color: white;
+}
+
+#dropdown-menu-node a {
+    font-size: small;
+}
+
+#dropdown-menu-node .dropdown-item {
+    padding: 0.1rem 0.6rem;
+}
+
+#dropdown-menu-node .dropdown-divider {
+    margin: .1rem 0;
+}

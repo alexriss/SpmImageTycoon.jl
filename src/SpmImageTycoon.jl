@@ -952,8 +952,13 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     
     # load all .css and .js asset files
     dir_asset = path_asset("");
+    dir_asset_nodeeditor = path_asset("node-editor/");
     dir_asset_external = path_asset("external/");
-    asset_files = vcat(readdir(dir_asset, join=true), readdir(dir_asset_external, join=true))
+    asset_files = vcat(
+        readdir(dir_asset, join=true),
+        readdir(dir_asset_nodeeditor, join=true),
+        readdir(dir_asset_external, join=true)
+    )
     filter!(
         x -> isfile(x) && (endswith(x, ".css") || endswith(x, ".js")),
         asset_files
@@ -1133,8 +1138,7 @@ end
         @js w get_line_profile("Image_398.sxm", $start, $stop, 0.2)
 
         items = get_items(window=w)
-        # close(w, quit=true)  # once Blink gets updated, PR request is already merged
-        close(w)
+        close(w, quit=true)
         return nothing
     end
 end

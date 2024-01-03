@@ -1,0 +1,252 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+
+/* board  */
+
+.boardWrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 6px 0 0 0;
+}
+
+.board {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    width: 200%;
+    height: 200%;
+    min-width:6000px;
+    min-height:6000px;
+    background-size: 30px 30px;
+    background-image: radial-gradient(circle, #b8b8b8bf 1px, rgba(0, 0, 0, 0) 1px);
+    background-color: #f0f0f0e4;
+    transform-origin: 0 0;
+    /* cursor: grab; */
+}
+
+.boardGrabbing {
+    cursor: grabbing;
+}
+
+/* node */
+
+.boardWrapper .node {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    cursor: grab;
+    background-color: #ffffff;
+    border: 2px solid #c4c4c4;
+    border-radius: 6px;
+    box-shadow: 1px 1px 11px -6px rgba(0, 0, 0, 0.75);
+    user-select: none;
+    z-index: 1;
+    transition: border ease 0.2s, box-shadow ease 0.2s;
+    width: 120px;
+    min-height: 75px;
+    font-size: small;
+}
+
+.boardWrapper .node .message-body {
+    padding: 1.0em 1.2em
+}
+
+.boardWrapper .message-header {
+    padding: .3em 0.5em;
+}
+
+.boardWrapper .node.node-input {
+    background-color: #f0ebec;
+    width: 180px;
+}
+
+.boardWrapper .node.node-input .message-header {
+    background-color: #a00f31dc;
+}
+
+.boardWrapper .node.node-input {
+    background-color: #f5e8eb;
+}
+
+.boardWrapper .node.node-output .message-header {
+    background-color: #0d8476e5;
+}
+
+.boardWrapper .node.node-output {
+    background-color: #cdf3ef;
+}
+
+.boardWrapper .node.node-color .message-header {
+    background-color: #a0a0a0;
+}
+
+.boardWrapper .node.node-color {
+    background-color: #f0f0f0;
+}
+
+.boardWrapper .node:hover {
+    box-shadow: 2px 2px 12px -6px rgba(0, 0, 0, 0.75);
+}
+
+.boardWrapper .nodeSelected {
+    border: 2px solid #e83f6f;
+    box-shadow: 0px 0px 6px 3px #e83f6f;
+}
+
+.boardWrapper .nodeSelected:hover {
+    box-shadow: 0px 0px 6px 3px #e83f6f, 2px 2px 16px -6px rgba(0, 0, 0, 0.75);
+}
+
+.boardWrapper .inputsWrapper {
+    position: absolute;
+    top: 11px;
+    left: -7px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 12px;
+    pointer-events: none;
+}
+
+.boardWrapper .outputsWrapper {
+    position: absolute;
+    top: 11px;
+    right: -7px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 12px;
+    pointer-events: none;
+}
+
+.boardWrapper .inputNode, .boardWrapper .outputNode {
+    width: 20px;
+    height: 20px;
+    cursor: crosshair;
+    pointer-events: all;
+}
+
+.boardWrapper .inputNode:before, .boardWrapper .outputNode:before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin: 2px;
+    background-color: #e83f6f;
+}
+
+.boardWrapper .inputNode.disabled:before, .boardWrapper .outputNode.disabled:before {
+    background-color: #f7b6c9;
+}
+
+.boardWrapper .outputNode:hover:before, .boardWrapper .inputNode:hover:before {
+    border: 2px solid #6c1f35;
+}
+
+.boardWrapper .outputNode.disabled:hover:before, .boardWrapper .inputNode.disabled:hover:before {
+    border: none;
+}
+
+
+.boardWrapper .node select, .boardWrapper .node input {
+    font-size: small;
+    border: 1px solid #c4c4c4;
+    height: auto;
+    line-height: normal;
+    padding: 0.3em 0.5em;
+    margin:0;
+}
+
+.boardWrapper .node input[type=color] {
+    font-size: small;
+    border: 1px solid #c4c4c4;
+    height: 25px;
+    line-height: normal;
+    padding: 0.1em 0.2em;
+    margin:0;
+}
+
+
+
+/* edge */
+
+.edgeWrapper {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.edgeWrapper .delete {
+    cursor: pointer;
+    pointer-events: all;
+    transition: all ease 0.1s;
+}
+
+.edgeWrapper .deleteHidden {
+    cursor: pointer;
+    pointer-events: none;
+    opacity: 0;
+    transition: all ease 0.1s;
+}
+
+.edgeWrapper .icon {
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    fill: white;
+}
+
+.edgeWrapper .circle {
+    cx: 0;
+    cy: 0;
+    r: 11;
+    fill: rgb(175, 59, 59);
+}
+
+.edgeWrapper .edge {
+    pointer-events: all;
+    stroke: rgba(168, 168, 168, 0.8);
+    stroke-width: 2;
+    fill: transparent;
+    cursor: pointer;
+}
+
+.edgeWrapper .edgeSelected {
+    pointer-events: all;
+    stroke: rgb(216, 141, 62);
+    stroke-width: 3;
+    fill: transparent;
+    z-index: 100;
+}
+
+.edgeWrapper .edgeNew {
+    stroke: rgba(168, 168, 168, 0.4);
+    stroke-width: 2;
+    fill: transparent;
+}
+
+/* selection */
+
+.selection-area {
+    background: rgba(46, 115, 252, 0.11);
+    border: 2px solid rgba(98, 155, 255, 0.81);
+    border-radius: 0.1em;
+}

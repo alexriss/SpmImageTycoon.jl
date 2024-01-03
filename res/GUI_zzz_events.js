@@ -72,11 +72,13 @@ const ctrl_key_commands = {
     q: { command: toggle_start_project, args: ["re-project"] },
     F12: { command: toggle_dev_tools, args: [] },
     F5: { command: re_parse_images, args: [true] },
+    "`": { command: () => window.node_editor_interface.toggleVisible(), args: [] },
 }
 
 // with ctrl-and shift modifier
 const ctrl_shift_key_commands = {
     F5: { command: re_parse_images, args: [true, true] },
+    N: { command: () => window.node_editor_interface.create(), args: [] },
 }
 
 const icon_sidebar = {

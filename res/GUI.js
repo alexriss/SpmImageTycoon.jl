@@ -62,6 +62,8 @@ window.queue_edits_range == null  // queue object, used for edits and range adju
 
 window.filter_items_object = null;  // holds the FilterItems object
 
+window.node_editor_interface = null;  // holds the NodeEditor object
+
 window.timeout_notification = {};  // holds the timeout for the notifications
 
 window.t0 = 0;   // for performance measurements
@@ -417,7 +419,7 @@ function toggle_imagezoom_mouse(event) {
     }
 }
 
-function toggle_imagezoom(target_view = "", id="") {
+function toggle_imagezoom(target_view = "", id="", create_new=false) {
     // toggles between grid and imagezoom views
 
     const grid = document.getElementById('imagegrid_container');
@@ -437,39 +439,51 @@ function toggle_imagezoom(target_view = "", id="") {
         toggle_sidebar_imagezoomtools();  // get rid of imagezoomtools
         gridsub.scrollTop = window.grid_last_scrolltop;
         check_hover_enabled();
-    } else {
-        let el = null;
-        if (target_view == "zoom" && id != "") {  // this is used for automated testing - here the hover doesn't work so well
-           el = document.getElementById(id);
+    } else { // grid -> zoom
+        if (id != "" && create_new) {
+            // id is forced, no checks necessary
+        } else if (id != "") {  // used for automatic testing - here the hover doesn't work so well
+            el = document.getElementById(id);
+            if (el == null) {
+                id = "";
+            }
         } else {
-           el = grid.querySelector('div.item:hover');
-           if (el == null && window.image_info_id != "") {
-               el = document.getElementById(window.image_info_id);
-           }
+            el = grid.querySelector('div.item:hover');
+            if (el == null && window.image_info_id != "") {
+                el = document.getElementById(window.image_info_id);
+            }
+            if (el != null) {
+                id = el.id;
+            }
         }
 
-        if (el != null) {
+        if (id != "") {
             window.grid_last_scrolltop = gridsub.scrollTop;
             grid.classList.add("is-hidden");
             zoom.classList.remove("is-hidden");
             footer_num_images_container.classList.add("is-invisible")
-
-            window.image_info_id = el.id;  // should be set already, but just to make sure
-            // get_image_info(el.id);  // should also not be necessary
-
-            const zoom_content = document.getElementById('imagezoom_content');
-            if (!window.zoom_control_setup) {
-                window.zoom_drag_objects["imagezoom"] = new ZoomDrag(zoom_content);
-                window.zoom_control_setup = true;
-            }
-            if (window.zoom_last_selected != el.id) {
-                // document.getElementById('imagezoom_image').src = file_url(el.id);
-                window.zoom_drag_objects["imagezoom"].zoom_drag_reset();
-            }
-            window.zoom_last_selected = el.id;
-            next_item(0); // sets the img src and displays colorbar etc
+    
+            set_imagezoom_id(id);
         }
     }
+}
+
+function set_imagezoom_id(id) {
+    // sets the current if for imagezoom mode
+    window.image_info_id = id;  // should be set already, but just to make sure
+    // get_image_info(id);  // should also not be necessary
+
+    const zoom_content = document.getElementById('imagezoom_content');
+    if (!window.zoom_control_setup) {
+        window.zoom_drag_objects["imagezoom"] = new ZoomDrag(zoom_content);
+        window.zoom_control_setup = true;
+    }
+    if (window.zoom_last_selected != id) {
+        // document.getElementById('imagezoom_image').src = file_url(id);
+        window.zoom_drag_objects["imagezoom"].zoom_drag_reset();
+    }
+    window.zoom_last_selected = id;
+    next_item(0); // sets the img src and displays colorbar etc
 }
 
 function imagezoom_size_adjust() {

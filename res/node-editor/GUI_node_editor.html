@@ -1,0 +1,183 @@
+    <div id="node-editor-boardWrapper" class="boardWrapper is-hidden" tabindex="-1">
+        <section id="node-editor-board" class="board">
+            <div class="dropdown is-active" id="dropdown-menu-node-wrapper">
+                <div>
+                <article class="message has-background-dark	 dropdown-menu">
+                    <div class="message-header has-text-info-light">
+                      Add node
+                    </div>
+                <div class="dropdown-menu" id="dropdown-menu-node" role="menu">
+                  <div class="dropdown-content">
+                    <template class="dropdown-item-template">
+                        <a href="#" class="dropdown-item">
+                        </a>
+                    </template>
+                    <template class="dropdown-item-template-divider">
+                        <hr class="dropdown-divider">
+                    </template>
+                  </div>
+                </div>
+                </article>
+                </div>
+            </div>
+        </section>
+
+        <div id="nodeTemplates">
+            <template id="nodeTemplateInput" data-name="Input">
+                <article class="node message node-input is-small">
+                    <div class="message-header is-small">
+                    Input
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                        <select name="filename_original" class="input mb-1">
+                        </select>
+                        <select name="channel_name" class="input mb-1">
+                        </select>
+                        <select name="channel2_name" class="input mb-1">
+                        </select>
+                    </div>
+                    <div class="outputsWrapper">
+                        <div class="outputNode"></div>
+                    </div>
+                </article>
+            </template>
+
+            <template id="nodeTemplateInput" data-name="divider"></template>
+
+            <template id="nodeTemplateAdd" data-name="Add">
+                <article class="node message is-info is-small">
+                    <div class="message-header is-small">
+                    Add
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                    
+                    </div>
+                    <div class="inputsWrapper">
+                        <div class="inputNode"></div>
+                    </div>
+                    <div class="outputsWrapper">
+                        <div class="outputNode"></div>
+                    </div>
+                </article>
+            </template>
+
+            <template id="nodeTemplateAverage" data-name="Average">
+                <article class="node message is-info is-small">
+                    <div class="message-header is-small">
+                    Average
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                    
+                    </div>
+                    <div class="inputsWrapper">
+                        <div class="inputNode"></div>
+                    </div>
+                    <div class="outputsWrapper">
+                        <div class="outputNode"></div>
+                    </div>
+                </article>
+            </template>
+
+            <template id="nodeTemplateMath" data-name="Math">
+                <article class="node message is-info is-small">
+                    <div class="message-header is-small">
+                    Math
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                        <select name="op" class="input node-math-type">
+                            <option value="add">Add</option>
+                            <option value="subtract">Subtract</option>
+                            <option value="multiply">Multiply</option>
+                            <option value="divide">Divide</option>
+                        </select>
+                    </div>
+                    <div class="inputsWrapper">
+                        <div class="inputNode"></div>
+                        <div class="inputNode"></div>
+                    </div>
+                    <div class="outputsWrapper">
+                        <div class="outputNode"></div>
+                    </div>
+                </article>
+            </template>
+
+            <template id="nodeTemplateNumber" data-name="Number">
+                <article class="node message is-info is-small">
+                    <div class="message-header is-small">
+                    Number
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                        <input name="val" class="input node-math-value" type="number" step="0.1" value="0">
+                    </div>
+                    <div class="inputsWrapper">
+                    </div>
+                    <div class="outputsWrapper">
+                        <div class="outputNode"></div>
+                    </div>
+                </article>
+            </template>
+
+            <template id="nodeTemplateInput" data-name="divider"></template>
+
+            <template id="nodeTemplateColor" data-name="Color">
+                <article class="node message node-color is-info is-small">
+                    <div class="message-header is-small">
+                    Color
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                        <input name="color" class="input" type="color" value="#000000">
+                    </div>
+                    <div class="inputsWrapper">
+                        <div class="inputNode"></div>
+                    </div>
+                    <div class="outputsWrapper">
+                        <div class="outputNode"></div>
+                    </div>
+                </article>
+            </template>
+
+            <template id="nodeTemplateOutput" data-name="Output" data-context="false" data-permanent="true", data-unique="true">
+                <article class="node message node-output is-small">
+                    <div class="message-header is-small">
+                    Output
+                    <button class="delete is-small"></button>
+                    </div>
+                    <div class="message-body">
+                        
+                    </div>
+                    <div class="inputsWrapper">
+                        <div class="inputNode"></div>
+                    </div>
+                </article>
+            </template>
+        </div>
+
+        <template id="edgeTemplate">
+            <svg class="edgeWrapper">
+                <path class="edgeNew"/>
+                <g class="deleteButton deleteHidden" transform="translate(0,0)">
+                    <circle class="circle" />
+                    <svg
+                        fill="currentColor"
+                        stroke-width="0"
+                        width="30"
+                        height="30"
+                        viewBox="150 150 1000 1000"
+                        style="overflow: visible;"
+                        class="icon"
+                    >
+                    <g>
+                        <line fill="#FFFFFF" stroke="#FFFFFF" stroke-width="100" x1="0" y1="0" x2="300" y2="300"/>
+                        <line fill="#FFFFFF" stroke="#FFFFFF" stroke-width="100" x1="0" y1="300" x2="300" y2="0"/>
+                    </g>
+                </g>
+            </svg>
+        </template>
+    </div>
+
