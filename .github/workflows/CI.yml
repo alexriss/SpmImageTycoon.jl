@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - patch
     paths-ignore:
       - '**.md'
       - '**.cff'
@@ -10,6 +11,7 @@ on:
   pull_request:
     branches:
       - main
+      - patch
     paths-ignore:
       - '**.md'
       - '**.cff'
@@ -24,8 +26,8 @@ jobs:
       matrix:
         version:
           - '1.9'
-          # - '^1.9.0-0'
-          # - 'nightly'
+          - '1.10'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:
