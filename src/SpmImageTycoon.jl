@@ -907,6 +907,9 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
             yield()
             sleep(0.1)
         end
+        # close and exit after a few seconds
+        sleep(5)
+        close(w, quit=true)
     end
     if return_window
         return w
@@ -1037,6 +1040,8 @@ end
         @js w get_line_profile("Image_398.sxm", $start, $stop, 0.2)
 
         items = get_items(window=w)
+        close(w, quit=true)
+        return nothing
     end
 end
 
