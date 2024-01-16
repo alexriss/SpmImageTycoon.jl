@@ -27,6 +27,18 @@ function is_image_channel_name_fwd(name)
 end
 
 
+"""get comment from spm image"""
+function get_comment(im_spm::SpmImage)::String
+    comment = ""
+    if haskey(im_spm.header, "Comment")
+        comment = utf8ify(im_spm.header["Comment"])
+    elseif haskey(im_spm.header, "comment")
+        comment = utf8ify(im_spm.header["comment"])
+    end
+    return comment
+end
+
+
 """saves all colorbars as pngs in the cache directory.
 Returns a dictionary that associates each colorscheme name with a png file"""
 function save_colorbars(dict_colorschemes::OrderedDict{String,ColorScheme}, dir_data::String, width::Int=512, height::Int=20)::OrderedDict{String,String}
@@ -419,13 +431,13 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
         griditem.z_feedback_setpoint = im_spm.z_feedback_setpoint
         griditem.z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
         griditem.z = im_spm.z
-        griditem.comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
+        griditem.comment = get_comment(im_spm)
         griditem.status = 0
     else
         # get the respective image channel (depending on whether the feedback was on or not)
         channel_name = default_channel_name(im_spm)
         length(datafiles) > 1 && (filename_original = channel_names_files[id][channel_name])
-        comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
+        comment = get_comment(im_spm)
         griditems[id] = SpmGridItem(
             id=id, type=SpmGridImage, filename_original=filename_original, created=created, last_modified=last_modified, recorded=im_spm.start_time,
             channel_name=channel_name, scansize=im_spm.scansize, scansize_unit=im_spm.scansize_unit,
@@ -469,7 +481,7 @@ function parse_image!(griditems::Dict{String, SpmGridItem}, virtual_copies_dict:
             virtual_copy.z_feedback_setpoint = im_spm.z_feedback_setpoint
             virtual_copy.z_feedback_setpoint_unit = im_spm.z_feedback_setpoint_unit
             virtual_copy.z = im_spm.z
-            virtual_copy.comment = haskey(im_spm.header, "Comment") ? utf8ify(im_spm.header["Comment"]) : ""
+            virtual_copy.comment = get_comment(im_spm)
             virtual_copy.status = 0
 
             t = Threads.@spawn create_image!(virtual_copy, im_spm, resize_to=resize_to, dir_cache=dir_cache, use_existing=use_existing)
