@@ -21,6 +21,32 @@ function expand_range(start::Float64, stop::Float64)::Tuple{Float64,Float64}
 end
 
 
+"""gets comment from spectrum"""
+function get_comment(spectrum::SpmSpectrum)::String
+    comment = ""
+
+    # Nanonis files have these numbered comment lines
+    for i in 1:99
+        comment_key = (i < 10) ? "Comment0$(i)" : "Comment$(i)"
+        if haskey(spectrum.header, comment_key)
+            if i > 1
+                comment *= "\n"
+            end
+            comment *= utf8ify(spectrum.header[comment_key])
+        else
+            break
+        end
+    end
+
+    # GXSM has a special comment field
+    if haskey(spectrum.header, "GXSM-Main-Comment")
+        comment *= utf8ify(spectrum.header["GXSM-Main-Comment"])
+    end
+
+    return comment
+end
+
+
 """Get the units for channel and channel2"""
 function get_channel_units(griditem::SpmGridItem, spectrum::SpmSpectrum)::Tuple{String,String}
     units = map((griditem.channel_name, griditem.channel2_name)) do c
@@ -554,19 +580,6 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         end
     end
 
-    comment = ""
-    for i in 1:99
-        comment_key = (i < 10) ? "Comment0$(i)" : "Comment$(i)"
-        if haskey(spectrum.header, comment_key)
-            if i > 1
-                comment *= "\n"
-            end
-            comment *= utf8ify(spectrum.header[comment_key])
-        else
-            break
-        end
-    end
-
     if haskey(griditems, id)
         griditem = griditems[id]
         # still update a few fields (the files may have changed) - but most of these fields should stay unchanged
@@ -581,7 +594,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
         griditem.z_feedback_setpoint = z_feedback_setpoint
         griditem.z_feedback_setpoint_unit = z_feedback_setpoint_unit
         griditem.z = spectrum.position[3]
-        griditem.comment = comment
+        griditem.comment = get_comment(spectrum)
         griditem.status = 0
     else
         # get the respective image channel (depending on whether the feedback was on or not)
@@ -592,7 +605,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
             center=spectrum.position .* 1e9, scan_direction=2, 
             bias=spectrum.bias, z_feedback=spectrum.z_feedback,
             z_feedback_setpoint=z_feedback_setpoint, z_feedback_setpoint_unit=z_feedback_setpoint_unit, z=spectrum.position[3],
-            comment=comment
+            comment=get_comment(spectrum)
         )
         if only_new
             push!(griditems_new, id)
@@ -618,7 +631,7 @@ function parse_spectrum!(griditems::Dict{String, SpmGridItem}, virtual_copies_di
             virtual_copy.z_feedback_setpoint = z_feedback_setpoint
             virtual_copy.z_feedback_setpoint_unit = z_feedback_setpoint_unit
             virtual_copy.z = spectrum.position[3]
-            virtual_copy.comment = comment
+            virtual_copy.comment = get_comment(spectrum)
             virtual_copy.status = 0
 
             t = Threads.@spawn create_spectrum!(virtual_copy, spectrum, dir_cache=dir_cache, use_existing=use_existing)
