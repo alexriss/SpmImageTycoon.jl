@@ -19,6 +19,10 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Tuple{Dict{String
             channel_names_list = loaded["channel_names_list"]
         end
 
+        if typeof(griditems_save) == JLD2.SerializedDict
+            griditems_save = griditems_save.kvvec  # that is how it is reconstructed by JLD2
+        end
+
         if length(griditems_save) == 0
             return griditems, channel_names_list
         end
@@ -27,20 +31,22 @@ function load_all(dir_data::String, w::Union{Window,Nothing})::Tuple{Dict{String
         t_save = typeof(first_value)
         if t_save <: Pair # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
             t_save = typeof(first_value[2])
+            first_value = first_value[2]
         end
 
         if t_save != SpmGridItem  # there was a change in the struct specification, lets try to copy field by field
             log("Old database detected. Converting... ", w, new_line=false)
 
-            fieldnames_save = fieldnames(t_save)
+            # fieldnames_save = fieldnames(t_save)
+            fieldnames_save = propertynames(first_value)  # this seems to be the way for the new JLD2 version (5.10)
             fieldnames_common = filter(x -> x in fieldnames_save, fieldnames(SpmGridItem))
-
+            
             for pair in griditems_save  # JLD2 apparently reconstructs an array of pairs{id, SpmGridItem}
                 id = pair[1]
                 griditem = pair[2]
                 griditems[id] = SpmGridItem()
                 for f in fieldnames_common
-                    val = getfield(griditem, f)
+                    val = getproperty(griditem, f)  # in JLD2 v5.10, the fields are called properties
                     if fieldtype(SpmGridItem, f) != typeof(val)  # this can happen; we changed "scan_direction" from bool to int in v129
                         val = convert(fieldtype(SpmGridItem, f), val)
                     end
