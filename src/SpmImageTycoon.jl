@@ -27,24 +27,6 @@ export SpmGridItem, tycoon
 const VERSION = VersionNumber(TOML.parsefile(joinpath(@__DIR__, "../Project.toml"))["version"]) 
 
 
-# workaround for ECONNREFUSED error
-# https://github.com/JuliaGizmos/Blink.jl/issues/325#issuecomment-2252670794
-@eval AtomShell begin
-    function init(; debug = false)
-        electron() # Check path exists
-        p, dp = port(), port()
-        debug && inspector(dp)
-        dbg = debug ? "--debug=$dp" : []
-        proc = (debug ? run_rdr : run)(
-            `$(electron()) --no-sandbox $dbg $mainjs port $p`; wait=false)
-        conn = try_connect(ip"127.0.0.1", p)
-        shell = Electron(proc, conn)
-        initcbs(shell)
-        return shell
-    end
-end
-
-
 @enum SpmGridItemType SpmGridImage SpmGridSpectrum
 
 # entries for SPM images and SPM spectra
