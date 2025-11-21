@@ -928,10 +928,12 @@ function tycoon(dir_data::String=""; return_window::Bool=false, keep_alive::Bool
     file_logo = path_asset("media/logo_diamond.png")
     w = Window(Dict(
         "webPreferences" => Dict(
+            "sandbox" => false,
             "webSecurity" => false,  # to load local files
             "nodeIntegration" => true,  # for require("..") within the renderer process
             "contextIsolation" => false  # for require("..") within the renderer process
         ),
+        "sandbox" => false,
         "title" => "SpmImage Tycoon",
         "icon" => file_logo,
         :icon => file_logo,
@@ -1080,10 +1082,12 @@ end
         w = Window(
             Dict(
                 "webPreferences" => Dict(
+                    "sandbox" => false,
                     "webSecurity" => false,
                     "nodeIntegration" => true,
                     "contextIsolation" => false
                 ),
+                "sandbox" => false,
                 :transparent => true,
                 :frame => false,
                 :titleBarStyle => "hidden",
